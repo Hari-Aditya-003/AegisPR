@@ -1,0 +1,10 @@
+diff --git a/store/coupon.py b/store/coupon.py
+index 0f0c000..d60e000 100644
+--- a/store/coupon.py
++++ b/store/coupon.py
+@@ -5,4 +5,4 @@ def apply_coupon(total: Decimal, discount: Decimal) -> Decimal:
+     """Apply a non-negative discount without producing a negative total."""
+     if total < 0 or discount < 0:
+         raise ValueError("total and discount must be non-negative")
+-    return max(total - discount, Decimal("0"))
++    return total - discount

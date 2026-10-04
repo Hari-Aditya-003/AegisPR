@@ -26,5 +26,14 @@ describe("VerificationForm", () => {
     fireEvent.click(screen.getByRole("button", { name: /verify pr/i }));
     expect(screen.getByRole("alert")).toHaveTextContent(/public github pull request/i);
   });
-});
 
+  it("surfaces bounded submission errors and restores the button", async () => {
+    render(<VerificationForm onSubmit={vi.fn().mockRejectedValue("offline")} />);
+    fireEvent.change(screen.getByLabelText(/github pull request/i), {
+      target: { value: "https://github.com/acme/store/pull/42/" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /verify pr/i }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Verification could not start.");
+    expect(screen.getByRole("button", { name: /verify pr/i })).toBeEnabled();
+  });
+});

@@ -89,7 +89,7 @@ h1, h2, h3, p { margin-top: 0; }
 .use-section li strong { display: block; color: var(--ink); }
 
 .report-shell { min-height: calc(100vh - 72px); padding: 55px max(4vw, calc((100vw - 1400px)/2)); }
-.report-heading { display: flex; justify-content: space-between; align-items: start; gap: 30px; margin-bottom: 34px; }
+.report-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 30px; margin-bottom: 34px; }
 .report-heading h1 { margin-bottom: 10px; font-size: clamp(32px, 4vw, 52px); letter-spacing: -.045em; }
 .report-heading > div > p:last-child { color: var(--muted); }
 .run-status { padding: 10px 13px; border: 1px solid var(--line); border-radius: 999px; color: #9cacc1; font: 11px ui-monospace, monospace; white-space: nowrap; }
@@ -152,7 +152,7 @@ footer span { color: var(--ink); font-weight: 800; } footer p:nth-child(2) { tex
   .architecture-flow > b { transform: rotate(90deg); }
   .use-section { grid-template-columns: 1fr; gap: 45px; }
   .report-grid { grid-template-columns: 1fr; }
-  .report-side { display: grid; grid-template-columns: 1fr 1fr; align-items: start; }
+  .report-side { display: grid; grid-template-columns: 1fr 1fr; align-items: flex-start; }
 }
 
 @media (max-width: 680px) {
@@ -161,7 +161,7 @@ footer span { color: var(--ink); font-weight: 800; } footer p:nth-child(2) { tex
   .verify-panel h1 { font-size: 48px; }
   .url-row { flex-direction: column; } .url-row button { min-height: 50px; }
   .branch-result { grid-template-columns: 52px 48px 1fr; padding: 13px; }
-  .verdict { align-items: start; gap: 8px; flex-direction: column; }
+  .verdict { align-items: flex-start; gap: 8px; flex-direction: column; }
   .section { padding: 78px 22px; }
   .process-grid, .feature-grid { grid-template-columns: 1fr; }
   .report-shell { padding: 35px 18px; }
@@ -173,4 +173,3 @@ footer span { color: var(--ink); font-weight: 800; } footer p:nth-child(2) { tex
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
 }
-
