@@ -1,6 +1,7 @@
 fastapi==0.116.1
 uvicorn[standard]==0.35.0
 pydantic-settings==2.10.1
+eval-type-backport==0.2.2
 httpx==0.28.1
 sqlalchemy==2.0.43
 aiosqlite==0.21.0
@@ -8,7 +9,7 @@ gitpython==3.1.45
 openai==1.99.9
 python-json-logger==3.3.0
 slowapi==0.1.9
+asyncpg==0.30.0
 pytest==8.4.1
 pytest-asyncio==1.1.0
 pytest-cov==6.2.1
-
