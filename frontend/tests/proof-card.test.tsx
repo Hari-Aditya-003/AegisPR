@@ -22,5 +22,17 @@ describe("ProofCard", () => {
     expect(screen.getByText("56/56")).toBeInTheDocument();
     expect(screen.getByText("12/12")).toBeInTheDocument();
   });
-});
 
+  it("renders a safe fallback for unknown and pending values", () => {
+    const { rerender } = render(
+      <ProofCard commit="" status="QUEUED" existingTests={{ passed: 0, total: 0 }} generatedTests={{ passed: 0, total: 0 }} regressions={0} buildStatus="PENDING" />,
+    );
+    expect(screen.getByText("Pending")).toBeInTheDocument();
+    expect(screen.getByText("QUEUED")).toBeInTheDocument();
+
+    rerender(
+      <ProofCard commit="abcdef123" status="CUSTOM_STATUS" existingTests={{ passed: 0, total: 0 }} generatedTests={{ passed: 0, total: 0 }} regressions={0} buildStatus="RECORDED" />,
+    );
+    expect(screen.getByText("CUSTOM STATUS")).toBeInTheDocument();
+  });
+});

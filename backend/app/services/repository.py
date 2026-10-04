@@ -58,7 +58,15 @@ class RepositoryService:
                 package_manager="npm",
                 test_framework=next((name for name in ("vitest", "jest", "mocha") if name in all_dependencies), None),
                 install_command=install,
-                test_command="npm test -- --runInBand" if "test" in scripts else None,
+                test_command=(
+                    "npm test -- --run"
+                    if "test" in scripts and "vitest" in all_dependencies
+                    else "npm test -- --runInBand"
+                    if "test" in scripts and "jest" in all_dependencies
+                    else "npm test"
+                    if "test" in scripts
+                    else None
+                ),
                 build_command="npm run build" if "build" in scripts else None,
                 lint_command="npm run lint" if "lint" in scripts else None,
                 important_files=sorted(file_set.intersection({"package.json", "package-lock.json", "tsconfig.json"})),
@@ -134,4 +142,3 @@ class RepositoryService:
         if result.returncode != 0:
             raise RuntimeError((result.stderr or result.stdout)[-4000:])
         return result.stdout
-

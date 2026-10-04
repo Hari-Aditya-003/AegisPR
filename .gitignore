@@ -14,5 +14,6 @@ coverage/
 artifacts/
 data/*.db
 data/*.sqlite*
+*.sqlite3
+*.tsbuildinfo
 work/
-

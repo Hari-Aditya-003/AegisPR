@@ -1,0 +1,76 @@
+name: aegispr
+
+services:
+  gpu-worker:
+    build:
+      context: ./gpu-worker
+    environment:
+      GPU_WORKER_TOKEN: ${GPU_WORKER_TOKEN:?GPU_WORKER_TOKEN is required}
+    gpus: all
+    ports:
+      - "127.0.0.1:8091:8091"
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      APP_ENV: production
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
+      NEBIUS_API_KEY: ${NEBIUS_API_KEY:?NEBIUS_API_KEY is required}
+      NEBIUS_BASE_URL: ${NEBIUS_BASE_URL:-https://api.tokenfactory.nebius.com/v1/}
+      NEBIUS_MODEL: ${NEBIUS_MODEL:-nvidia/nemotron-3-ultra-550b-a55b}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      GPU_WORKER_URL: http://gpu-worker:8091
+      GPU_WORKER_TOKEN: ${GPU_WORKER_TOKEN:?GPU_WORKER_TOKEN is required}
+      ENABLE_SANDBOX: "true"
+      DATA_PATH: /app/data/aegispr.sqlite3
+      WORKSPACE_ROOT: /tmp/aegispr-runs
+    group_add:
+      - ${DOCKER_GID:-999}
+    volumes:
+      - aegis-data:/app/data
+      - aegis-runs:/tmp/aegispr-runs
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8000:8000"
+    depends_on:
+      gpu-worker:
+        condition: service_healthy
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8000}
+    environment:
+      NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8000}
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+volumes:
+  aegis-data:
+  aegis-runs:

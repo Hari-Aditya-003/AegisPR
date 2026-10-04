@@ -172,3 +172,5 @@ class CreateVerificationRequest(BaseModel):
 class RepairRequest(BaseModel):
     instructions: str | None = Field(default=None, max_length=1000)
 
+
+TestExecution.__test__ = False
