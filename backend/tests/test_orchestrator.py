@@ -76,6 +76,7 @@ async def test_execution_workflow_classifies_regression(tmp_path: Path) -> None:
     run.generated_tests = [GeneratedTest(id="AEG-1", hypothesis_id="H1", file_path="tests/test_new.py", framework="pytest", test_code="def test_x(): assert True")]
     orchestrator.repository = MagicMock()
     orchestrator.sandbox = MagicMock()
+    orchestrator.nebius.analyze_root_cause = AsyncMock(return_value="The changed branch drops the boundary guard.")
     orchestrator.sandbox.execute.side_effect = [
         execution("base", ExecutionStatus.PASSED), execution("head", ExecutionStatus.FAILED),
     ]
@@ -83,6 +84,7 @@ async def test_execution_workflow_classifies_regression(tmp_path: Path) -> None:
     await orchestrator._execute_plan(run, tmp_path / "repo", tmp_path / "work")
     assert run.status == VerificationStatus.REGRESSION_FOUND
     assert run.findings[0].classification == "REGRESSION"
+    assert run.findings[0].root_cause == "The changed branch drops the boundary guard."
     assert run.metrics.regressions_found == 1
 
 

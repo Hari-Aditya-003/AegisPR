@@ -131,6 +131,9 @@ h1, h2, h3, p { margin-top: 0; }
 .comparison { display: flex; gap: 10px; }
 .comparison span { flex: 1; padding: 12px; background: #0b1017; color: var(--muted); font-size: 11px; }
 .comparison b { float: right; color: var(--ink); }
+.root-cause { margin-top: 14px; padding: 14px; border-left: 2px solid var(--lime); background: rgba(185,255,102,.04); }
+.root-cause span { color: var(--lime); font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.root-cause p { margin: 7px 0 0; color: var(--ink); line-height: 1.55; }
 .hypothesis { display: grid; grid-template-columns: 45px 1fr; gap: 16px; padding: 18px 0; border-top: 1px solid var(--line); }
 .hypothesis > span { color: var(--lime); font: 12px ui-monospace, monospace; }
 .hypothesis p { margin: 7px 0 0; color: var(--muted); line-height: 1.55; }

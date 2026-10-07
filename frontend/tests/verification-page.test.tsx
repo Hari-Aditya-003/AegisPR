@@ -19,6 +19,7 @@ const completedRun = {
   findings: [{
     id: "finding-1", classification: "REGRESSION", severity: "high", summary: "Negative total",
     affected_file: "coupon.py",
+    root_cause: "The changed discount branch omits the zero-floor clamp.",
     base_execution: { branch: "base", commit: "a".repeat(40), status: "PASSED", stdout: "", stderr: "", duration_ms: 4 },
     head_execution: { branch: "head", commit: "b".repeat(40), status: "FAILED", stdout: "", stderr: "", duration_ms: 5 },
   }],
@@ -37,6 +38,7 @@ describe("VerificationPage", () => {
     await waitFor(() => expect(screen.getByRole("heading", { name: "Coupon support" })).toBeInTheDocument());
     expect(screen.getByText("CUDA")).toBeInTheDocument();
     expect(screen.getAllByText("REGRESSION").length).toBeGreaterThan(0);
+    expect(screen.getByText(/omits the zero-floor clamp/i)).toBeInTheDocument();
     expect(screen.getByText("Evidence is scoped.")).toBeInTheDocument();
   });
 

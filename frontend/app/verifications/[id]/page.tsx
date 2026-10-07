@@ -60,6 +60,7 @@ export default function VerificationPage() {
                 <h3>{finding.summary}</h3>
                 <p>{finding.affected_file ?? "Affected location pending"}</p>
                 <div className="comparison"><span>BASE <b>{finding.base_execution.status}</b></span><span>PR <b>{finding.head_execution.status}</b></span></div>
+                {finding.root_cause && <div className="root-cause"><span>Likely root cause</span><p>{finding.root_cause}</p></div>}
               </article>
             ))}
           </section>
@@ -82,4 +83,3 @@ export default function VerificationPage() {
     </section>
   );
 }
-
