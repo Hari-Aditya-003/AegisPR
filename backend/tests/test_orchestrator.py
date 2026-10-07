@@ -87,6 +87,30 @@ async def test_execution_workflow_classifies_regression(tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
+async def test_execution_without_generated_test_code_is_analysis_only(tmp_path: Path) -> None:
+    settings = Settings(data_path=tmp_path / "runs.sqlite3", workspace_root=tmp_path / "work")
+    store = VerificationStore(settings.data_path)
+    orchestrator = Orchestrator(settings, store)
+    request = CreateVerificationRequest(pull_request_url="https://github.com/acme/store/pull/42")
+    run = orchestrator.create(request)
+    run.summary = summary()
+    run.repository_profile = RepositoryProfile(languages=["Python"], test_command="pytest -q")
+    run.hypotheses = [Hypothesis(id="H1", description="Risk", affected_files=["coupon.py"], test_strategy="Boundary")]
+    run.generated_tests = [GeneratedTest(id="AEG-1", hypothesis_id="H1", file_path="", framework="pytest", test_code="")]
+    orchestrator.repository = MagicMock()
+    orchestrator.sandbox = MagicMock()
+
+    await orchestrator._execute_plan(run, tmp_path / "repo", tmp_path / "work")
+
+    assert run.status == VerificationStatus.ANALYSIS_ONLY
+    orchestrator.sandbox.execute.assert_not_called()
+    assert all(
+        next(stage for stage in run.stages if stage.key == key).state.value == "complete"
+        for key in ("base", "head", "compare")
+    )
+
+
+@pytest.mark.asyncio
 async def test_workflow_records_environment_error(tmp_path: Path, monkeypatch) -> None:
     settings = Settings(data_path=tmp_path / "runs.sqlite3", workspace_root=tmp_path / "work")
     store = VerificationStore(settings.data_path)
