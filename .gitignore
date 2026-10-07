@@ -10,6 +10,8 @@ htmlcov/
 node_modules/
 .next/
 dist/
+!website/dist/
+!website/dist/**
 coverage/
 artifacts/
 data/*.db
