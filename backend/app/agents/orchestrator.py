@@ -149,10 +149,20 @@ class Orchestrator:
 
     async def _execute_plan(self, run: VerificationRun, repository: Path, workspace: Path) -> None:
         assert run.summary and run.repository_profile
+        executable_tests = [
+            generated
+            for generated in run.generated_tests
+            if generated.file_path.strip() and generated.test_code.strip()
+        ]
+        if not executable_tests:
+            run.status = VerificationStatus.ANALYSIS_ONLY
+            for key in ("base", "head", "compare"):
+                self._complete(run, key, "No executable generated test was available")
+            return
         regression = False
         pre_existing = False
         sandbox_started = time.monotonic()
-        for index, generated in enumerate(run.generated_tests):
+        for index, generated in enumerate(executable_tests):
             base_checkout = workspace / f"base-{index}-{generated.id}"
             head_checkout = workspace / f"head-{index}-{generated.id}"
             self._activate(run, "base")
@@ -232,4 +242,3 @@ class Orchestrator:
         stage.detail = detail
         stage.timestamp = datetime.now(timezone.utc)
         self.store.save(run)
-
