@@ -193,18 +193,21 @@ class Orchestrator:
             self._complete(run, "head", head.status.value)
             classification = compare_executions(base, head)
             hypothesis = next(item for item in run.hypotheses if item.id == generated.hypothesis_id)
-            run.findings.append(
-                Finding(
-                    hypothesis_id=hypothesis.id,
-                    generated_test_id=generated.id,
-                    classification=classification.value,
-                    severity="high" if classification == Classification.REGRESSION else "info",
-                    summary=hypothesis.description,
-                    affected_file=hypothesis.affected_files[0] if hypothesis.affected_files else None,
-                    base_execution=base,
-                    head_execution=head,
-                )
+            finding = Finding(
+                hypothesis_id=hypothesis.id,
+                generated_test_id=generated.id,
+                classification=classification.value,
+                severity="high" if classification == Classification.REGRESSION else "info",
+                summary=hypothesis.description,
+                affected_file=hypothesis.affected_files[0] if hypothesis.affected_files else None,
+                base_execution=base,
+                head_execution=head,
             )
+            if classification == Classification.REGRESSION:
+                finding.root_cause = await self.nebius.analyze_root_cause(finding)
+                if finding.root_cause:
+                    run.metrics.model_calls += 1
+            run.findings.append(finding)
             regression = regression or classification == Classification.REGRESSION
             pre_existing = pre_existing or classification == Classification.PRE_EXISTING
         self._activate(run, "compare")
