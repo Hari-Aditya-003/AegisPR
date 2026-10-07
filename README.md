@@ -4,6 +4,8 @@ Don't trust a PR. Prove it.
 
 AegisPR is an autonomous evidence-backed pull request verification agent powered by NVIDIA Nemotron on Nebius Token Factory. It analyzes a code change, names concrete risks, generates targeted adversarial tests, executes the same test against the base and pull request commits, and reports whether the change introduced a reproducible regression.
 
+Project website: [aegispr.mr-adityahari.chatgpt.site](https://aegispr.mr-adityahari.chatgpt.site) (owner-private until sharing is enabled).
+
 ## Why AegisPR
 
 AI review usually returns an opinion. AegisPR turns a claim into an experiment:
