@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import asyncio
 
 import httpx
@@ -13,7 +11,7 @@ from slowapi.util import get_remote_address
 from app.agents.orchestrator import Orchestrator
 from app.config import get_settings
 from app.github.parser import parse_pull_request_url
-from app.schemas.verification import CreateVerificationRequest, VerificationStatus
+from app.schemas.verification import CreateVerificationRequest, RepairRequest, VerificationStatus
 from app.services.store import VerificationStore
 
 
@@ -100,6 +98,24 @@ async def get_verification(run_id: str):
     run = store.get(run_id)
     if not run:
         raise HTTPException(status_code=404, detail="Verification run not found")
+    return run
+
+
+@app.post("/api/verifications/{run_id}/repair", status_code=202)
+@limiter.limit("2/minute")
+async def create_repair(
+    run_id: str,
+    request: Request,
+    payload: RepairRequest,
+    background_tasks: BackgroundTasks,
+):
+    try:
+        run = orchestrator.create_repair(run_id, payload)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Verification run not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    background_tasks.add_task(orchestrator.repair, run_id, payload)
     return run
 
 

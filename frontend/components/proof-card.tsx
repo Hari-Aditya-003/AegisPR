@@ -27,7 +27,7 @@ export function ProofCard({
   regressions,
   buildStatus,
 }: ProofCardProps) {
-  const tone = status === "REGRESSION_FOUND" ? "danger" : status === "VERIFIED_WITHIN_SCOPE" ? "verified" : "neutral";
+  const tone = status === "REGRESSION_FOUND" ? "danger" : ["VERIFIED_WITHIN_SCOPE", "FIX_VERIFIED"].includes(status) ? "verified" : "neutral";
   return (
     <article className={`proof-card ${tone}`} aria-label="Verification proof card">
       <div className="proof-topline">

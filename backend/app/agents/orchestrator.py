@@ -11,7 +11,11 @@ from app.github.client import GitHubClient
 from app.github.parser import parse_pull_request_url
 from app.schemas.verification import (
     CreateVerificationRequest,
+    ExecutionStatus,
     Finding,
+    RepairRequest,
+    RepairResult,
+    RepairStatus,
     StageState,
     VerificationRun,
     VerificationStage,
@@ -57,6 +61,127 @@ class Orchestrator:
         )
         self.store.save(run)
         return run
+
+    def create_repair(self, run_id: str, request: RepairRequest) -> VerificationRun:
+        run = self._required(run_id)
+        if run.status != VerificationStatus.REGRESSION_FOUND:
+            raise ValueError("A repair requires a confirmed regression")
+        if not self.settings.enable_sandbox:
+            raise ValueError("Repair verification requires the execution sandbox")
+        if not self.settings.nebius_api_key:
+            raise ValueError("Repair generation requires Nebius credentials")
+        finding = self._repair_finding(run, request.finding_id)
+        run.repair = RepairResult(finding_id=finding.id)
+        run.status = VerificationStatus.RUNNING
+        run.completed_at = None
+        for key, label in (
+            ("repair", "Minimal repair generated"),
+            ("repair_verify", "Repair checks executed"),
+        ):
+            existing = next((stage for stage in run.stages if stage.key == key), None)
+            if existing:
+                existing.state = StageState.PENDING
+                existing.detail = None
+                existing.timestamp = None
+            else:
+                run.stages.append(VerificationStage(key=key, label=label))
+        self.store.save(run)
+        return run
+
+    async def repair(self, run_id: str, request: RepairRequest) -> None:
+        run = self._required(run_id)
+        if not run.repair or not run.summary or not run.repository_profile:
+            return
+        workspace = self.settings.workspace_root / f"{run.id}-repair"
+        repository = workspace / "repository.git"
+        checkout = workspace / "head"
+        try:
+            run.repair.status = RepairStatus.RUNNING
+            self._activate(run, "repair")
+            finding = self._repair_finding(run, run.repair.finding_id)
+            generated = next(
+                test for test in run.generated_tests if test.id == finding.generated_test_id
+            )
+            await asyncio.to_thread(
+                self.repository.clone, run.summary.clone_url, repository
+            )
+            await asyncio.to_thread(
+                self.repository.fetch_commits,
+                repository,
+                run.summary.base_commit,
+                run.summary.head_commit,
+            )
+            await asyncio.to_thread(
+                self.repository.checkout, repository, run.summary.head_commit, checkout
+            )
+            diff = await asyncio.to_thread(
+                self.repository.diff,
+                repository,
+                run.summary.base_commit,
+                run.summary.head_commit,
+            )
+            source = ""
+            if finding.affected_file:
+                source = await asyncio.to_thread(
+                    self.repository.file_content,
+                    repository,
+                    run.summary.head_commit,
+                    finding.affected_file,
+                )
+            proposal = await self.nebius.create_repair(
+                finding, diff, source, request.instructions
+            )
+            run.repair.patch = proposal.patch
+            run.repair.summary = proposal.summary
+            run.metrics.model_calls += 1
+            allowed_paths = set(run.changed_files)
+            if finding.affected_file:
+                allowed_paths.add(finding.affected_file)
+            await asyncio.to_thread(
+                self.repository.apply_patch, checkout, proposal.patch, allowed_paths
+            )
+            self._complete(run, "repair", proposal.summary)
+
+            self._activate(run, "repair_verify")
+            run.repair.checks = await asyncio.to_thread(
+                self.sandbox.verify_repair,
+                checkout,
+                run.summary.head_commit,
+                run.repository_profile,
+                generated,
+            )
+            verified = all(
+                check.execution.status == ExecutionStatus.PASSED
+                for check in run.repair.checks
+                if check.name in {"existing_tests", "generated_tests"} or check.command
+            ) and {
+                check.name for check in run.repair.checks
+                if check.execution.status == ExecutionStatus.PASSED
+            }.issuperset({"existing_tests", "generated_tests"})
+            if verified:
+                run.status = VerificationStatus.FIX_VERIFIED
+                run.repair.status = RepairStatus.VERIFIED
+                detail = "All configured repair checks passed"
+            else:
+                run.status = VerificationStatus.REGRESSION_FOUND
+                run.repair.status = RepairStatus.FAILED
+                run.repair.error = "The proposed repair did not pass every required check"
+                detail = "Repair was not verified"
+            self._complete(run, "repair_verify", detail)
+            run.completed_at = datetime.now(timezone.utc)
+            self.store.save(run)
+        except Exception as exc:
+            run.status = VerificationStatus.REGRESSION_FOUND
+            run.repair.status = RepairStatus.FAILED
+            run.repair.error = str(exc)[:2000]
+            run.completed_at = datetime.now(timezone.utc)
+            for stage in run.stages:
+                if stage.state == StageState.ACTIVE:
+                    stage.state = StageState.ERROR
+                    stage.detail = "Repair could not complete"
+            self.store.save(run)
+        finally:
+            shutil.rmtree(workspace, ignore_errors=True)
 
     async def verify(self, run_id: str, request: CreateVerificationRequest) -> None:
         run = self._required(run_id)
@@ -232,6 +357,17 @@ class Orchestrator:
         if not run:
             raise KeyError(run_id)
         return run
+
+    @staticmethod
+    def _repair_finding(run: VerificationRun, finding_id: str | None) -> Finding:
+        candidates = [
+            finding for finding in run.findings if finding.classification == Classification.REGRESSION.value
+        ]
+        if finding_id:
+            candidates = [finding for finding in candidates if finding.id == finding_id]
+        if not candidates:
+            raise ValueError("A repair requires a confirmed regression finding")
+        return candidates[0]
 
     def _activate(self, run: VerificationRun, key: str) -> None:
         stage = next(stage for stage in run.stages if stage.key == key)

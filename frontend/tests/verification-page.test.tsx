@@ -95,7 +95,7 @@ describe("VerificationPage", () => {
       expect.objectContaining({ method: "POST" }),
     ));
     await waitFor(() => expect(screen.getByText("Clamp the result at zero.")).toBeInTheDocument());
-    expect(screen.getByText("FIX VERIFIED")).toBeInTheDocument();
-    expect(screen.getByText("PASSED")).toBeInTheDocument();
+    expect(screen.getAllByText("FIX VERIFIED").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("PASSED").length).toBeGreaterThan(0);
   });
 });

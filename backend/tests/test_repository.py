@@ -55,3 +55,27 @@ def test_repository_profile_diff_context_and_impact(tmp_path: Path) -> None:
 def test_repository_command_failure_is_bounded() -> None:
     with pytest.raises(RuntimeError):
         RepositoryService._run(["git", "definitely-not-a-command"])
+
+
+def test_applies_safe_unified_patch_and_rejects_traversal(tmp_path: Path) -> None:
+    repo, _, head = create_repository(tmp_path)
+    service = RepositoryService()
+    assert service.file_content(repo, head, "coupon.ts") == "export const total = -50\n"
+    patch = (
+        "diff --git a/coupon.ts b/coupon.ts\n"
+        "--- a/coupon.ts\n"
+        "+++ b/coupon.ts\n"
+        "@@ -1 +1 @@\n"
+        "-export const total = -50\n"
+        "+export const total = 0\n"
+    )
+
+    service.apply_patch(repo, patch)
+    assert (repo / "coupon.ts").read_text() == "export const total = 0\n"
+
+    unsafe = "diff --git a/coupon.ts b/../escape.ts\n--- a/coupon.ts\n+++ b/../escape.ts\n"
+    with pytest.raises(ValueError, match="unsafe path"):
+        service.apply_patch(repo, unsafe)
+
+    with pytest.raises(ValueError, match="outside the pull request scope"):
+        service.apply_patch(repo, patch, {"checkout.ts"})

@@ -26,4 +26,4 @@ The same test runs against the base and head commits. A pure comparison function
 
 ## Root cause and repair
 
-Regression evidence can be used in a later model pass to propose the smallest reasonable patch. A repair is never marked verified until existing tests, generated tests, build, and configured type or lint checks pass.
+Regression evidence is used in a later Nemotron pass to propose the smallest reasonable unified diff. AegisPR validates paths and applies the patch only in an ephemeral head checkout. Existing tests, the generated regression test, build, and configured lint checks are recorded separately. A repair is never marked verified until every required and configured executable check passes.

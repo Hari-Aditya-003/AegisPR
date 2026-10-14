@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 
 import { ProofCard } from "@/components/proof-card";
 import { VerificationTimeline } from "@/components/verification-timeline";
-import { apiUrl } from "@/lib/api";
+import { apiUrl, requestRepair } from "@/lib/api";
 import type { VerificationRun } from "@/lib/types";
 
 
@@ -18,6 +18,9 @@ export default function VerificationPage() {
   const params = useParams<{ id: string }>();
   const [run, setRun] = useState<VerificationRun | null>(null);
   const [error, setError] = useState("");
+  const [repairError, setRepairError] = useState("");
+  const [repairing, setRepairing] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -36,7 +39,23 @@ export default function VerificationPage() {
     }
     load();
     return () => { active = false; if (timer) clearTimeout(timer); };
-  }, [params.id]);
+  }, [params.id, reloadKey]);
+
+  async function startRepair(findingId: string) {
+    setRepairing(true);
+    setRepairError("");
+    try {
+      const queued = await requestRepair(params.id, findingId);
+      setRun(queued);
+      setReloadKey((value) => value + 1);
+    } catch (repairFailure) {
+      setRepairError(
+        repairFailure instanceof Error ? repairFailure.message : "Repair verification could not start.",
+      );
+    } finally {
+      setRepairing(false);
+    }
+  }
 
   if (error) return <section className="report-shell"><div className="report-error"><h1>Verification unavailable</h1><p>{error}</p></div></section>;
   if (!run) return <section className="report-shell"><div className="report-loading"><span />Loading evidence workspace…</div></section>;
@@ -61,9 +80,26 @@ export default function VerificationPage() {
                 <p>{finding.affected_file ?? "Affected location pending"}</p>
                 <div className="comparison"><span>BASE <b>{finding.base_execution.status}</b></span><span>PR <b>{finding.head_execution.status}</b></span></div>
                 {finding.root_cause && <div className="root-cause"><span>Likely root cause</span><p>{finding.root_cause}</p></div>}
+                {finding.classification === "REGRESSION" && run.status === "REGRESSION_FOUND" && run.repair?.status !== "RUNNING" && (
+                  <button className="repair-button" type="button" disabled={repairing} onClick={() => startRepair(finding.id)}>
+                    {repairing ? "Generating repair…" : "Generate and verify repair"}
+                  </button>
+                )}
               </article>
             ))}
           </section>
+          {run.repair && (
+            <section className="report-card repair-card">
+              <div className="card-heading"><h2>Repair evidence</h2><span>{run.repair.status}</span></div>
+              {run.repair.summary && <p className="repair-summary">{run.repair.summary}</p>}
+              {run.repair.checks.length > 0 && <div className="repair-checks">{run.repair.checks.map((check) => (
+                <div key={check.name}><span>{check.name.replaceAll("_", " ")}</span><strong className={`check-${check.execution.status.toLowerCase()}`}>{check.execution.status}</strong></div>
+              ))}</div>}
+              {run.repair.patch && <details><summary>View isolated patch</summary><pre>{run.repair.patch}</pre></details>}
+              {run.repair.error && <p className="repair-error" role="alert">{run.repair.error}</p>}
+            </section>
+          )}
+          {repairError && <p className="repair-error" role="alert">{repairError}</p>}
           <section className="report-card"><h2>Risk hypotheses</h2>{run.hypotheses.map((hypothesis) => <article className="hypothesis" key={hypothesis.id}><span>{hypothesis.id}</span><div><strong>{hypothesis.description}</strong><p>{hypothesis.test_strategy}</p></div></article>)}</section>
         </div>
         <aside className="report-side">

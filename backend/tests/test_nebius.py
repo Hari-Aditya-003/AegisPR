@@ -84,3 +84,48 @@ async def test_regression_evidence_becomes_bounded_root_cause() -> None:
 async def test_root_cause_is_unavailable_without_nebius() -> None:
     gateway = NebiusGateway(None, "https://example.invalid/v1", "model")
     assert await gateway.analyze_root_cause(None) is None
+
+
+@pytest.mark.asyncio
+async def test_structured_repair_response_becomes_bounded_patch() -> None:
+    gateway = NebiusGateway("key", "https://example.invalid/v1", "nvidia/model")
+    payload = {
+        "summary": "Clamp the total at zero.",
+        "patch": (
+            "diff --git a/coupon.py b/coupon.py\n"
+            "--- a/coupon.py\n"
+            "+++ b/coupon.py\n"
+            "@@ -1 +1 @@\n"
+            "-return total - discount\n"
+            "+return max(total - discount, 0)\n"
+        ),
+    }
+    create = AsyncMock(return_value=SimpleNamespace(
+        choices=[SimpleNamespace(message=SimpleNamespace(content=json.dumps(payload)))]
+    ))
+    gateway.client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    finding = Finding(
+        hypothesis_id="H1", generated_test_id="AEG-1", classification="REGRESSION",
+        summary="Negative total", affected_file="coupon.py", root_cause="Missing clamp",
+        base_execution=TestExecution(branch="base", commit="a" * 40, status=ExecutionStatus.PASSED),
+        head_execution=TestExecution(branch="head", commit="b" * 40, status=ExecutionStatus.FAILED),
+    )
+
+    proposal = await gateway.create_repair(finding, "diff", "return total - discount", None)
+
+    assert proposal.summary == "Clamp the total at zero."
+    assert proposal.patch.startswith("diff --git")
+    create.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_repair_requires_nebius_credentials() -> None:
+    gateway = NebiusGateway(None, "https://example.invalid/v1", "model")
+    finding = Finding(
+        hypothesis_id="H1", generated_test_id="AEG-1", classification="REGRESSION",
+        summary="Negative total",
+        base_execution=TestExecution(branch="base", commit="a" * 40, status=ExecutionStatus.PASSED),
+        head_execution=TestExecution(branch="head", commit="b" * 40, status=ExecutionStatus.FAILED),
+    )
+    with pytest.raises(ValueError, match="Nebius"):
+        await gateway.create_repair(finding, "diff", "source", None)

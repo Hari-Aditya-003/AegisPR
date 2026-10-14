@@ -35,6 +35,13 @@ class StageState(str, Enum):
     ERROR = "error"
 
 
+class RepairStatus(str, Enum):
+    PENDING = "PENDING"
+    RUNNING = "RUNNING"
+    VERIFIED = "VERIFIED"
+    FAILED = "FAILED"
+
+
 class VerificationStage(BaseModel):
     key: str
     label: str
@@ -128,6 +135,21 @@ class Finding(BaseModel):
     head_execution: TestExecution
 
 
+class RepairCheck(BaseModel):
+    name: str
+    command: str | None = None
+    execution: TestExecution
+
+
+class RepairResult(BaseModel):
+    finding_id: str
+    status: RepairStatus = RepairStatus.PENDING
+    patch: str = ""
+    summary: str = ""
+    checks: list[RepairCheck] = Field(default_factory=list)
+    error: str | None = None
+
+
 class VerificationMetrics(BaseModel):
     files_analyzed: int = 0
     hypotheses_generated: int = 0
@@ -155,6 +177,7 @@ class VerificationRun(BaseModel):
     hypotheses: list[Hypothesis] = Field(default_factory=list)
     generated_tests: list[GeneratedTest] = Field(default_factory=list)
     findings: list[Finding] = Field(default_factory=list)
+    repair: RepairResult | None = None
     metrics: VerificationMetrics = Field(default_factory=VerificationMetrics)
     error: str | None = None
     disclaimer: str = (
@@ -170,6 +193,7 @@ class CreateVerificationRequest(BaseModel):
 
 
 class RepairRequest(BaseModel):
+    finding_id: str | None = Field(default=None, max_length=100)
     instructions: str | None = Field(default=None, max_length=1000)
 
 

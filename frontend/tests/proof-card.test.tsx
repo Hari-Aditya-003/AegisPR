@@ -35,4 +35,12 @@ describe("ProofCard", () => {
     );
     expect(screen.getByText("CUSTOM STATUS")).toBeInTheDocument();
   });
+
+  it("uses the verified treatment only after repair checks pass", () => {
+    render(
+      <ProofCard commit="abcdef123" status="FIX_VERIFIED" existingTests={{ passed: 1, total: 1 }} generatedTests={{ passed: 1, total: 1 }} regressions={1} buildStatus="PASS" />,
+    );
+    expect(screen.getByLabelText("Verification proof card")).toHaveClass("verified");
+    expect(screen.getByText("FIX VERIFIED")).toBeInTheDocument();
+  });
 });

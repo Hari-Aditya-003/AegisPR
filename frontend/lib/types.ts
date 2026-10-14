@@ -8,7 +8,7 @@ export interface VerificationStage {
 }
 
 export interface TestExecution {
-  branch: "base" | "head";
+  branch: "base" | "head" | "repair";
   commit: string;
   status: string;
   stdout: string;
@@ -25,6 +25,21 @@ export interface Finding {
   root_cause?: string;
   base_execution: TestExecution;
   head_execution: TestExecution;
+}
+
+export interface RepairCheck {
+  name: string;
+  command?: string;
+  execution: TestExecution;
+}
+
+export interface RepairResult {
+  finding_id: string;
+  status: "PENDING" | "RUNNING" | "VERIFIED" | "FAILED";
+  patch: string;
+  summary: string;
+  checks: RepairCheck[];
+  error?: string;
 }
 
 export interface VerificationRun {
@@ -45,6 +60,7 @@ export interface VerificationRun {
   };
   stages: VerificationStage[];
   findings: Finding[];
+  repair?: RepairResult;
   changed_files: string[];
   hypotheses: Array<{ id: string; description: string; test_strategy: string }>;
   metrics: {

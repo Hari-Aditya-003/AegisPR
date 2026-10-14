@@ -34,6 +34,7 @@ The core result matrix is deterministic:
 - Isolated Docker execution with no runtime network, dropped capabilities, process limits, CPU and memory limits
 - Base-versus-PR differential verification
 - Evidence records containing commits, commands, logs, exit codes, and durations
+- Minimal Nemotron repair generation with isolated patch application and re-verification
 - Live verification timeline, findings, proof card, and bounded status language
 - Persistent local run history and API/SSE access
 
@@ -132,7 +133,10 @@ make test
 | `GET` | `/api/verifications/{id}/events` | Stream run updates with SSE |
 | `GET` | `/api/verifications/{id}/findings` | Read differential findings |
 | `GET` | `/api/verifications/{id}/impact` | Read impact nodes and edges |
+| `POST` | `/api/verifications/{id}/repair` | Generate an isolated minimal patch and verify it against recorded evidence |
 | `GET` | `/health` | Inspect Nebius, GPU worker, and sandbox configuration |
+
+Repair requests are accepted only for a confirmed differential regression. A patch remains inside a temporary checkout, and `FIX_VERIFIED` is emitted only when the existing suite, generated regression test, and every configured build or lint check pass.
 
 ## Environment variables
 

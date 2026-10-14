@@ -29,9 +29,13 @@ Pull request URL
   → execute head sandbox
   → classify result matrix
   → persist evidence
+  → optionally generate a minimal repair in an isolated head checkout
+  → run existing tests, generated tests, build, and lint as separate checks
   → render proof card and findings
 ```
 
 ## Failure semantics
 
 Missing model credentials produce `ANALYSIS_ONLY` behavior through the heuristic fallback. Missing or unsupported test commands produce skipped execution evidence. GitHub, install, build, or executor failures become `ENVIRONMENT_ERROR`. No stage silently upgrades incomplete evidence to a verified status.
+
+Repair generation requires both Nebius credentials and the execution sandbox. Model-produced unified diffs are size-bounded, path-validated, checked with `git apply --check`, and applied only to an ephemeral checkout. Failed or skipped required checks preserve `REGRESSION_FOUND`; only complete executable evidence can produce `FIX_VERIFIED`.

@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from app.schemas.verification import ImpactEdge, ImpactNode, RepositoryProfile
 from app.services.context_ranker import ContextDocument
@@ -31,6 +31,45 @@ class RepositoryService:
             ["git", "-C", str(repository), "diff", "--unified=30", base_commit, head_commit]
         )
         return output[: self.max_diff_characters]
+
+    def file_content(self, repository: Path, commit: str, file_path: str) -> str:
+        self._validate_relative_path(file_path)
+        return self._run(["git", "-C", str(repository), "show", f"{commit}:{file_path}"])[
+            : self.max_diff_characters
+        ]
+
+    def apply_patch(
+        self, checkout: Path, patch: str, allowed_paths: set[str] | None = None
+    ) -> None:
+        if not patch or len(patch) > 50_000 or "\x00" in patch or "GIT binary patch" in patch:
+            raise ValueError("Repair patch was rejected by the safety policy")
+        paths: list[str] = []
+        for line in patch.splitlines():
+            if line.startswith("diff --git "):
+                parts = line.split()
+                if len(parts) != 4 or not parts[2].startswith("a/") or not parts[3].startswith("b/"):
+                    raise ValueError("Repair patch contains an invalid file header")
+                paths.extend((parts[2][2:], parts[3][2:]))
+            elif line.startswith(("--- ", "+++ ")):
+                value = line[4:].split("\t", 1)[0]
+                if value != "/dev/null":
+                    if not value.startswith(("a/", "b/")):
+                        raise ValueError("Repair patch contains an invalid file path")
+                    paths.append(value[2:])
+        if not paths:
+            raise ValueError("Repair patch did not contain a unified diff")
+        for path in paths:
+            self._validate_relative_path(path)
+            if allowed_paths is not None and path not in allowed_paths:
+                raise ValueError("Repair patch modifies a file outside the pull request scope")
+
+        patch_file = checkout / ".aegispr-repair.patch"
+        patch_file.write_text(patch, encoding="utf-8")
+        try:
+            self._run(["git", "-C", str(checkout), "apply", "--check", str(patch_file)])
+            self._run(["git", "-C", str(checkout), "apply", str(patch_file)])
+        finally:
+            patch_file.unlink(missing_ok=True)
 
     def checkout(self, repository: Path, commit: str, destination: Path) -> None:
         self._run(["git", "-C", str(repository), "worktree", "add", "--detach", str(destination), commit])
@@ -142,3 +181,15 @@ class RepositoryService:
         if result.returncode != 0:
             raise RuntimeError((result.stderr or result.stdout)[-4000:])
         return result.stdout
+
+    @staticmethod
+    def _validate_relative_path(file_path: str) -> None:
+        path = PurePosixPath(file_path)
+        if (
+            not file_path
+            or path.is_absolute()
+            or ".." in path.parts
+            or path.parts[0] in {".git", ".aegispr"}
+            or "\\" in file_path
+        ):
+            raise ValueError("Repair patch contains an unsafe path")

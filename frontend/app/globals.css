@@ -94,7 +94,7 @@ h1, h2, h3, p { margin-top: 0; }
 .report-heading > div > p:last-child { color: var(--muted); }
 .run-status { padding: 10px 13px; border: 1px solid var(--line); border-radius: 999px; color: #9cacc1; font: 11px ui-monospace, monospace; white-space: nowrap; }
 .status-regression_found { border-color: rgba(255,107,107,.45); color: #ff9292; }
-.status-verified_within_scope { border-color: rgba(185,255,102,.45); color: var(--lime); }
+.status-verified_within_scope, .status-fix_verified { border-color: rgba(185,255,102,.45); color: var(--lime); }
 .report-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 22px; }
 .report-main, .report-side { display: flex; flex-direction: column; gap: 22px; }
 .report-card, .metric-card, .error-card { padding: 28px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
@@ -134,6 +134,19 @@ h1, h2, h3, p { margin-top: 0; }
 .root-cause { margin-top: 14px; padding: 14px; border-left: 2px solid var(--lime); background: rgba(185,255,102,.04); }
 .root-cause span { color: var(--lime); font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .root-cause p { margin: 7px 0 0; color: var(--ink); line-height: 1.55; }
+.repair-button { margin-top: 16px; padding: 11px 15px; border: 1px solid rgba(185,255,102,.5); border-radius: 7px; background: rgba(185,255,102,.08); color: var(--lime); font-weight: 750; cursor: pointer; }
+.repair-button:hover { background: rgba(185,255,102,.15); }
+.repair-button:disabled { opacity: .6; cursor: wait; }
+.repair-summary { color: var(--ink); line-height: 1.6; }
+.repair-checks { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 18px 0; }
+.repair-checks div { display: flex; justify-content: space-between; gap: 14px; padding: 12px; background: #0b1017; color: var(--muted); font-size: 11px; text-transform: uppercase; }
+.repair-checks strong { color: var(--muted); }
+.repair-checks .check-passed { color: var(--lime); }
+.repair-checks .check-failed, .repair-checks .check-error, .repair-checks .check-timeout { color: var(--danger); }
+.repair-card details { margin-top: 16px; }
+.repair-card summary { color: var(--cyan); cursor: pointer; font-size: 12px; }
+.repair-card pre { max-height: 360px; overflow: auto; padding: 16px; border: 1px solid var(--line); background: #080c12; color: #b9c5d6; font-size: 11px; line-height: 1.55; white-space: pre-wrap; }
+.repair-error { margin: 14px 0 0; color: #ff9f9f; font-size: 12px; }
 .hypothesis { display: grid; grid-template-columns: 45px 1fr; gap: 16px; padding: 18px 0; border-top: 1px solid var(--line); }
 .hypothesis > span { color: var(--lime); font: 12px ui-monospace, monospace; }
 .hypothesis p { margin: 7px 0 0; color: var(--muted); line-height: 1.55; }
