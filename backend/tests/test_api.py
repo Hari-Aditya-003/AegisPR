@@ -19,3 +19,8 @@ def test_create_verification_rejects_invalid_pull_request_url() -> None:
     response = client.post("/api/verifications", json={"pull_request_url": "https://example.com/pr/1"})
     assert response.status_code == 422
 
+
+def test_repair_unknown_verification_returns_not_found() -> None:
+    response = client.post("/api/verifications/not-a-run/repair", json={})
+    assert response.status_code == 404
+

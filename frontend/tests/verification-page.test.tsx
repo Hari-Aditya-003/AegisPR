@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ useParams: () => ({ id: "run-1" }) }));
@@ -65,5 +65,37 @@ describe("VerificationPage", () => {
     expect(screen.getByText(/findings appear after differential execution/i)).toBeInTheDocument();
     expect(screen.getByText("Sandbox is warming up")).toBeInTheDocument();
     expect(screen.getByText("CPU")).toBeInTheDocument();
+  });
+
+  it("starts repair verification for a confirmed regression", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(completedRun), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ...completedRun, status: "RUNNING", repair: { finding_id: "finding-1", status: "PENDING", patch: "", summary: "", checks: [] } }), { status: 202 }))
+      .mockResolvedValue(new Response(JSON.stringify({
+        ...completedRun,
+        status: "FIX_VERIFIED",
+        repair: {
+          finding_id: "finding-1",
+          status: "VERIFIED",
+          patch: "diff --git a/coupon.py b/coupon.py",
+          summary: "Clamp the result at zero.",
+          checks: [
+            { name: "existing_tests", command: "pytest -q", execution: { branch: "repair", commit: "b".repeat(40), status: "PASSED", stdout: "", stderr: "", duration_ms: 8 } },
+          ],
+        },
+      }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<VerificationPage />);
+    const button = await screen.findByRole("button", { name: /generate and verify repair/i });
+    fireEvent.click(button);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/api/verifications/run-1/repair"),
+      expect.objectContaining({ method: "POST" }),
+    ));
+    await waitFor(() => expect(screen.getByText("Clamp the result at zero.")).toBeInTheDocument());
+    expect(screen.getByText("FIX VERIFIED")).toBeInTheDocument();
+    expect(screen.getByText("PASSED")).toBeInTheDocument();
   });
 });
