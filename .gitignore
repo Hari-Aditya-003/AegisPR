@@ -13,6 +13,8 @@ dist/
 !website/dist/
 !website/dist/**
 coverage/
+test-results/
+playwright-report/
 artifacts/
 data/*.db
 data/*.sqlite*

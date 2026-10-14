@@ -1,12 +1,21 @@
-.PHONY: test test-backend test-frontend build up down gpu-check
+.PHONY: test test-backend test-frontend test-e2e test-gpu test-demo build up down gpu-check
 
-test: test-backend test-frontend
+test: test-backend test-frontend test-gpu test-demo test-e2e
 
 test-backend:
 	cd backend && .venv/bin/pytest
 
 test-frontend:
-	cd frontend && npm run test:coverage && npm run typecheck
+	cd frontend && npm run test:coverage && npm run typecheck && npm run build && npm audit --audit-level=high
+
+test-e2e:
+	cd frontend && npm run e2e
+
+test-gpu:
+	PYTHONPATH=gpu-worker backend/.venv/bin/pytest -q gpu-worker/tests
+
+test-demo:
+	cd demo-repositories/demo-store && PYTHONPATH=. ../../backend/.venv/bin/pytest -q
 
 build:
 	docker compose build
