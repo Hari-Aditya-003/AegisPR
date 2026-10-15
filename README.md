@@ -58,7 +58,7 @@ FastAPI orchestrator ─── GitHub API + git
 
 Nemotron 3 Ultra is served remotely because it is a 550B-class mixture-of-experts model. The Dell RTX 3050 Ti performs a real, bounded CUDA workload: hashed term-document vector construction, cosine scoring, and context prioritization. If the worker is unavailable, AegisPR records a CPU fallback rather than hiding the loss of acceleration.
 
-See [architecture](docs/architecture.md), [agent stages](docs/agents.md), [verification semantics](docs/verification.md), [security model](docs/security.md), and the [hackathon submission kit](docs/hackathon-submission.md).
+Start with the [complete project documentation](docs/PROJECT_DOCUMENTATION.md). Focused references cover [architecture](docs/architecture.md), [agent stages](docs/agents.md), [verification semantics](docs/verification.md), [security](docs/security.md), [operations](docs/RUNBOOK.md), [contributing](docs/CONTRIBUTING.md), and the [hackathon submission kit](docs/hackathon-submission.md).
 
 ## Quick start
 

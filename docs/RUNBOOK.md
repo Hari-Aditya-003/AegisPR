@@ -1,0 +1,177 @@
+# AegisPR Operations Runbook
+
+## Service inventory
+
+| Service | Port | Health check | Persistent data |
+| --- | --- | --- | --- |
+| Frontend | `3000` | `GET /` | none |
+| Backend | `8000` | `GET /health` | `aegis-data` SQLite volume |
+| GPU worker | host loopback `8091` | `GET /health` | none |
+
+The backend also uses `aegis-runs` for temporary repository workspaces. Successful and failed orchestrations remove their per-run directories.
+
+## Start and stop
+
+```bash
+docker compose up --build -d
+docker compose ps
+docker compose down
+```
+
+Avoid `docker compose down -v` during routine operations because it removes persisted run history.
+
+## Health verification
+
+```bash
+curl -fsS http://127.0.0.1:8000/health
+curl -fsS http://127.0.0.1:8091/health
+curl -fsS http://127.0.0.1:3000/
+```
+
+Expected production backend checks:
+
+```json
+{
+  "status": "ok",
+  "checks": {
+    "nebius": "configured",
+    "gpu_worker": "ok",
+    "sandbox": "enabled"
+  }
+}
+```
+
+Expected GPU field for the live hackathon demo:
+
+```json
+{
+  "accelerator": "cuda"
+}
+```
+
+## Logs
+
+```bash
+docker compose logs --tail=200 backend
+docker compose logs --tail=200 gpu-worker
+docker compose logs --tail=200 frontend
+docker compose logs -f backend gpu-worker
+```
+
+Do not paste logs publicly until they have been checked for repository content, PR data, URLs, and infrastructure details.
+
+## Dell deployment
+
+```bash
+./scripts/gpu-smoke-test.sh
+./scripts/deploy-dell.sh
+```
+
+Overrides:
+
+```bash
+AEGIS_REMOTE_HOST=user@host AEGIS_REMOTE_PATH=/srv/aegispr ./scripts/deploy-dell.sh
+```
+
+The remote `.env` is intentionally preserved and must be managed separately.
+
+## Nebius preflight
+
+From a trusted environment with the API key loaded, query the Token Factory model catalog and confirm the configured `NEBIUS_MODEL` is present. Do not print or record the key. Restart the backend after changing model configuration.
+
+## CUDA preflight
+
+```bash
+nvidia-smi
+docker run --rm --gpus all nvidia/cuda:12.8.1-base-ubuntu24.04 nvidia-smi
+docker compose exec gpu-worker python3 -c "import cupy as cp; print(cp.cuda.runtime.getDeviceProperties(0)['name']); print(cp.arange(1000000).sum())"
+```
+
+## Release procedure
+
+1. Confirm the worktree contains only intended changes.
+2. Run `make test`.
+3. Run `git diff --check`.
+4. Review configuration and documentation changes.
+5. Commit and push to `main` through the normal repository workflow.
+6. Wait for all GitHub Actions jobs to pass.
+7. Run the Dell GPU smoke test.
+8. Deploy with `scripts/deploy-dell.sh`.
+9. Verify all three services and confirm CUDA in worker health.
+10. Run one real public PR and inspect its complete evidence.
+
+## Rollback
+
+1. Identify the last known-good Git commit.
+2. Check out that commit in a separate safe release worktree or deploy its archived source.
+3. Synchronize it to the Dell without replacing `.env`.
+4. Rebuild and restart Compose.
+5. Verify health endpoints and one known PR workflow.
+
+Do not use destructive Git resets on a working directory containing uncommitted work.
+
+## SQLite backup
+
+Create a consistent backup through SQLite inside the backend container:
+
+```bash
+docker compose exec backend python -c "import sqlite3; source=sqlite3.connect('/app/data/aegispr.sqlite3'); target=sqlite3.connect('/app/data/aegispr-backup.sqlite3'); source.backup(target); target.close(); source.close()"
+```
+
+Copy the backup from the named volume only through an administrator-approved process. Verification records may contain repository snippets and logs; protect them accordingly.
+
+## Incident triage
+
+### Backend unavailable
+
+1. `docker compose ps`
+2. `docker compose logs --tail=200 backend`
+3. Verify the `.env` requirements and Docker socket group.
+4. Verify the SQLite volume is writable.
+5. Recreate only the backend after correcting configuration.
+
+### GPU worker unavailable or CPU-only
+
+1. Run host `nvidia-smi`.
+2. Run the CUDA container smoke test.
+3. Inspect `gpu-worker` logs.
+4. Confirm backend and worker use the same `GPU_WORKER_TOKEN`.
+5. Rebuild the worker image.
+6. Do not describe a run as GPU-accelerated when the response reports CPU.
+
+### Nebius errors
+
+1. Confirm server-side key presence without printing it.
+2. Confirm model availability from `/v1/models`.
+3. Confirm outbound HTTPS and system time.
+4. Check bounded backend logs for provider status.
+5. Allow the run to remain `ANALYSIS_ONLY` or `ENVIRONMENT_ERROR`; do not alter evidence manually.
+
+### Docker sandbox errors
+
+1. Check Docker daemon availability.
+2. Confirm `DOCKER_GID` matches `/var/run/docker.sock` group ownership.
+3. Inspect bounded build/test logs in the finding.
+4. Confirm the repository uses a supported runtime and test command.
+5. Confirm package registries were reachable during image build.
+
+### Tailscale/SSH unavailable
+
+1. Power on and unlock the Dell if needed.
+2. Confirm both devices are connected to the same tailnet.
+3. Verify MagicDNS or SSH configuration.
+4. Test `ssh -o BatchMode=yes -o ConnectTimeout=8 dell-ts hostname`.
+5. Use `AEGIS_REMOTE_HOST` only after confirming the intended host identity.
+
+## Security escalation
+
+Stop new verifications and rotate affected credentials if:
+
+- an API key or worker token appears in Git, logs, screenshots, or video;
+- a sandbox obtains network or Docker socket access;
+- a generated patch changes out-of-scope files;
+- the public API is being abused;
+- persisted evidence is exposed to an unauthorized party.
+
+After containment, preserve relevant logs, document the incident, and verify the corrected boundary with an automated regression test.
+
