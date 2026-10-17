@@ -42,6 +42,27 @@ describe("VerificationPage", () => {
     expect(screen.getByText("Evidence is scoped.")).toBeInTheDocument();
   });
 
+  it("exposes exact branch execution evidence and does not invent existing-suite or build results", async () => {
+    const run = { ...completedRun, findings: [{ ...completedRun.findings[0], head_execution: { ...completedRun.findings[0].head_execution, stdout: "AssertionError: -10 != 0", stderr: "", duration_ms: 17 } }] };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(run), { status: 200 })));
+    render(<VerificationPage />);
+    await screen.findByRole("heading", { name: "Coupon support" });
+    fireEvent.click(screen.getByText("Inspect branch execution evidence"));
+    expect(screen.getByText("AssertionError: -10 != 0")).toBeInTheDocument();
+    expect(screen.getByText("17 ms")).toBeInTheDocument();
+    expect(screen.getAllByText("Not recorded").length).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByText("RECORDED")).not.toBeInTheDocument();
+  });
+
+  it("allows retry after an unavailable report", async () => {
+    vi.stubGlobal("fetch", vi.fn()
+      .mockResolvedValueOnce(new Response("", { status: 503 }))
+      .mockResolvedValue(new Response(JSON.stringify(completedRun), { status: 200 })));
+    render(<VerificationPage />);
+    fireEvent.click(await screen.findByRole("button", { name: /retry loading evidence/i }));
+    await screen.findByRole("heading", { name: "Coupon support" });
+  });
+
   it("renders a bounded loading error", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("", { status: 404 })));
     render(<VerificationPage />);
