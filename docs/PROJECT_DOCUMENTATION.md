@@ -314,7 +314,7 @@ https://api.tokenfactory.nebius.com/v1/
 The default model is:
 
 ```text
-nvidia/nemotron-3-ultra-550b-a55b
+nvidia/Nemotron-3-Ultra-550b-a55b
 ```
 
 The configured model must be confirmed against `/v1/models` before a live demonstration.
@@ -599,7 +599,8 @@ The website is deployed through OpenAI Sites. Its current audience remains owner
 | --- | --- | --- | --- |
 | `NEBIUS_API_KEY` | Production | none | Server-side Token Factory credential. |
 | `NEBIUS_BASE_URL` | No | `https://api.tokenfactory.nebius.com/v1/` | OpenAI-compatible API base URL. |
-| `NEBIUS_MODEL` | No | `nvidia/nemotron-3-ultra-550b-a55b` | Model used for planning, root cause, and repair. |
+| `NEBIUS_MODEL` | No | `nvidia/Nemotron-3-Ultra-550b-a55b` | Exact case-sensitive model ID used for planning, root cause, and repair. |
+| `BACKEND_PORT` | No | `8000`; current Dell uses `8080` | Host-published Compose backend port; update `PUBLIC_API_URL` and rebuild the frontend when changed. |
 | `GITHUB_TOKEN` | No | empty | Raises GitHub public API rate limits. |
 | `GPU_WORKER_TOKEN` | Production | random secret | Internal bearer token shared by backend and worker. |
 | `PUBLIC_API_URL` | Production | Dell/Tailscale backend URL | Browser-visible backend URL embedded at frontend build time. |
@@ -874,11 +875,13 @@ As of October 17, 2026:
 - the latest complete local matrix passed 69 tests;
 - the five-hour continuation heartbeat remains enabled;
 - the Dell Tailscale connection, NVIDIA container runtime, and real CuPy CUDA ranking workload are verified on the RTX 3050 Ti;
-- the remote source, production images, worker token, Docker socket group, and GPU worker are prepared;
-- live Nebius inference and the complete backend/frontend stack still require the owner to place a real `NEBIUS_API_KEY` in `/home/hari/aegispr/.env`;
+- all three production services are healthy on the Dell, with the backend on port 8080;
+- the backend production image now includes the Git and Docker tools needed by repository analysis and sandbox execution;
+- live Docker sandbox testing produced baseline PASS, seeded regression FAIL, and manually repaired fixture PASS;
+- the Nebius key authenticates and the configured model is in the catalog, but actual inference is blocked by HTTP 402 (no usable budget);
 - the public application URL, public website sharing, and YouTube upload remain final operator actions.
 
-The captured worker health and authenticated ranking evidence report `accelerator: cuda`; see [live-gpu-evidence.md](live-gpu-evidence.md). No documentation or UI should claim a successful live Nemotron run until the configured model is confirmed and an inference completes with the owner's Nebius credential.
+The captured worker health and authenticated ranking evidence report `accelerator: cuda`; see [live-gpu-evidence.md](live-gpu-evidence.md). Deployment and deterministic sandbox results are in [live-stack-evidence.md](live-stack-evidence.md). The latter is a manual fixture experiment, not a model-generated public PR review. No documentation or UI should claim a successful live Nemotron run until inference succeeds.
 
 ## 24. Limitations and roadmap
 
@@ -897,7 +900,7 @@ The captured worker health and authenticated ranking evidence report `accelerato
 
 ### Recommended next steps
 
-1. Configure the Nebius key on the server and confirm model availability.
+1. Resolve Nebius billing/credits with support and confirm a real inference succeeds.
 2. Complete a real public-PR end-to-end run and capture evidence.
 3. Publish the live application behind HTTPS with authentication or bounded hackathon access.
 4. Enable public project-website access when the owner is ready.

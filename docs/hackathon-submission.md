@@ -31,6 +31,15 @@ The model proposes experiments, but it does not decide whether they passed. Exit
 
 ## NVIDIA and Nebius usage
 
+**Verified status (October 17):** All three services are healthy on the Dell.
+CUDA ranking and real Docker sandbox differential execution have been tested.
+The Nebius key authenticates and the exact Nemotron ID is in the model catalog,
+but inference returns HTTP 402 (no usable budget). The model descriptions and
+recording script below describe the implemented integration and intended final
+demonstration; they are not evidence of a completed live model run. Do not submit
+model quality ratings or claim a working Nebius demo until inference succeeds.
+See [live-stack-evidence.md](live-stack-evidence.md).
+
 - **NVIDIA Nemotron 3 Ultra** is called through the OpenAI-compatible Nebius Token Factory API for risk hypotheses, test synthesis, evidence summaries, and minimal repair proposals.
 - **Dell RTX 3050 Ti** runs the GPU worker. CuPy performs hashed term-document vector construction, cosine similarity scoring, and repository-context ranking before Nemotron receives a bounded prompt.
 - **CUDA telemetry** records the selected device and whether each ranking used CUDA or the visible CPU fallback.
@@ -104,9 +113,10 @@ The OpenAI-compatible Token Factory interface made it straightforward to place N
 - [x] Dell host is reachable over Tailscale.
 - [x] `nvidia-smi` succeeds on the host.
 - [x] NVIDIA Container Toolkit exposes the GPU inside `gpu-worker`.
-- [ ] Nebius API key is present only in the server-side `.env`.
-- [ ] `/v1/models` confirms the configured Nemotron model is available.
-- [ ] Health endpoint reports Nebius configured and the GPU worker reachable.
+- [x] Nebius API key is present only in the server-side `.env`.
+- [x] `/v1/models` confirms the configured Nemotron model is available.
+- [x] Health endpoint reports Nebius configured and the GPU worker reachable (credential presence only).
+- [ ] A real inference completes successfully (currently HTTP 402).
 - [x] GPU worker health and authenticated ranking record `accelerator: cuda` and RTX 3050 Ti device metadata.
 - [ ] A real public PR completes base and PR execution.
 - [ ] The proof card shows exact commits, commands, logs, exit codes, and durations.
@@ -128,5 +138,5 @@ The OpenAI-compatible Token Factory interface made it straightforward to place N
 - [ ] Public project website audience enabled by the owner
 - [ ] Public YouTube demonstration, three minutes or shorter
 - [x] Live Dell CUDA application-workload evidence captured
-- [ ] Live Nebius evidence captured after the owner supplies the server credential
+- [ ] Live Nebius inference evidence captured after billing credits become usable
 

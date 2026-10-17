@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     github_token: str | None = Field(default=None, repr=False)
     nebius_api_key: str | None = Field(default=None, repr=False)
     nebius_base_url: str = "https://api.tokenfactory.nebius.com/v1/"
-    nebius_model: str = "nvidia/nemotron-3-ultra-550b-a55b"
+    nebius_model: str = "nvidia/Nemotron-3-Ultra-550b-a55b"
     gpu_worker_url: str | None = None
     gpu_worker_token: str | None = Field(default=None, repr=False)
     enable_sandbox: bool = False

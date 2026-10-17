@@ -58,7 +58,7 @@ FastAPI orchestrator ─── GitHub API + git
 
 Nemotron 3 Ultra is served remotely because it is a 550B-class mixture-of-experts model. The Dell RTX 3050 Ti performs a real, bounded CUDA workload: hashed term-document vector construction, cosine scoring, and context prioritization. If the worker is unavailable, AegisPR records a CPU fallback rather than hiding the loss of acceleration.
 
-Start with the [complete project documentation](docs/PROJECT_DOCUMENTATION.md). Focused references cover [architecture](docs/architecture.md), [agent stages](docs/agents.md), [verification semantics](docs/verification.md), [security](docs/security.md), [live Dell GPU evidence](docs/live-gpu-evidence.md), [operations](docs/RUNBOOK.md), [contributing](docs/CONTRIBUTING.md), and the [hackathon submission kit](docs/hackathon-submission.md).
+Start with the [complete project documentation](docs/PROJECT_DOCUMENTATION.md). Focused references cover [architecture](docs/architecture.md), [agent stages](docs/agents.md), [verification semantics](docs/verification.md), [security](docs/security.md), [live Dell GPU evidence](docs/live-gpu-evidence.md), [live deployment and sandbox evidence](docs/live-stack-evidence.md), [operations](docs/RUNBOOK.md), [contributing](docs/CONTRIBUTING.md), and the [hackathon submission kit](docs/hackathon-submission.md).
 
 ## Quick start
 
@@ -79,7 +79,7 @@ curl http://localhost:8000/health
 
 Open `http://localhost:3000`, paste a public GitHub pull request URL, and select **Verify PR**.
 
-The default model is `nvidia/nemotron-3-ultra-550b-a55b` through the OpenAI-compatible Nebius endpoint at `https://api.tokenfactory.nebius.com/v1/`. Always confirm the model is available to the API key by querying `/v1/models` before a demo.
+The Compose deployment uses `nvidia/Nemotron-3-Ultra-550b-a55b` through the OpenAI-compatible Nebius endpoint at `https://api.tokenfactory.nebius.com/v1/`. Copy `.env.example` for the exact, case-sensitive model ID and confirm it appears in `/v1/models` before a demo. A successful model-list request does not confirm inference credits; an actual completion must also succeed.
 
 ## Dell GPU deployment
 

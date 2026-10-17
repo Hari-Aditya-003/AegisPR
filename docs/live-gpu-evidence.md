@@ -66,5 +66,9 @@ Both fixes were implemented with RED/GREEN container-contract tests. The worker 
 
 ## Remaining live-stack dependency
 
-The remote source, production images, secure worker token, correct Docker socket group, and CUDA worker are prepared. The complete backend/frontend stack still requires a real `NEBIUS_API_KEY` in `/home/hari/aegispr/.env`. No key was available locally, in the remote shell, in the target directory, or in an existing AegisPR container, so no placeholder was persisted and no model-success claim has been made.
+The key has since been configured securely and all three services are running.
+Model discovery authenticates, but a real inference returns HTTP 402 because
+usable credits are unavailable. See [live-stack-evidence.md](live-stack-evidence.md)
+for deployment, browser, and actual sandbox execution results. No successful
+live model claim has been made.
 

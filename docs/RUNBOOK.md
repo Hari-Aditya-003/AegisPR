@@ -75,9 +75,21 @@ AEGIS_REMOTE_HOST=user@host AEGIS_REMOTE_PATH=/srv/aegispr ./scripts/deploy-dell
 
 The remote `.env` is intentionally preserved and must be managed separately.
 
+If port 8000 is occupied, set `BACKEND_PORT=8080` and change `PUBLIC_API_URL`
+to the Dell's reachable URL on port 8080. Rebuild the frontend because its API
+URL is embedded at build time. Container-to-container traffic still uses port
+8000. The current Dell installation uses this port-8080 configuration.
+
 ## Nebius preflight
 
 From a trusted environment with the API key loaded, query the Token Factory model catalog and confirm the configured `NEBIUS_MODEL` is present. Do not print or record the key. Restart the backend after changing model configuration.
+
+Model IDs are case-sensitive. The live catalog returned
+`nvidia/Nemotron-3-Ultra-550b-a55b`. A model-list success proves authentication,
+not inference readiness. HTTP 402 from a completion means usable credits are
+unavailable; ask Token Factory support to check the project billing/credit
+status. Backend health reports credential presence only and must not be used
+as proof of a successful live model call.
 
 ## CUDA preflight
 
