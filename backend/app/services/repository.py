@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import tempfile
 from pathlib import Path, PurePosixPath
 
+from app.github.parser import parse_pull_request_url
 from app.schemas.verification import ImpactEdge, ImpactNode, RepositoryProfile
 from app.services.context_ranker import ContextDocument
 
@@ -15,25 +17,38 @@ class RepositoryService:
         self.max_diff_characters = max_diff_characters
 
     def clone(self, clone_url: str, destination: Path) -> None:
+        try:
+            if not clone_url.endswith(".git"):
+                raise ValueError("Invalid suffix")
+            parse_pull_request_url(f"{clone_url[:-4]}/pull/1")
+        except ValueError as exc:
+            raise ValueError("Repository clone URL must be canonical HTTPS GitHub") from exc
         destination.parent.mkdir(parents=True, exist_ok=True)
-        self._run(["git", "clone", "--filter=blob:none", "--no-checkout", clone_url, str(destination)])
+        self._run(["git", "clone", "--filter=blob:none", "--no-checkout", "--no-recurse-submodules", "--", clone_url, str(destination)])
 
     def fetch_commits(self, repository: Path, base_commit: str, head_commit: str) -> None:
-        self._run(["git", "-C", str(repository), "fetch", "origin", base_commit, head_commit])
+        self._validate_commit(base_commit)
+        self._validate_commit(head_commit)
+        self._run(["git", "-C", str(repository), "fetch", "--no-recurse-submodules", "origin", base_commit, head_commit])
 
     def changed_files(self, repository: Path, base_commit: str, head_commit: str) -> list[str]:
+        self._validate_commit(base_commit)
+        self._validate_commit(head_commit)
         output = self._run(
             ["git", "-C", str(repository), "diff", "--name-only", base_commit, head_commit]
         )
         return [line for line in output.splitlines() if line and not line.startswith("../")]
 
     def diff(self, repository: Path, base_commit: str, head_commit: str) -> str:
+        self._validate_commit(base_commit)
+        self._validate_commit(head_commit)
         output = self._run(
-            ["git", "-C", str(repository), "diff", "--unified=30", base_commit, head_commit]
+            ["git", "-C", str(repository), "diff", "--no-ext-diff", "--unified=30", base_commit, head_commit]
         )
         return output[: self.max_diff_characters]
 
     def file_content(self, repository: Path, commit: str, file_path: str) -> str:
+        self._validate_commit(commit)
         self._validate_relative_path(file_path)
         return self._run(["git", "-C", str(repository), "show", f"{commit}:{file_path}"])[
             : self.max_diff_characters
@@ -71,9 +86,11 @@ class RepositoryService:
             self._run(["git", "-C", str(checkout), "apply", str(patch_file)])
 
     def checkout(self, repository: Path, commit: str, destination: Path) -> None:
+        self._validate_commit(commit)
         self._run(["git", "-C", str(repository), "worktree", "add", "--detach", str(destination), commit])
 
     def profile(self, repository: Path, commit: str) -> RepositoryProfile:
+        self._validate_commit(commit)
         files = self._run(["git", "-C", str(repository), "ls-tree", "-r", "--name-only", commit]).splitlines()
         file_set = set(files)
         languages: list[str] = []
@@ -124,6 +141,7 @@ class RepositoryService:
     def context_documents(
         self, repository: Path, commit: str, changed_files: list[str], limit: int = 100
     ) -> list[ContextDocument]:
+        self._validate_commit(commit)
         candidates = list(changed_files)
         tree = self._run(["git", "-C", str(repository), "ls-tree", "-r", "--name-only", commit]).splitlines()
         candidates.extend(
@@ -167,8 +185,19 @@ class RepositoryService:
 
     @staticmethod
     def _run(args: list[str]) -> str:
-        environment = os.environ.copy()
-        environment["GIT_TERMINAL_PROMPT"] = "0"
+        environment = {
+            key: value for key, value in os.environ.items()
+            if key in {"PATH", "LANG", "LC_ALL", "TMPDIR", "SSL_CERT_FILE", "SSL_CERT_DIR"}
+        }
+        environment.update({
+            "GIT_TERMINAL_PROMPT": "0", "GIT_CONFIG_NOSYSTEM": "1",
+            "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_SYSTEM": os.devnull,
+        })
+        args = [
+            args[0], "-c", "protocol.allow=never", "-c", "protocol.https.allow=always",
+            "-c", "protocol.ext.allow=never", "-c", f"core.hooksPath={os.devnull}",
+            "-c", "http.followRedirects=false", *args[1:],
+        ]
         result = subprocess.run(
             args,
             check=False,
@@ -186,6 +215,7 @@ class RepositoryService:
         path = PurePosixPath(file_path)
         if (
             not file_path
+            or not path.parts
             or path.is_absolute()
             or ".." in path.parts
             or any(part.lower() in {".git", ".aegispr"} for part in path.parts)
@@ -193,3 +223,8 @@ class RepositoryService:
             or any(ord(character) < 32 or ord(character) == 127 for character in file_path)
         ):
             raise ValueError("Repair patch contains an unsafe path")
+
+    @staticmethod
+    def _validate_commit(commit: str) -> None:
+        if not re.fullmatch(r"[0-9a-fA-F]{40}", commit):
+            raise ValueError("A full Git commit SHA is required")

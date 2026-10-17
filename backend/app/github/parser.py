@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from urllib.parse import urlparse
 
 
@@ -22,8 +23,14 @@ def parse_pull_request_url(value: str) -> PullRequestReference:
             or parsed.username
             or parsed.password
             or parsed.port
+            or parsed.query
+            or parsed.fragment
             or len(parts) != 4
             or parts[2] != "pull"
+            or not re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?", parts[0])
+            or not re.fullmatch(r"[A-Za-z0-9_.-]{1,100}", parts[1])
+            or parts[1] in {".", ".."}
+            or not re.fullmatch(r"[1-9][0-9]{0,9}", parts[3])
         ):
             raise ValueError(message)
         number = int(parts[3])

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import httpx
 
-from app.github.parser import PullRequestReference
+from app.github.parser import PullRequestReference, parse_pull_request_url
 from app.schemas.verification import PullRequestSummary
 
 
@@ -19,6 +19,9 @@ class GitHubClient:
         )
 
     async def get_pull_request(self, reference: PullRequestReference) -> PullRequestSummary:
+        parse_pull_request_url(
+            f"https://github.com/{reference.owner}/{reference.repository}/pull/{reference.number}"
+        )
         response = await self._client.get(
             f"/repos/{reference.owner}/{reference.repository}/pulls/{reference.number}"
         )
@@ -32,7 +35,7 @@ class GitHubClient:
             number=reference.number,
             title=payload.get("title", ""),
             html_url=payload["html_url"],
-            clone_url=payload["base"]["repo"]["clone_url"],
+            clone_url=f"https://github.com/{reference.owner}/{reference.repository}.git",
             base_ref=payload["base"]["ref"],
             head_ref=payload["head"]["ref"],
             base_commit=payload["base"]["sha"],
