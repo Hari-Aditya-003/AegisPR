@@ -79,3 +79,22 @@ def test_applies_safe_unified_patch_and_rejects_traversal(tmp_path: Path) -> Non
 
     with pytest.raises(ValueError, match="outside the pull request scope"):
         service.apply_patch(repo, patch, {"checkout.ts"})
+
+
+def test_repair_patch_does_not_follow_internal_patch_file_symlink(tmp_path: Path) -> None:
+    repo, _, _ = create_repository(tmp_path)
+    outside = tmp_path / "outside.txt"
+    outside.write_text("preserve me")
+    (repo / ".aegispr-repair.patch").symlink_to(outside)
+    patch = "--- a/coupon.ts\n+++ b/coupon.ts\n@@ -1 +1 @@\n-export const total = -50\n+export const total = 0\n"
+
+    RepositoryService().apply_patch(repo, patch, {"coupon.ts"})
+
+    assert outside.read_text() == "preserve me"
+    assert (repo / ".aegispr-repair.patch").is_symlink()
+
+
+@pytest.mark.parametrize("path", ["tests/.git/config", "a/.aegispr/token", "./.git/config", "test\x00.py", "test\n.py"])
+def test_repair_paths_reject_nested_metadata_and_control_characters(path: str) -> None:
+    with pytest.raises(ValueError, match="unsafe path"):
+        RepositoryService._validate_relative_path(path)
