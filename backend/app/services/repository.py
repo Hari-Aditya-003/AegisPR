@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import tempfile
 from pathlib import Path, PurePosixPath
 
 from app.schemas.verification import ImpactEdge, ImpactNode, RepositoryProfile
@@ -63,13 +64,11 @@ class RepositoryService:
             if allowed_paths is not None and path not in allowed_paths:
                 raise ValueError("Repair patch modifies a file outside the pull request scope")
 
-        patch_file = checkout / ".aegispr-repair.patch"
-        patch_file.write_text(patch, encoding="utf-8")
-        try:
+        with tempfile.TemporaryDirectory(prefix="aegispr-patch-") as temporary:
+            patch_file = Path(temporary) / "repair.patch"
+            patch_file.write_text(patch, encoding="utf-8")
             self._run(["git", "-C", str(checkout), "apply", "--check", str(patch_file)])
             self._run(["git", "-C", str(checkout), "apply", str(patch_file)])
-        finally:
-            patch_file.unlink(missing_ok=True)
 
     def checkout(self, repository: Path, commit: str, destination: Path) -> None:
         self._run(["git", "-C", str(repository), "worktree", "add", "--detach", str(destination), commit])
@@ -189,7 +188,8 @@ class RepositoryService:
             not file_path
             or path.is_absolute()
             or ".." in path.parts
-            or path.parts[0] in {".git", ".aegispr"}
+            or any(part.lower() in {".git", ".aegispr"} for part in path.parts)
             or "\\" in file_path
+            or any(ord(character) < 32 or ord(character) == 127 for character in file_path)
         ):
             raise ValueError("Repair patch contains an unsafe path")
