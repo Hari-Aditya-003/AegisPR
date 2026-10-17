@@ -5,7 +5,7 @@
 **Tagline:** Don't trust a PR. Prove it.  
 **Track:** Coding and Agentic Engineering  
 **Repository:** <https://github.com/Hari-Aditya-003/AegisPR>  
-**Project website:** <https://aegispr.mr-adityahari.chatgpt.site>  
+**Project website:** <https://hari-aditya-003.github.io/AegisPR/>
 **License:** MIT
 
 ## Table of contents
@@ -589,7 +589,7 @@ The separate static project website explains the six-stage story:
 5. publish evidence;
 6. repair and re-prove.
 
-The website is deployed through OpenAI Sites. Its current audience remains owner-private until the owner explicitly enables public sharing.
+The project website and deterministic browser test build are published on GitHub Pages. The browser build at `/AegisPR/demo/` executes a coupon boundary fixture locally; it does not call Nebius, analyze arbitrary pull requests, or run GPU workloads. The full stack runs separately on the Dell.
 
 ## 16. Configuration reference
 
@@ -870,7 +870,7 @@ As of October 17, 2026:
 - optional repair and repair verification are implemented;
 - repository is public and MIT-licensed;
 - README, architecture, security, user journeys, verification semantics, runbook, contribution guide, and submission kit are present;
-- the project website is deployed as version 2 and remains owner-private;
+- the project website and browser test build are publicly hosted on GitHub Pages;
 - GitHub Actions is green on `main`;
 - the latest complete local matrix passed 69 tests;
 - the five-hour continuation heartbeat remains enabled;
@@ -879,7 +879,7 @@ As of October 17, 2026:
 - the backend production image now includes the Git and Docker tools needed by repository analysis and sandbox execution;
 - live Docker sandbox testing produced baseline PASS, seeded regression FAIL, and manually repaired fixture PASS;
 - the Nebius key authenticates and the configured model is in the catalog, but actual inference is blocked by HTTP 402 (no usable budget);
-- the public application URL, public website sharing, and YouTube upload remain final operator actions.
+- a public full-stack application URL and final YouTube upload remain outstanding;
 
 The captured worker health and authenticated ranking evidence report `accelerator: cuda`; see [live-gpu-evidence.md](live-gpu-evidence.md). Deployment and deterministic sandbox results are in [live-stack-evidence.md](live-stack-evidence.md). The latter is a manual fixture experiment, not a model-generated public PR review. No documentation or UI should claim a successful live Nemotron run until inference succeeds.
 
@@ -903,7 +903,7 @@ The captured worker health and authenticated ranking evidence report `accelerato
 1. Resolve Nebius billing/credits with support and confirm a real inference succeeds.
 2. Complete a real public-PR end-to-end run and capture evidence.
 3. Publish the live application behind HTTPS with authentication or bounded hackathon access.
-4. Enable public project-website access when the owner is ready.
+4. Keep the GitHub Pages project website and test build in sync with releases.
 5. Record and publish the three-minute demonstration.
 6. Add stable-result repetition for flaky-test resistance.
 7. Replace the Docker socket with an isolated executor service.

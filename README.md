@@ -4,7 +4,9 @@ Don't trust a PR. Prove it.
 
 AegisPR is an autonomous evidence-backed pull request verification agent powered by NVIDIA Nemotron on Nebius Token Factory. It analyzes a code change, names concrete risks, generates targeted adversarial tests, executes the same test against the base and pull request commits, and reports whether the change introduced a reproducible regression.
 
-Project website: [aegispr.mr-adityahari.chatgpt.site](https://aegispr.mr-adityahari.chatgpt.site) (owner-private until sharing is enabled).
+Project website: [hari-aditya-003.github.io/AegisPR](https://hari-aditya-003.github.io/AegisPR/).
+
+Public interactive test build: [Try the coupon-boundary experiment](https://hari-aditya-003.github.io/AegisPR/demo/). This browser test build demonstrates deterministic base/change/repair comparisons. It does not analyze arbitrary PRs or run cloud inference. The full application runs on the Dell; its Nebius key authenticates, but inference currently returns HTTP 402 because usable credits are unavailable.
 
 ## Why AegisPR
 
@@ -167,7 +169,21 @@ A successful AegisPR verification does not prove that software contains no defec
 
 ## Hackathon fit
 
-AegisPR uses NVIDIA Nemotron for repository reasoning, risk planning, test generation, and evidence synthesis through Nebius Token Factory. It uses the Dell NVIDIA GPU for accelerated repository context ranking and isolated compute telemetry. These are core workflow components, not decorative integrations.
+AegisPR integrates NVIDIA Nemotron 3 Ultra (`nvidia/Nemotron-3-Ultra-550b-a55b`) through Nebius Token Factory for risk planning, test generation, root-cause analysis, and repair proposals. Token Factory's hosted, OpenAI-compatible API avoids serving the large reasoning model on the 4 GB Dell GPU. Authentication and catalog availability are verified; successful inference, model output quality, and end-to-end latency are not yet verified because of the account credit block. No measured speedup or successful cloud review is claimed.
+
+The Dell RTX 3050 Ti independently runs the verified CuPy/CUDA context-ranking workload. Real Docker fixture testing produced baseline PASS, changed code FAIL, and manually repaired code PASS. The Dell is local infrastructure, not a Nebius cloud GPU instance. See [live deployment evidence](docs/live-stack-evidence.md).
+
+## Free public hosting
+
+GitHub Pages publishes `website/dist` using [the website workflow](.github/workflows/pages.yml). It hosts the project website and browser test build without server credentials or Tailscale. It cannot host the FastAPI backend or CUDA worker. Full-stack setup instructions above describe running those services on a Linux NVIDIA GPU host.
+
+Run the public test build locally with:
+
+```bash
+node --test website/tests/boundary.test.mjs
+python3 -m http.server 3112 --directory website/dist
+# Open http://localhost:3112/demo/
+```
 
 ## License
 

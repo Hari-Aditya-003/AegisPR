@@ -8,12 +8,14 @@ This file is the source of truth for the Nebius × NVIDIA Global AI Hackathon su
 - **Tagline:** Don't trust a PR. Prove it.
 - **Track:** Coding and Agentic Engineering
 - **Source:** <https://github.com/Hari-Aditya-003/AegisPR>
-- **Project website:** <https://aegispr.mr-adityahari.chatgpt.site>
+- **Project website:** <https://hari-aditya-003.github.io/AegisPR/>
 - **License:** MIT
-- **Demo application:** `[ADD PUBLIC GPU-HOSTED APPLICATION URL]`
+- **Public test build:** <https://hari-aditya-003.github.io/AegisPR/demo/>
 - **Video:** `[ADD PUBLIC YOUTUBE URL, 3:00 OR SHORTER]`
 
-The project website currently requires owner sign-in. Make it public only when the owner is ready to share the submission.
+The website and interactive browser test build are published on GitHub Pages.
+The test build executes a deterministic coupon fixture in JavaScript; it is not
+a public GPU/Nemotron service. Full-stack inference remains blocked by HTTP 402.
 
 ## Short description
 
@@ -135,7 +137,7 @@ The OpenAI-compatible Token Factory interface made it straightforward to place N
 - [x] Real CUDA workload and explicit fallback reporting
 - [x] Automated test and security verification
 - [ ] Public working demo application URL
-- [ ] Public project website audience enabled by the owner
+- [x] Public project website on GitHub Pages
 - [ ] Public YouTube demonstration, three minutes or shorter
 - [x] Live Dell CUDA application-workload evidence captured
 - [ ] Live Nebius inference evidence captured after billing credits become usable

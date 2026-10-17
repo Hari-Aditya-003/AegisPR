@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#05090c">
+  <title>AegisPR — Interactive test build</title>
+  <meta name="description" content="Try AegisPR's differential verification concept with a deterministic coupon-boundary experiment in your browser.">
+  <link rel="icon" href="../aegispr-logo.jpg"><link rel="stylesheet" href="../styles.css"><link rel="stylesheet" href="../brand.css"><link rel="stylesheet" href="./demo.css">
+</head>
+<body>
+  <header class="nav"><a class="brand" href="../"><span aria-hidden="true">A</span>AegisPR</a><a class="nav-cta" href="https://github.com/Hari-Aditya-003/AegisPR">Source &amp; setup ↗</a></header>
+  <main class="demo-shell">
+    <p class="eyebrow">Public interactive test build</p>
+    <h1>One test.<br><em>Two versions.</em></h1>
+    <p class="lede">Change the cart and discount. Run the same boundary check before and after a code change, then test the repair.</p>
+    <div class="demo-notice"><strong>What this build does</strong><p>Runs a browser port of the demo-store coupon fixture. It does not fetch GitHub pull requests, call Nemotron, execute Python, or use a GPU. The full application runs separately on the Dell; live Nebius inference is currently blocked by unavailable account credits.</p><a href="https://github.com/Hari-Aditya-003/AegisPR/blob/main/docs/live-stack-evidence.md">Read the real Docker and GPU test evidence ↗</a></div>
+    <div class="demo-grid">
+      <section class="demo-card"><p class="eyebrow">01 / Set up an experiment</p><h2>Can a coupon make a cart negative?</h2>
+        <form id="experiment">
+          <label for="total">Cart total</label><input id="total" type="number" min="0" step="0.01" value="10" required>
+          <label for="discount">Coupon discount</label><input id="discount" type="number" min="0" step="0.01" value="20" required>
+          <label for="change">Change under test</label><select id="change"><option value="buggy">Remove the zero clamp</option><option value="safe">Keep the zero clamp</option></select>
+          <button class="button primary" type="submit">Run boundary check →</button>
+          <p id="input-error" role="alert" hidden></p>
+        </form>
+        <div class="sample-actions"><button type="button" id="oversized">Oversized discount</button><button type="button" id="normal">Normal discount</button></div>
+      </section>
+      <section class="demo-card evidence" aria-labelledby="evidence-title"><p class="eyebrow">02 / Inspect the result</p><h2 id="evidence-title">Execution evidence</h2>
+        <p id="idle" class="scope">Run the experiment to see the calculated results. No cloud credentials needed.</p>
+        <div id="results" hidden aria-live="polite">
+          <p id="classification" class="result-label"></p>
+          <div class="result"><span>BASELINE</span><strong id="base-status"></strong></div><code id="base-value"></code>
+          <div class="result"><span>CHANGED VERSION</span><strong id="head-status"></strong></div><code id="head-value"></code>
+          <p id="conclusion"></p><button type="button" class="button secondary" id="repair">Apply clamp &amp; re-run</button>
+          <div id="repair-result" hidden><p class="result-label">REPAIRED FIXTURE PASSED</p><code id="repair-value"></code><p>The manually defined repair passes this boundary check. This is not an automatically generated or fully verified repository repair.</p></div>
+        </div>
+      </section>
+    </div>
+    <section class="demo-card"><p class="eyebrow">The check you just ran</p><pre id="test-code">expected = max(cart_total - coupon_discount, 0)
+assert baseline_result == expected
+assert changed_result == expected</pre><p class="scope">Amounts are evaluated as integer cents. Passing one check is evidence within that scope; it does not prove the absence of other bugs.</p></section>
+    <p class="scope"><a href="../">← Project website</a> · <a href="https://github.com/Hari-Aditya-003/AegisPR/blob/main/LICENSE">MIT License</a> · <a href="https://github.com/Hari-Aditya-003/AegisPR#quick-start">Run the full application</a></p>
+  </main><script type="module" src="./demo.mjs"></script>
+</body></html>

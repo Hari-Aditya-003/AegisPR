@@ -1,4 +1,5 @@
 :root{--green:#00e5a4;--ink:#edf8f7;--muted:#8da4a7;--panel:#0c171b;--line:#203439;--bg:#05090c;--cyan:#09d4ee}
+.demo-launch{max-width:1180px;margin:30px auto 0;padding:0 25px;display:flex;gap:22px;align-items:center}.demo-launch p{color:var(--muted);font-size:12px;line-height:1.7;margin:0}.demo-launch .button{flex-shrink:0}.license-note{max-width:1130px;margin:0 auto 25px;padding:0 20px;color:var(--muted);font-size:12px}.license-note a{text-decoration:underline}@media(max-width:650px){.demo-launch{align-items:flex-start;flex-direction:column;gap:12px;padding-inline:18px}}
 body{background:radial-gradient(ellipse at 85% 0%,#00372e70,transparent 36%),var(--bg)}
 ::selection{background:#00e5a449;color:white}
 .nav{position:sticky;top:0;z-index:5;background:#050a0de8;backdrop-filter:blur(18px);border-color:#143038}
