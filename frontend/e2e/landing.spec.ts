@@ -1,5 +1,33 @@
 import { expect, test } from "@playwright/test";
 
+test("visitor can explore example outcomes and test code with the keyboard", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByText("Interactive example · not a live review")).toBeVisible();
+  const safeChange = page.getByRole("button", { name: "Safe change", exact: true });
+  await safeChange.focus();
+  await page.keyboard.press("Enter");
+  await expect(safeChange).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText("VERIFIED WITHIN SCOPE", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Verified repair", exact: true }).click();
+  await expect(page.getByText("FIX VERIFIED", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Show test code", exact: true }).click();
+  await expect(page.getByText(/def test_discount_boundary/)).toBeVisible();
+  await page.getByRole("button", { name: "Show evidence", exact: true }).click();
+  await expect(page.getByText("FIX VERIFIED", { exact: true })).toBeVisible();
+});
+
+test("branded mobile page fits the viewport and respects reduced motion", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  const logo = page.getByAltText("AegisPR shield and branching circuit logo");
+  await expect(logo).toBeVisible();
+  expect(await logo.evaluate((node) => (node as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  expect(await logo.evaluate((node) => getComputedStyle(node).animationName)).toBe("none");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await expect(page.getByLabel(/github pull request/i)).toBeVisible();
+});
+
 
 test("visitor can understand and start the verification flow", async ({ page }) => {
   await page.route("http://localhost:8000/api/verifications", async (route) => {

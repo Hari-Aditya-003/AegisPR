@@ -3,16 +3,18 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="AegisPR turns pull request risk hypotheses into executable evidence with NVIDIA Nemotron, Nebius, and CUDA.">
-  <title>AegisPR — Don't trust a PR. Prove it.</title><link rel="icon" href="./favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="./styles.css">
+  <meta name="theme-color" content="#05090c">
+  <title>AegisPR — Don't trust a PR. Prove it.</title><link rel="icon" href="./aegispr-logo.jpg" type="image/jpeg"><link rel="stylesheet" href="./styles.css"><link rel="stylesheet" href="./brand.css">
 </head>
 <body>
+  <a class="skip-link" href="#top">Skip to content</a>
   <header class="nav"><a class="brand" href="#top"><span>A</span>AegisPR</a><nav><a href="#workflow">Workflow</a><a href="#architecture">Architecture</a><a href="#use">How to use</a></nav><a class="nav-cta" href="https://github.com/Hari-Aditya-003/AegisPR">View source</a></header>
   <main id="top">
     <section class="hero">
       <div><p class="kicker">■ NVIDIA Nemotron × Nebius × CUDA</p><h1>Don’t trust a PR.<br><em>Prove it.</em></h1><p class="lede">AegisPR converts code-review claims into controlled experiments. It generates adversarial tests, runs the same test against both commits, and can verify a minimal repair without touching the source repository.</p><div class="actions"><a class="button primary" href="#use">Run the workflow</a><a class="button secondary" href="#architecture">See the architecture</a></div><p class="scope">Built for the Nebius × NVIDIA Global AI Hackathon · Evidence is bounded to executed checks.</p></div>
       <div class="proof"><div class="window">● ● ● <span>AEGIS / PROOF CARD</span></div><div class="proof-body"><p class="danger">● REGRESSION DETECTED</p><h2>Coupon boundary can produce a negative cart total</h2><div class="result"><span>BASE <b>71be309</b></span><strong>PASS</strong></div><div class="connector"></div><div class="result fail"><span>PR <b>6f47a12</b></span><strong>FAIL</strong></div><div class="metrics"><div><small>Context</small><b>CUDA</b></div><div><small>Tests</small><b>12</b></div><div><small>Reproduced</small><b>1</b></div></div><p class="caption">Illustrative report format, not a claim about a real pull request.</p></div></div>
     </section>
-    <section class="statement"><p>Most AI review stops at <span>“this might break.”</span></p><h2>AegisPR asks the code to prove it.</h2></section>
+    <section class="statement"><p>Most AI review stops at <span>“this might break.”</span></p><h2>AegisPR asks the code to prove it.</h2><div class="brand-signature"><img src="./aegispr-logo.jpg" alt="AegisPR cyan and emerald shield logo" width="1400" height="768" loading="lazy"></div></section>
     <section class="section" id="workflow"><div class="heading"><p class="eyebrow">The verification chain</p><h2>Reasoning becomes an experiment.</h2><p>Select a stage to see how a pull request becomes reproducible evidence.</p></div><div class="workflow"><ol>
       <li><button class="stage active" data-stage="0"><span>01</span><b>Map the change</b><small>Diff, profile, impact graph</small></button></li>
       <li><button class="stage" data-stage="1"><span>02</span><b>Form hypotheses</b><small>Nemotron names failure modes</small></button></li>

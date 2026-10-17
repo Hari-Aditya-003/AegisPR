@@ -1,0 +1,31 @@
+:root{--green:#00e5a4;--ink:#edf8f7;--muted:#8da4a7;--panel:#0c171b;--line:#203439;--bg:#05090c;--cyan:#09d4ee}
+body{background:radial-gradient(ellipse at 85% 0%,#00372e70,transparent 36%),var(--bg)}
+::selection{background:#00e5a449;color:white}
+.nav{position:sticky;top:0;z-index:5;background:#050a0de8;backdrop-filter:blur(18px);border-color:#143038}
+.brand{font-size:23px;letter-spacing:-.04em}.brand span{width:42px;height:48px;border:0;font-size:0;background:url('./aegispr-logo.jpg') 50% 11% / 173px auto no-repeat}
+.nav-cta{border:1px solid #1c5149;border-radius:7px;background:#0a221d;color:#baffeb;transition:background .25s,box-shadow .25s}.nav-cta:hover{background:#103a2d;box-shadow:0 0 25px #00e5a421}
+.hero{position:relative;gap:55px;overflow:hidden;min-height:800px}
+.hero:before{content:'';position:absolute;inset:0;background-image:linear-gradient(#04d4dd09 1px,transparent 1px),linear-gradient(90deg,#04d4dd09 1px,transparent 1px);background-size:54px 54px;mask-image:linear-gradient(black,transparent);pointer-events:none}
+.hero>div{position:relative;animation:brand-enter .9s ease both}.hero>.proof{animation-delay:.1s}
+.kicker{font-size:10px;letter-spacing:.08em;border:1px solid #1a443e;background:#09201a;padding:10px 12px;border-radius:30px;width:fit-content}
+h1{font-size:clamp(60px,6.4vw,90px);line-height:1.02;letter-spacing:-.06em}
+h1 em{background:linear-gradient(105deg,var(--cyan),var(--green));color:transparent;background-clip:text}
+.lede{font-size:17px}.scope,.caption{color:#839b9d}
+.button{border-radius:7px;transition:transform .25s,box-shadow .25s}.button:hover{transform:translateY(-3px);box-shadow:0 12px 35px #00e5a41a}.primary{background:linear-gradient(110deg,var(--cyan),var(--green))}.secondary{border-color:#28534f;background:#0a1b1b}
+.proof{transform:none;border-radius:13px;border-color:#235049;background:#071115;box-shadow:0 22px 70px #0009,0 0 70px #00cba310;overflow:hidden;animation:brand-enter .9s ease both}
+.hero .proof:before{content:'';display:block;height:205px;background:url('./aegispr-logo.jpg') center / contain no-repeat;animation:brand-breathe 7s ease-in-out infinite}
+.proof-body{padding:26px}.proof-body h2{font-size:22px}.window{background:#0e1c20;color:#80b5ae}.proof .metrics div{background:#0c1d22}
+.statement{background:#071014;border-color:#143038;padding-block:75px;position:relative;overflow:hidden}.statement h2{font-size:clamp(34px,4.5vw,60px)}
+.brand-signature{height:110px;overflow:hidden;margin:25px auto 0;width:220px}.brand-signature img{width:220px;height:auto;mix-blend-mode:screen;transform:translateY(-8px)}
+.stage{transition:background .25s,box-shadow .25s}.stage:hover{background:#0c2524}.stage.active{background:#0b2c29;box-shadow:inset 3px 0 var(--cyan)}.stage.active b{color:#b6fff2}
+.stage-detail{background:radial-gradient(circle at 80% 15%,#07372f,transparent 70%);min-width:0}.stage-detail pre{background:#071115;border-color:#20413f}.stage-detail h3{font-size:34px}
+.stage-detail.changing{animation:stage-in .35s ease both}.architecture{background:#071014;border-color:#143038}.planes article{background:linear-gradient(150deg,#102127,#0a1418);border-radius:9px;border-color:#1c343b;transition:transform .3s,border-color .3s}.planes article:hover{transform:translateY(-6px);border-color:#197d72}.planes article.core{background:linear-gradient(150deg,#0d302b,#0a171c);border-color:#197d72}.planes i{border-color:#1d5754;color:var(--cyan);border-radius:8px}.arrow{animation:brand-flow 2.4s ease-in-out infinite}.matrix{border-radius:10px;overflow:hidden;background:#091418}.use{border-color:#235049;border-radius:14px;background:radial-gradient(ellipse at 0% 0%,#07372f,#0a1418 75%)}
+nav a{transition:color .2s}nav a:hover{color:var(--cyan)}footer{border-color:#143038}.skip-link{position:fixed;top:-80px;left:20px;z-index:99;padding:14px;background:var(--green);color:#04100d;border-radius:8px}.skip-link:focus{top:12px}
+.reveal{animation:brand-enter .7s ease both}
+@keyframes brand-enter{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes stage-in{from{opacity:.4;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@keyframes brand-breathe{50%{filter:drop-shadow(0 0 16px #00ddbd35)}}
+@keyframes brand-flow{50%{color:var(--cyan);text-shadow:0 0 12px #09d4ee99}}
+@media(max-width:900px){.hero{padding-top:55px;gap:35px}.hero .proof{max-width:600px;width:100%;justify-self:center}.hero .proof:before{height:230px}.planes article:hover{transform:none}}
+@media(max-width:600px){.hero{padding-top:40px}.kicker{font-size:8px}h1{font-size:57px}.hero .proof:before{height:190px}.metrics{grid-template-columns:repeat(3,1fr)}.proof-body{padding:23px}.section{padding-top:75px;padding-bottom:75px}.stage-detail{padding:25px}.stage-detail h3{font-size:29px}.use .button{max-width:100%;width:auto}.use code{overflow-wrap:anywhere}.brand-signature{height:100px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
