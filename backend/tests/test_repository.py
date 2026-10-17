@@ -98,3 +98,38 @@ def test_repair_patch_does_not_follow_internal_patch_file_symlink(tmp_path: Path
 def test_repair_paths_reject_nested_metadata_and_control_characters(path: str) -> None:
     with pytest.raises(ValueError, match="unsafe path"):
         RepositoryService._validate_relative_path(path)
+
+
+@pytest.mark.parametrize("url", ["file:///etc", "ssh://github.com/acme/store.git", "https://localhost/private.git", "https://github.com/acme/store.git?x=1"])
+def test_clone_rejects_noncanonical_remote_without_starting_git(tmp_path: Path, monkeypatch, url: str) -> None:
+    calls = []
+    monkeypatch.setattr(RepositoryService, "_run", lambda self, args: calls.append(args))
+    with pytest.raises(ValueError, match="clone URL"):
+        RepositoryService().clone(url, tmp_path / "checkout")
+    assert not calls
+
+
+def test_git_child_environment_excludes_application_secrets_and_disables_external_helpers(monkeypatch) -> None:
+    monkeypatch.setenv("NEBIUS_API_KEY", "test-only-secret")
+    monkeypatch.setenv("GIT_CONFIG_COUNT", "1")
+    captured = {}
+
+    def fake_run(args, **kwargs):
+        captured.update(kwargs)
+        captured["args"] = args
+        return subprocess.CompletedProcess(args, 0, "ok", "")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    assert RepositoryService._run(["git", "status"]) == "ok"
+    assert "NEBIUS_API_KEY" not in captured["env"]
+    assert "GIT_CONFIG_COUNT" not in captured["env"]
+    assert captured["env"]["GIT_CONFIG_GLOBAL"] == "/dev/null"
+    assert "protocol.ext.allow=never" in captured["args"]
+
+
+def test_fetch_rejects_revision_option_injection_before_starting_git(tmp_path: Path, monkeypatch) -> None:
+    calls = []
+    monkeypatch.setattr(RepositoryService, "_run", lambda self, args: calls.append(args))
+    with pytest.raises(ValueError, match="commit"):
+        RepositoryService().fetch_commits(tmp_path, "--upload-pack=anything", "b" * 40)
+    assert not calls

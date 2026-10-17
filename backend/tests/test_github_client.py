@@ -36,3 +36,20 @@ async def test_rejects_private_repository_metadata() -> None:
     with pytest.raises(ValueError, match="public repositories"):
         await client.get_pull_request(PullRequestReference("acme", "store", 42))
     await client.close()
+
+
+@pytest.mark.asyncio
+async def test_clone_url_is_derived_from_validated_reference_not_api_payload() -> None:
+    payload = {
+        "html_url": "https://github.com/acme/store/pull/42",
+        "base": {"ref": "main", "sha": "a" * 40, "repo": {"clone_url": "http://127.0.0.1/private.git", "private": False}},
+        "head": {"ref": "head", "sha": "b" * 40},
+    }
+    client = GitHubClient()
+    await client._client.aclose()
+    client._client = httpx.AsyncClient(transport=httpx.MockTransport(lambda request: httpx.Response(200, json=payload)), base_url="https://api.github.com")
+    try:
+        summary = await client.get_pull_request(PullRequestReference("acme", "store", 42))
+        assert summary.clone_url == "https://github.com/acme/store.git"
+    finally:
+        await client.close()

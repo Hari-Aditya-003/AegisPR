@@ -18,6 +18,13 @@ def test_parses_canonical_public_github_pull_request_url() -> None:
         "https://github.com/acme/store/pull/0",
         "file:///etc/passwd",
         "not-a-url",
+        "https://github.com/../store/pull/42",
+        "https://github.com/acme/../pull/42",
+        "https://github.com/acme/store/pull/+42",
+        "https://github.com/acme/store/pull/٤٢",
+        "https://github.com/acme/store/pull/42?redirect=example.com",
+        "https://github.com/acme/store/pull/42#anything",
+        "https://github.com/acme%2fother/store/pull/42",
     ],
 )
 def test_rejects_noncanonical_or_unsafe_urls(url: str) -> None:
