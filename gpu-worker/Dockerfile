@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.8.1-runtime-ubuntu24.04
+FROM nvidia/cuda:12.8.1-devel-ubuntu24.04
 ENV DEBIAN_FRONTEND=noninteractive PYTHONUNBUFFERED=1 CUPY_CACHE_DIR=/tmp/cupy-cache
 RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-pip ca-certificates && rm -rf /var/lib/apt/lists/*
 RUN useradd --system --uid 10001 --create-home aegis
