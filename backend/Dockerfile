@@ -3,7 +3,12 @@ WORKDIR /build
 COPY requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
+FROM docker:28.5.1-cli AS docker-cli
+
 FROM python:3.12-slim AS runner
+RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=docker-cli /usr/local/bin/docker /usr/local/bin/docker
 RUN useradd --system --uid 10001 --create-home aegis
 WORKDIR /app
 COPY --from=builder /install /usr/local
