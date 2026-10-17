@@ -35,6 +35,7 @@ export function VerificationForm({ onSubmit }: VerificationFormProps) {
   return (
     <section className="verify-panel" aria-labelledby="verify-title">
       <p className="eyebrow">Autonomous evidence-backed PR verification</p>
+      <div className="hero-intro"><span className="intro-line" />The next checkpoint for your code.</div>
       <h1 id="verify-title">Don&apos;t trust a PR. <span>Prove it.</span></h1>
       <p className="hero-copy">
         AegisPR turns Nemotron&apos;s risk hypotheses into executable tests, runs them against both commits,
@@ -60,6 +61,7 @@ export function VerificationForm({ onSubmit }: VerificationFormProps) {
         <p className="field-hint" id="pr-hint">Public repositories are supported in the hackathon MVP.</p>
         {error && <p className="field-error" id="pr-error" role="alert">{error}</p>}
       </form>
+      <div className="hero-assurances"><span><i aria-hidden="true">✓</i> Exact commit comparison</span><span><i aria-hidden="true">✓</i> Isolated execution</span><span><i aria-hidden="true">✓</i> Evidence you can inspect</span></div>
     </section>
   );
 }

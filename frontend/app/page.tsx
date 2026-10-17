@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 
 import { VerificationForm } from "@/components/verification-form";
+import { VerificationPreview } from "@/components/verification-preview";
 import { createVerification } from "@/lib/api";
 
 
@@ -28,15 +29,7 @@ export default function HomePage() {
       <section className="hero">
         <div className="hero-glow" aria-hidden="true" />
         <VerificationForm onSubmit={startVerification} />
-        <aside className="terminal-card" aria-label="Example differential verification result">
-          <div className="terminal-bar"><span /><span /><span /><b>AEG-08 · differential run</b></div>
-          <div className="terminal-body">
-            <p><em>HYPOTHESIS</em> Discount may exceed cart value</p>
-            <div className="branch-result"><span>BASE</span><strong className="pass">PASS</strong><code>total = 0</code></div>
-            <div className="branch-result"><span>PR</span><strong className="fail">FAIL</strong><code>total = -50</code></div>
-            <div className="verdict"><span>REGRESSION VERIFIED</span><small>Failure isolated to pull request</small></div>
-          </div>
-        </aside>
+        <VerificationPreview />
       </section>
 
       <section className="trust-strip" aria-label="Core technologies">
@@ -62,7 +55,7 @@ export default function HomePage() {
       <section className="section muted" id="features">
         <div className="section-heading"><p className="eyebrow">Product capabilities</p><h2>Everything a reviewer needs to verify the claim.</h2></div>
         <div className="feature-grid">
-          {features.map(([title, description]) => <article key={title}><span className="feature-icon">◆</span><h3>{title}</h3><p>{description}</p></article>)}
+          {features.map(([title, description], index) => <article key={title}><div className="feature-top"><span className="feature-icon">{["⌘", "◇", "⇄", "▤", "↗", "⌁"][index]}</span><span className="feature-number">0{index + 1}</span></div><h3>{title}</h3><p>{description}</p></article>)}
         </div>
       </section>
 
