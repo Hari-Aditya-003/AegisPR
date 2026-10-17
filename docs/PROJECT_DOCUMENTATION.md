@@ -676,7 +676,7 @@ CPU fallback tests do not require CUDA:
 PYTHONPATH=gpu-worker backend/.venv/bin/pytest -q gpu-worker/tests
 ```
 
-The production worker image uses CUDA 12.8 and `cupy-cuda12x`.
+The production worker image uses the CUDA 12.8.1 development image and `cupy-cuda12x`. CuPy JIT compilation needs the CUDA headers, and its compiled-kernel cache is directed to the writable `/tmp` tmpfs so the container root filesystem can remain read-only.
 
 ## 18. Dell GPU deployment
 
@@ -783,7 +783,7 @@ GPU tests cover:
 
 ### 19.2 Latest verified evidence
 
-The implementation milestone was locally verified with 67 passing automated tests across backend, frontend, GPU worker, demo repository, and Playwright. Frontend type checking and production build passed; npm reported zero vulnerabilities at the configured threshold; Python bytecode compilation, shell syntax, Compose configuration, and Git whitespace checks passed. The latest GitHub Actions workflow on the documentation release commit also completed successfully.
+The implementation milestone was locally verified with 69 passing automated tests across backend, frontend, GPU worker, demo repository, and Playwright. Frontend type checking and production build passed; npm reported zero vulnerabilities at the configured threshold; Python bytecode compilation, shell syntax, Compose configuration, and Git whitespace checks passed. The latest GitHub Actions workflow on the documentation release commit also completed successfully.
 
 ## 20. CI/CD
 
@@ -863,7 +863,7 @@ Use [hackathon-submission.md](hackathon-submission.md) for the exact voice-over,
 
 ## 23. Current project status
 
-As of October 15, 2026:
+As of October 17, 2026:
 
 - core product workflow is implemented;
 - optional repair and repair verification are implemented;
@@ -871,12 +871,14 @@ As of October 15, 2026:
 - README, architecture, security, user journeys, verification semantics, runbook, contribution guide, and submission kit are present;
 - the project website is deployed as version 2 and remains owner-private;
 - GitHub Actions is green on `main`;
-- the latest complete local matrix passed 67 tests;
+- the latest complete local matrix passed 69 tests;
 - the five-hour continuation heartbeat remains enabled;
-- live Dell deployment is pending because the configured Tailscale hostname is not currently resolvable from the development machine;
-- live Nebius/CUDA evidence, public application URL, public website sharing, and YouTube upload remain final operator actions.
+- the Dell Tailscale connection, NVIDIA container runtime, and real CuPy CUDA ranking workload are verified on the RTX 3050 Ti;
+- the remote source, production images, worker token, Docker socket group, and GPU worker are prepared;
+- live Nebius inference and the complete backend/frontend stack still require the owner to place a real `NEBIUS_API_KEY` in `/home/hari/aegispr/.env`;
+- the public application URL, public website sharing, and YouTube upload remain final operator actions.
 
-No documentation or UI should claim a successful live CUDA run until worker health reports `accelerator: cuda` from the intended Dell deployment.
+The captured worker health and authenticated ranking evidence report `accelerator: cuda`; see [live-gpu-evidence.md](live-gpu-evidence.md). No documentation or UI should claim a successful live Nemotron run until the configured model is confirmed and an inference completes with the owner's Nebius credential.
 
 ## 24. Limitations and roadmap
 
@@ -895,16 +897,15 @@ No documentation or UI should claim a successful live CUDA run until worker heal
 
 ### Recommended next steps
 
-1. Restore Dell Tailscale reachability and run the GPU smoke test.
-2. Configure the Nebius key on the server and confirm model availability.
-3. Complete a real public-PR end-to-end run and capture evidence.
-4. Publish the live application behind HTTPS with authentication or bounded hackathon access.
-5. Enable public project-website access when the owner is ready.
-6. Record and publish the three-minute demonstration.
-7. Add stable-result repetition for flaky-test resistance.
-8. Replace the Docker socket with an isolated executor service.
-9. Add a queue and managed database for concurrent production runs.
-10. Build a GitHub App and check-run integration.
+1. Configure the Nebius key on the server and confirm model availability.
+2. Complete a real public-PR end-to-end run and capture evidence.
+3. Publish the live application behind HTTPS with authentication or bounded hackathon access.
+4. Enable public project-website access when the owner is ready.
+5. Record and publish the three-minute demonstration.
+6. Add stable-result repetition for flaky-test resistance.
+7. Replace the Docker socket with an isolated executor service.
+8. Add a queue and managed database for concurrent production runs.
+9. Build a GitHub App and check-run integration.
 
 ## 25. Related documentation
 
@@ -915,6 +916,7 @@ No documentation or UI should claim a successful live CUDA run until worker heal
 - [Verification semantics](verification.md)
 - [User journeys](user-journeys.md)
 - [Hackathon submission kit](hackathon-submission.md)
+- [Live Dell GPU evidence](live-gpu-evidence.md)
 - [Contributor guide](CONTRIBUTING.md)
 - [Operations runbook](RUNBOOK.md)
 - [Original extracted project specification](../work/AegisPR-spec.md)

@@ -101,13 +101,13 @@ The OpenAI-compatible Token Factory interface made it straightforward to place N
 
 ## Recording checklist
 
-- [ ] Dell host is reachable over Tailscale.
-- [ ] `nvidia-smi` succeeds on the host.
-- [ ] NVIDIA Container Toolkit exposes the GPU inside `gpu-worker`.
+- [x] Dell host is reachable over Tailscale.
+- [x] `nvidia-smi` succeeds on the host.
+- [x] NVIDIA Container Toolkit exposes the GPU inside `gpu-worker`.
 - [ ] Nebius API key is present only in the server-side `.env`.
 - [ ] `/v1/models` confirms the configured Nemotron model is available.
 - [ ] Health endpoint reports Nebius configured and the GPU worker reachable.
-- [ ] GPU smoke test records `used_gpu: true` and device metadata.
+- [x] GPU worker health and authenticated ranking record `accelerator: cuda` and RTX 3050 Ti device metadata.
 - [ ] A real public PR completes base and PR execution.
 - [ ] The proof card shows exact commits, commands, logs, exit codes, and durations.
 - [ ] Repair verification reaches `FIX_VERIFIED` with all required checks passing.
@@ -127,5 +127,6 @@ The OpenAI-compatible Token Factory interface made it straightforward to place N
 - [ ] Public working demo application URL
 - [ ] Public project website audience enabled by the owner
 - [ ] Public YouTube demonstration, three minutes or shorter
-- [ ] Live Dell/Nebius evidence captured after credentials and host access are available
+- [x] Live Dell CUDA application-workload evidence captured
+- [ ] Live Nebius evidence captured after the owner supplies the server credential
 
