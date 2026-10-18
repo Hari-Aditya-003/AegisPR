@@ -1,7 +1,9 @@
 import subprocess
 import sys
+import runpy
 from pathlib import Path
 from pathlib import PurePosixPath
+from types import SimpleNamespace
 
 import pytest
 
@@ -294,3 +296,34 @@ def test_process_timeout_retains_bounded_partial_output() -> None:
     with pytest.raises(subprocess.TimeoutExpired) as error:
         DockerSandbox._run_bounded([sys.executable, "-c", "import time; print('partial',flush=True); time.sleep(10)"], timeout=1)
     assert b"partial" in error.value.stdout
+
+
+@pytest.mark.parametrize("base_image", ["node:22-bookworm-slim", "python:3.12-slim"])
+def test_trusted_node_installer_is_pinned_before_repository_is_loaded(
+    tmp_path: Path, monkeypatch, base_image: str,
+) -> None:
+    instructions = []
+
+    def fake_build(args, **kwargs):
+        instructions.append(Path(args[args.index("--file") + 1]).read_text())
+        return subprocess.CompletedProcess(args, 0, "", "")
+
+    monkeypatch.setattr(DockerSandbox, "_run_bounded", staticmethod(fake_build))
+    DockerSandbox(5, "128m", 1)._build_image(tmp_path, base_image, "npm ci --ignore-scripts", "test-image")
+    dockerfile = instructions[0]
+    pin = "RUN npm install --global --ignore-scripts npm@12.2.0"
+    if base_image.startswith("node:"):
+        assert pin in dockerfile
+        assert dockerfile.index(pin) < dockerfile.index("COPY --chown")
+        assert dockerfile.index(pin) < dockerfile.index("USER 10001")
+    else:
+        assert pin not in dockerfile
+
+
+def test_acceptance_failure_preserves_install_error_from_build_stdout(tmp_path: Path, monkeypatch) -> None:
+    acceptance = runpy.run_path(str(Path(__file__).resolve().parents[2] / "scripts/sandbox-acceptance.py"))
+    monkeypatch.setattr(DockerSandbox, "execute", lambda *args: SimpleNamespace(
+        status=SimpleNamespace(value="ERROR"), stdout="npm error: edgesOut", stderr="docker build failed",
+    ))
+    with pytest.raises(RuntimeError, match="edgesOut"):
+        acceptance["check"]("node", tmp_path)
