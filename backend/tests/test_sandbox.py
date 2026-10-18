@@ -160,6 +160,7 @@ def test_timed_out_runtime_force_removes_named_container(tmp_path: Path, monkeyp
     result = DockerSandbox(5, "128m", 1)._run_image("test-image", "pytest -q", "a" * 40)
 
     assert result.status.value == "TIMEOUT"
+    assert result.environment["command"] == "pytest -q"
     run_command = next(args for args in calls if args[:2] == ["docker", "run"])
     name = run_command[run_command.index("--name") + 1]
     assert ["docker", "container", "rm", "--force", name] in calls
@@ -268,7 +269,8 @@ def test_runtime_uses_bounded_ephemeral_workspace_for_build_outputs(monkeypatch)
     DockerSandbox(5, "128m", 1)._run_image("image", "npm run build", "a" * 40)
     command = calls[0]
     assert "--read-only" in command
-    assert "--tmpfs=/run/aegis:rw,nosuid,nodev,size=512m,uid=10001,gid=10001" in command
+    assert "--tmpfs=/run/aegis:rw,exec,nosuid,nodev,size=512m,uid=10001,gid=10001" in command
+    assert "--tmpfs=/tmp:rw,noexec,nosuid,size=256m" in command
     assert not any(argument.startswith("--volume") or argument == "-v" for argument in command)
     assert "--network=none" in command
 
@@ -277,12 +279,22 @@ def test_generated_paths_cannot_be_interpreted_as_runner_options() -> None:
     assert not DockerSandbox._is_safe_test_path(PurePosixPath("--config=tests/evil.test.js"))
 
 
-def test_runtime_setup_failure_is_not_reported_as_a_test_failure(monkeypatch) -> None:
+@pytest.mark.parametrize("exit_code", [125, 126, 127])
+def test_runtime_setup_failure_is_not_reported_as_a_test_failure(monkeypatch, exit_code: int) -> None:
     calls = []
-    mock_processes(monkeypatch, lambda args, **kwargs: (calls.append(args) or subprocess.CompletedProcess(args, 125, "", "workspace unavailable")))
+    mock_processes(monkeypatch, lambda args, **kwargs: (calls.append(args) or subprocess.CompletedProcess(args, exit_code, "", "workspace unavailable")))
     result = DockerSandbox(5, "128m", 1)._run_image("image", "npm run build", "a" * 40)
     assert result.status.value == "ERROR"
     assert "|| exit 125" in calls[0][-1]
+
+
+@pytest.mark.parametrize("generated_command", [None, "python -m pytest -q -- tests/test_generated.py"])
+def test_runtime_records_actual_command_in_execution_evidence(monkeypatch, generated_command) -> None:
+    mock_processes(monkeypatch, lambda args, **kwargs: subprocess.CompletedProcess(args, 0, "passed", ""))
+    execution = DockerSandbox(5, "128m", 1)._run_image(
+        "image", "pytest -q", "a" * 40, generated_command=generated_command,
+    )
+    assert execution.environment["command"] == (generated_command or "pytest -q")
 
 
 def test_process_output_has_a_hard_combined_limit_and_retains_only_a_tail() -> None:
