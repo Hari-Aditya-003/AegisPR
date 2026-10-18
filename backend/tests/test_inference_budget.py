@@ -72,3 +72,9 @@ def test_unpriced_model_fails_closed_and_cache_hit_is_not_a_paid_call(tmp_path):
     assert budget.summary("run1")["cache_hits"] == 1
     assert budget.summary("run1")["calls"] == 0
     assert budget.summary("run1")["accounted_cost_usd"] == 0
+
+
+@pytest.mark.parametrize("invalid", ["-0.0000001", "NaN", "Infinity", "not-money"])
+def test_invalid_budget_values_fail_closed(tmp_path, invalid):
+    with pytest.raises(ValueError):
+        ledger(tmp_path, limit_usd=invalid)

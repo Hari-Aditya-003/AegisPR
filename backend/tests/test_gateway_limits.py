@@ -80,3 +80,23 @@ async def test_truncated_response_is_not_accepted_or_retried(tmp_path):
         await gateway.create_plan("diff", RepositoryProfile(), [])
     assert create.await_count == 1
     assert budget.summary()["accounted_cost_usd"] > 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mutation", ["unsafe_id", "orphan", "duplicate", "too_many"])
+async def test_generated_plan_references_and_scope_are_validated(tmp_path, mutation):
+    gateway, create, _ = setup_gateway(tmp_path)
+    data = response()
+    payload = json.loads(data.choices[0].message.content)
+    if mutation == "unsafe_id":
+        payload["tests"][0]["id"] = "../../outside"
+    elif mutation == "orphan":
+        payload["tests"][0]["hypothesis_id"] = "missing"
+    elif mutation == "duplicate":
+        payload["tests"].append(payload["tests"][0])
+    else:
+        payload["hypotheses"] *= 3
+    data.choices[0].message.content = json.dumps(payload)
+    create.return_value = data
+    with pytest.raises(ValueError):
+        await gateway.create_plan("diff", RepositoryProfile(), [])

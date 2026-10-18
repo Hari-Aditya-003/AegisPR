@@ -89,6 +89,27 @@ async def test_execution_workflow_classifies_regression(tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
+async def test_optional_explanation_failure_preserves_reproduced_regression(tmp_path):
+    settings = Settings(data_path=tmp_path / "runs.sqlite3", workspace_root=tmp_path / "work")
+    orchestrator = Orchestrator(settings, VerificationStore(settings.data_path))
+    run = orchestrator.create(CreateVerificationRequest(pull_request_url="https://github.com/acme/store/pull/42"))
+    run.summary = summary()
+    run.repository_profile = RepositoryProfile(languages=["Python"], test_command="pytest -q")
+    run.hypotheses = [Hypothesis(id="H1", description="Risk", test_strategy="Boundary")]
+    run.generated_tests = [GeneratedTest(id="T1", hypothesis_id="H1", file_path="tests/test_x.py", framework="pytest", test_code="def test_x(): assert True")]
+    orchestrator.repository = MagicMock()
+    orchestrator.sandbox = MagicMock()
+    orchestrator.sandbox.execute.side_effect = [execution("base", ExecutionStatus.PASSED), execution("head", ExecutionStatus.FAILED)]
+    from app.services.nebius import InferenceUnavailable
+    orchestrator.nebius.analyze_root_cause = AsyncMock(side_effect=InferenceUnavailable("Nebius credits are unavailable"))
+    await orchestrator._execute_plan(run, tmp_path / "repo", tmp_path / "work")
+    assert run.status == VerificationStatus.REGRESSION_FOUND
+    assert len(run.findings) == 1
+    assert run.findings[0].root_cause is None
+    assert run.findings[0].explanation_error == "Nebius credits are unavailable"
+
+
+@pytest.mark.asyncio
 async def test_execution_without_generated_test_code_is_analysis_only(tmp_path: Path) -> None:
     settings = Settings(data_path=tmp_path / "runs.sqlite3", workspace_root=tmp_path / "work")
     store = VerificationStore(settings.data_path)
