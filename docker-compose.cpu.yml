@@ -1,0 +1,5 @@
+# Explicit degraded-mode override; never describe this as CUDA execution.
+# docker compose -f docker-compose.yml -f docker-compose.cpu.yml up -d
+services:
+  gpu-worker:
+    gpus: !reset []

@@ -68,6 +68,7 @@ async def inference_budget():
 @app.get("/health")
 async def health() -> dict:
     gpu_status = "not_configured"
+    gpu_accelerator = "not_configured"
     if settings.gpu_worker_url:
         headers = (
             {"Authorization": f"Bearer {settings.gpu_worker_token}"}
@@ -80,15 +81,18 @@ async def health() -> dict:
                     f"{settings.gpu_worker_url.rstrip('/')}/health", headers=headers
                 )
                 gpu_status = "ok" if response.is_success else "error"
+                if response.is_success:
+                    gpu_accelerator = response.json().get("accelerator", "unknown")
         except httpx.HTTPError:
             gpu_status = "error"
     checks = {
         "nebius": "configured" if settings.nebius_api_key else "not_configured",
         "gpu_worker": gpu_status,
+        "gpu_accelerator": gpu_accelerator,
         "sandbox": "enabled" if settings.enable_sandbox else "disabled",
     }
     degraded = checks["nebius"] != "configured" or (
-        settings.gpu_worker_url is not None and gpu_status != "ok"
+        settings.gpu_worker_url is not None and (gpu_status != "ok" or gpu_accelerator != "cuda")
     )
     return {"status": "degraded" if degraded else "ok", "checks": checks}
 
