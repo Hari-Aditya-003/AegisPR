@@ -158,3 +158,52 @@ def test_timed_out_runtime_force_removes_named_container(tmp_path: Path, monkeyp
 
 def test_runtime_rejects_install_command_injection() -> None:
     assert DockerSandbox._runtime(RepositoryProfile(languages=["Python"], install_command="pip install .\nRUN unsafe")) == (None, None)
+
+
+@pytest.mark.parametrize("build_number", [1, 2])
+def test_repair_build_timeout_is_recorded_and_all_images_are_cleaned(
+    tmp_path: Path, monkeypatch, build_number: int,
+) -> None:
+    calls: list[list[str]] = []
+    builds = 0
+
+    def fake_run(args, **kwargs):
+        nonlocal builds
+        calls.append(args)
+        if args[:2] == ["docker", "build"]:
+            builds += 1
+            if builds == build_number:
+                raise subprocess.TimeoutExpired(args, 5, output=b"build output")
+        return subprocess.CompletedProcess(args, 0, "passed", "")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    profile = RepositoryProfile(languages=["Python"], install_command="pip install .", test_command="pytest -q")
+    checks = DockerSandbox(5, "128m", 1).verify_repair(
+        tmp_path, "a" * 40, profile, generated("tests/test_timeout.py"),
+    )
+
+    timeout = next(check.execution for check in checks if check.execution.status.value == "TIMEOUT")
+    assert timeout.stdout == "build output"
+    assert timeout.environment["phase"] == "build"
+    if build_number == 2:
+        assert checks[0].execution.status.value == "PASSED"
+    built_tags = [args[args.index("--tag") + 1] for args in calls if args[:2] == ["docker", "build"]]
+    assert all(["docker", "image", "rm", "--force", tag] in calls for tag in built_tags)
+
+
+def test_repair_unexpected_baseline_failure_still_cleans_image(tmp_path: Path, monkeypatch) -> None:
+    calls: list[list[str]] = []
+
+    def fake_run(args, **kwargs):
+        calls.append(args)
+        if args[:2] == ["docker", "run"]:
+            raise OSError("Docker daemon unavailable")
+        return subprocess.CompletedProcess(args, 0, "", "")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    profile = RepositoryProfile(languages=["Python"], install_command="pip install .", test_command="pytest -q")
+    with pytest.raises(OSError):
+        DockerSandbox(5, "128m", 1).verify_repair(tmp_path, "a" * 40, profile, generated("tests/test_failure.py"))
+
+    build = next(args for args in calls if args[:2] == ["docker", "build"])
+    assert ["docker", "image", "rm", "--force", build[build.index("--tag") + 1]] in calls
