@@ -8,10 +8,17 @@ Repository code, pull request text, generated tests, and model output are untrus
 - The clone host is derived from the validated owner and repository.
 - Secrets remain server-side environment variables and are never copied into sandboxes or prompts.
 - Generated paths reject absolute paths and traversal.
+- Descriptor-relative, no-follow writes reject symlinked parents and refuse to overwrite existing generated-test files. Trusted Dockerfiles and repair patches live outside repository-controlled paths.
+- Git subprocesses have a small environment allowlist, no inherited application credentials/global config, HTTPS-only transport, disabled hooks and no recursive submodules. Full commit SHAs and canonical remotes are required.
+- Repairs cannot rename, copy, change file modes, modify Git metadata, or expand scope through model-provided affected-file suggestions.
 - Test commands must match a narrow allowlist derived from detected project commands.
 - Runtime sandboxes use no network, no added capabilities, no new privileges, resource limits, process limits, and a read-only root filesystem.
+- A bounded 512 MiB ephemeral tmpfs worktree allows build output without writable host mounts; setup/capacity errors are executor errors, not test failures. Unsupported or ignored generated targets are skipped/inconclusive. `.dockerignore` projects are currently unsupported for generated verification.
+- Generated checks directly target pytest/Jest/Vitest instead of trusting arbitrary npm scripts to collect the generated test. Unknown runners are skipped.
+- Docker build/run CLI output is drained with a 1 MiB combined limit and a retained tail; timeouts clean up named runtime containers and attempted images. Resource cleanup failures are logged.
 - API responses do not return provider credentials or internal stack traces.
-- The public create endpoint is rate-limited.
+- Production `/api/*` requires a separate constant-time-compared private deployment token and fails closed if it is missing. Create and repair routes are rate-limited. Browser storage contains only a tab-session access code, never the provider key.
+- Inference admission has a durable estimate/call ledger, bounded context/output, exact caching and zero automatic SDK retries. This is not a provider billing guarantee; see [credit controls](model-budget.md).
 - Frontend and backend set defensive browser headers and exact CORS origins.
 - CI scans dependencies and rejects obvious committed secret assignments.
 
@@ -22,3 +29,7 @@ The deployed orchestrator talks to the host Docker daemon to create nested execu
 ## Network policy
 
 Dependency installation happens during image build and therefore has outbound access. Actual test execution uses `--network=none`. Production deployments should add an allowlisted package mirror and image-signature verification.
+
+## Remaining boundaries
+
+This MVP is a private, trusted-operator deployment, not a hardened public arbitrary-code service. Docker socket access remains host-level privilege; build-time dependencies can execute untrusted code (npm lifecycle scripts are disabled, but Python package builds can execute). Runtime resource limits do not enforce build daemon quotas, repository disk quotas, or Git output bounds. Malicious repository configuration/test plugins may manipulate their own test runner and therefore the meaning of an exit code. The current one-run-per-branch evidence does not prove flakiness resistance. Before a public multi-user executor, use a remote ephemeral executor, bounded Git/repository admission, build/disk quotas, a job queue/concurrency limits, and a trusted collection harness. No audit proves the absence of all vulnerabilities.

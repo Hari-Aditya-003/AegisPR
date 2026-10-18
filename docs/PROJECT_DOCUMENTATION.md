@@ -170,7 +170,7 @@ The backend builds a distinct container image for each generated test and commit
 6. A bounded diff and changed-file list are produced.
 7. Candidate source documents are collected and ranked on the Dell CUDA worker when available.
 8. A reference-based impact graph connects changed files to potentially affected files.
-9. Nemotron returns strict JSON containing up to three hypotheses and one generated test per hypothesis.
+9. Nemotron returns strict JSON containing up to two hypotheses and one generated test per hypothesis; duplicate, unsafe, orphaned, or oversized plans are rejected.
 10. AegisPR validates each generated path and command against repository-derived policy.
 11. The generated test is written into a detached base checkout and executed in Docker.
 12. The identical generated test is written into a detached head checkout and executed in Docker.
@@ -314,14 +314,14 @@ https://api.tokenfactory.nebius.com/v1/
 The default model is:
 
 ```text
-nvidia/Nemotron-3-Ultra-550b-a55b
+nvidia/Nemotron-3_5-Lightning
 ```
 
-The configured model must be confirmed against `/v1/models` before a live demonstration.
+The configured model must be confirmed against `/v1/models` before a live demonstration. Lightning is a lower-cost evaluation candidate, not a measured quality winner. Ultra is an explicit alternative, not an automatic escalation. No successful live inference or measured model comparison is claimed while credits return HTTP 402.
 
 ### 10.1 Model calls
 
-- **Verification planning:** repository profile, bounded PR diff, optional focus, and up to 20 ranked context documents produce strict JSON hypotheses and tests.
+- **Verification planning:** repository profile, bounded PR diff, optional focus, and excerpts from at most eight ranked context documents produce strict JSON hypotheses and tests.
 - **Root-cause analysis:** bounded logs and finding evidence produce one uncertainty-aware root-cause string.
 - **Repair generation:** regression evidence, bounded source, PR diff, and optional instructions produce a minimal unified diff and summary.
 
@@ -332,6 +332,10 @@ Every model prompt states that repository content, diffs, evidence, and user-pro
 ### 10.3 Missing credentials
 
 Without a Nebius key, planning returns an explicit heuristic hypothesis with no executable generated test. The run therefore remains analysis-only instead of presenting heuristic output as verified model evidence. Repair generation is unavailable without credentials.
+
+### 10.4 Credit protection
+
+Persistent atomic admission estimates default to $20 total, $0.25 per verification including repairs, and five provider attempts per verification. Requests have bounded UTF-8 input, stage-specific output limits, no SDK automatic retries, and exact-response caching. Provider usage and conservative uncertain reservations are recorded in `inference-budget.sqlite3`. An optional explanation error does not erase independently executed regression evidence. These controls are app-side estimates, not provider balance or a guaranteed billing cap. See [model and credit policy](model-budget.md).
 
 ## 11. Repository intelligence and supported projects
 
@@ -599,7 +603,11 @@ The project website and deterministic browser test build are published on GitHub
 | --- | --- | --- | --- |
 | `NEBIUS_API_KEY` | Production | none | Server-side Token Factory credential. |
 | `NEBIUS_BASE_URL` | No | `https://api.tokenfactory.nebius.com/v1/` | OpenAI-compatible API base URL. |
-| `NEBIUS_MODEL` | No | `nvidia/Nemotron-3-Ultra-550b-a55b` | Exact case-sensitive model ID used for planning, root cause, and repair. |
+| `NEBIUS_MODEL` | No | `nvidia/Nemotron-3_5-Lightning` | Economical candidate pending a measured quality comparison. |
+| `API_ACCESS_TOKEN` | Production | unique random secret, at least 16 characters | Private deployment code; required Bearer authentication on all `/api/*` routes. |
+| `INFERENCE_BUDGET_USD` | No | `20` | Persistent total app-side admission estimate in USD. |
+| `INFERENCE_RUN_BUDGET_USD` | No | `0.25` | Per-verification estimate including repairs. |
+| `INFERENCE_MAX_CALLS_PER_RUN` | No | `5` | Provider-attempt cap including rejected attempts. |
 | `BACKEND_PORT` | No | `8000`; current Dell uses `8080` | Host-published Compose backend port; update `PUBLIC_API_URL` and rebuild the frontend when changed. |
 | `GITHUB_TOKEN` | No | empty | Raises GitHub public API rate limits. |
 | `GPU_WORKER_TOKEN` | Production | random secret | Internal bearer token shared by backend and worker. |
@@ -737,6 +745,7 @@ The worker health response must show `"accelerator": "cuda"` before presenting t
 | `make test-e2e` | Run the Playwright browser suite. |
 | `make test-gpu` | Run GPU-worker API and ranking tests with CPU fallback. |
 | `make test-demo` | Run the seeded demo repository tests. |
+| `make test-website` | Run deterministic public fixture and website interaction contract tests. |
 | `make build` | Build the Compose images. |
 | `make up` | Start the Compose services. |
 | `make down` | Stop the Compose services. |
@@ -784,7 +793,7 @@ GPU tests cover:
 
 ### 19.2 Latest verified evidence
 
-The implementation milestone was locally verified with 69 passing automated tests across backend, frontend, GPU worker, demo repository, and Playwright. Frontend type checking and production build passed; npm reported zero vulnerabilities at the configured threshold; Python bytecode compilation, shell syntax, Compose configuration, and Git whitespace checks passed. The latest GitHub Actions workflow on the documentation release commit also completed successfully.
+The October 18 hardening pass locally verified 113 backend tests (89.49% line coverage), 26 frontend tests (95.42% statement coverage), seven Chromium E2E tests, eight website tests, six GPU-worker CPU-fallback tests, and one seeded repository test. Type checking, production build, npm audit, Python compilation, shell syntax, and Git whitespace checks passed. A fresh Python 3.12 resolved backend environment reported no known vulnerabilities with pip-audit after dependency updates; this does not certify every image, OS package, or attack surface. See [hardening evidence](hardening-evidence.md) for release checks, live observations, and remaining gates rather than assuming an older CI result applies to new commits.
 
 ## 20. CI/CD
 
@@ -916,6 +925,9 @@ The captured worker health and authenticated ranking evidence report `accelerato
 - [Architecture](architecture.md)
 - [Agent stages](agents.md)
 - [Security model](security.md)
+- [Model and credit policy](model-budget.md)
+- [Submission readiness audit](submission-readiness.md)
+- [Hardening evidence](hardening-evidence.md)
 - [Verification semantics](verification.md)
 - [User journeys](user-journeys.md)
 - [Hackathon submission kit](hackathon-submission.md)
