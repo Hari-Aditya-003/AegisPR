@@ -61,6 +61,13 @@ class RepositoryService:
             raise ValueError("Repair patch was rejected by the safety policy")
         paths: list[str] = []
         for line in patch.splitlines():
+            if line.startswith((
+                "rename from ", "rename to ", "copy from ", "copy to ",
+                "old mode ", "new mode ", "new file mode ", "deleted file mode ",
+            )):
+                # Git honors these paths/modes independently of diff headers.
+                # The MVP supports textual repairs only, not filesystem metadata.
+                raise ValueError("Repair patch contains unsupported filesystem metadata")
             if line.startswith("diff --git "):
                 parts = line.split()
                 if len(parts) != 4 or not parts[2].startswith("a/") or not parts[3].startswith("b/"):
