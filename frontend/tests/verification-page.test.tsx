@@ -32,6 +32,22 @@ const completedRun = {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("VerificationPage", () => {
+  it("keeps execution proof when explanation is unavailable and labels cost as an app estimate", async () => {
+    const run = {
+      ...completedRun,
+      findings: [{ ...completedRun.findings[0], root_cause: null, explanation_error: "Explanation unavailable: inference spending cap reached." }],
+      metrics: { ...completedRun.metrics, input_tokens: 450, output_tokens: 180, accounted_cost_usd: 0.0042, cache_hits: 1 },
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(run), { status: 200 })));
+    render(<VerificationPage />);
+    await screen.findByRole("heading", { name: "Coupon support" });
+    expect(screen.getByText("Explanation unavailable: inference spending cap reached.")).toBeInTheDocument();
+    expect(screen.getByText("App cost estimate")).toBeInTheDocument();
+    expect(screen.getByText("$0.0042")).toBeInTheDocument();
+    expect(screen.getByText("450 / 180")).toBeInTheDocument();
+    expect(screen.getByText(/not the provider balance/i)).toBeInTheDocument();
+    expect(screen.getByText("Inspect branch execution evidence")).toBeInTheDocument();
+  });
   it("renders a completed evidence report", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(completedRun), { status: 200 })));
     render(<VerificationPage />);
