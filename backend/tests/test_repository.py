@@ -94,6 +94,42 @@ def test_repair_patch_does_not_follow_internal_patch_file_symlink(tmp_path: Path
     assert (repo / ".aegispr-repair.patch").is_symlink()
 
 
+@pytest.mark.parametrize("operation", ["rename", "copy"])
+def test_repair_rejects_extended_headers_that_hide_an_unapproved_target(
+    tmp_path: Path, operation: str,
+) -> None:
+    repo, _, _ = create_repository(tmp_path)
+    patch = (
+        "diff --git a/coupon.ts b/coupon.ts\n"
+        "similarity index 100%\n"
+        f"{operation} from coupon.ts\n"
+        f"{operation} to unapproved.ts\n"
+    )
+
+    with pytest.raises(ValueError, match="metadata"):
+        RepositoryService().apply_patch(repo, patch, {"coupon.ts"})
+
+    assert (repo / "coupon.ts").read_text() == "export const total = -50\n"
+    assert not (repo / "unapproved.ts").exists()
+
+
+@pytest.mark.parametrize("header", [
+    "old mode 100644", "new mode 100755", "new file mode 100755",
+    "deleted file mode 100644",
+])
+def test_repair_rejects_mode_metadata_before_starting_git(
+    tmp_path: Path, monkeypatch, header: str,
+) -> None:
+    calls = []
+    monkeypatch.setattr(RepositoryService, "_run", lambda self, args: calls.append(args))
+    patch = f"diff --git a/coupon.ts b/coupon.ts\n{header}\n"
+
+    with pytest.raises(ValueError, match="metadata"):
+        RepositoryService().apply_patch(tmp_path, patch, {"coupon.ts"})
+
+    assert not calls
+
+
 @pytest.mark.parametrize("path", ["tests/.git/config", "a/.aegispr/token", "./.git/config", "test\x00.py", "test\n.py"])
 def test_repair_paths_reject_nested_metadata_and_control_characters(path: str) -> None:
     with pytest.raises(ValueError, match="unsafe path"):
