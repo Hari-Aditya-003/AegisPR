@@ -89,7 +89,7 @@ export default function VerificationPage() {
                 <details className="execution-details"><summary>Inspect branch execution evidence</summary><div className="execution-grid">{[finding.base_execution, finding.head_execution].map(execution => <section key={execution.branch}>
                   <h4>{execution.branch === "base" ? "Base revision" : "Pull request revision"}</h4>
                   <dl><div><dt>Commit</dt><dd>{execution.commit || "Not recorded"}</dd></div><div><dt>Duration</dt><dd>{execution.duration_ms} ms</dd></div><div><dt>Exit code</dt><dd>{execution.exit_code ?? "Not recorded"}</dd></div></dl>
-                  <p>Standard output</p><pre>{execution.stdout || "No standard output captured."}</pre><p>Standard error</p><pre>{execution.stderr || "No standard error captured."}</pre>
+                  <p>Executed command</p><pre>{execution.environment?.command ?? "Not recorded"}</pre><p>Standard output</p><pre>{execution.stdout || "No standard output captured."}</pre><p>Standard error</p><pre>{execution.stderr || "No standard error captured."}</pre>
                 </section>)}</div></details>
                 {finding.root_cause && <div className="root-cause"><span>Likely root cause</span><p>{finding.root_cause}</p></div>}
                 {finding.explanation_error && <p className="scope-note">{finding.explanation_error}</p>}

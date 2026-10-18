@@ -59,13 +59,14 @@ describe("VerificationPage", () => {
   });
 
   it("exposes exact branch execution evidence and does not invent existing-suite or build results", async () => {
-    const run = { ...completedRun, findings: [{ ...completedRun.findings[0], head_execution: { ...completedRun.findings[0].head_execution, stdout: "AssertionError: -10 != 0", stderr: "", duration_ms: 17 } }] };
+    const run = { ...completedRun, findings: [{ ...completedRun.findings[0], head_execution: { ...completedRun.findings[0].head_execution, stdout: "AssertionError: -10 != 0", stderr: "", duration_ms: 17, environment: { command: "python -m pytest -q -- tests/test_boundary.py" } } }] };
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(run), { status: 200 })));
     render(<VerificationPage />);
     await screen.findByRole("heading", { name: "Coupon support" });
     fireEvent.click(screen.getByText("Inspect branch execution evidence"));
     expect(screen.getByText("AssertionError: -10 != 0")).toBeInTheDocument();
     expect(screen.getByText("17 ms")).toBeInTheDocument();
+    expect(screen.getByText("python -m pytest -q -- tests/test_boundary.py")).toBeInTheDocument();
     expect(screen.getAllByText("Not recorded").length).toBeGreaterThanOrEqual(2);
     expect(screen.queryByText("RECORDED")).not.toBeInTheDocument();
   });

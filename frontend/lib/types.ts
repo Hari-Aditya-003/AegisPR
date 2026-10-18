@@ -15,6 +15,7 @@ export interface TestExecution {
   stderr: string;
   duration_ms: number;
   exit_code?: number | null;
+  environment?: { command?: string; [key: string]: unknown };
 }
 
 export interface Finding {
