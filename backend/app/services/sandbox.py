@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import shlex
 import subprocess
 import tempfile
 import time
@@ -47,6 +48,11 @@ class DockerSandbox:
         relative = PurePosixPath(generated_test.file_path)
         if not self._is_safe_test_path(relative):
             return self._skipped(branch, commit, "Generated test path was rejected")
+        if (checkout / ".dockerignore").exists() or (checkout / ".dockerignore").is_symlink():
+            return self._skipped(branch, commit, "Generated verification does not support repository .dockerignore files")
+        targeted = self._generated_command(profile, relative)
+        if not targeted:
+            return self._skipped(branch, commit, "No supported generated-test runner was detected")
         base_image, install = self._runtime(profile)
         if not base_image or not install:
             return self._skipped(branch, commit, "Unsupported project runtime")
@@ -58,7 +64,9 @@ class DockerSandbox:
             build = self._build_image(checkout, base_image, install, tag)
             if build.returncode != 0:
                 return self._result(branch, commit, ExecutionStatus.ERROR, build.returncode, build.stdout, build.stderr, started)
-            return self._run_image(tag, command, commit, branch=branch)
+            execution = self._run_image(tag, command, commit, branch=branch, generated_command=targeted)
+            execution.environment["generated_test_path"] = str(relative)
+            return execution
         except subprocess.TimeoutExpired as exc:
             return self._result(branch, commit, ExecutionStatus.TIMEOUT, None, exc.stdout or "", exc.stderr or "", started)
         finally:
@@ -94,22 +102,6 @@ class DockerSandbox:
 
         suffix = uuid4().hex[:10]
         baseline_tag = f"aegispr-repair-{commit[:12]}-{suffix}-baseline"
-        baseline_build = self._build_image(checkout, base_image, install, baseline_tag)
-        checks = [
-            RepairCheck(
-                name=name,
-                command=command,
-                execution=(
-                    self._run_image(baseline_tag, command, commit)
-                    if baseline_build.returncode == 0 and command
-                    else self._skipped("repair", commit, "No supported command was detected")
-                    if not command
-                    else self._build_error(commit, baseline_build)
-                ),
-            )
-            for name, command in commands
-        ]
-
         command_rejected = bool(
             generated_test.test_command and generated_test.test_command != profile.test_command
         )
@@ -128,18 +120,42 @@ class DockerSandbox:
             and self._is_safe_test_path(relative)
         )
         generated_tag = f"aegispr-repair-{commit[:12]}-{suffix}-generated"
+        started = time.monotonic()
         try:
-            if safe_path and generated_command:
+            try:
+                baseline_build = self._build_image(checkout, base_image, install, baseline_tag)
+            except subprocess.TimeoutExpired as exc:
+                all_commands = commands[:1] + [("generated_tests", generated_command)] + commands[1:]
+                return [RepairCheck(
+                    name=name, command=command,
+                    execution=self._build_timeout(commit, exc, started)
+                    if command else self._skipped("repair", commit, "No supported command was detected"),
+                ) for name, command in all_commands]
+            checks = [RepairCheck(
+                name=name, command=command,
+                execution=self._run_image(baseline_tag, command, commit)
+                if baseline_build.returncode == 0 and command
+                else self._skipped("repair", commit, "No supported command was detected")
+                if not command else self._build_error(commit, baseline_build),
+            ) for name, command in commands]
+            targeted = self._generated_command(profile, relative) if safe_path else None
+            if (checkout / ".dockerignore").exists() or (checkout / ".dockerignore").is_symlink():
+                generated_execution = self._skipped("repair", commit, "Generated verification does not support repository .dockerignore files")
+            elif safe_path and generated_command and targeted:
                 if self._write_generated_test(checkout, relative, generated_test.test_code):
-                    generated_build = self._build_image(checkout, base_image, install, generated_tag)
-                    generated_execution = (
-                        self._run_image(generated_tag, generated_command, commit)
-                        if generated_build.returncode == 0
-                        else self._build_error(commit, generated_build)
-                    )
+                    started = time.monotonic()
+                    try:
+                        generated_build = self._build_image(checkout, base_image, install, generated_tag)
+                        generated_execution = (
+                            self._run_image(generated_tag, generated_command, commit, generated_command=targeted)
+                            if generated_build.returncode == 0 else self._build_error(commit, generated_build)
+                        )
+                        generated_execution.environment["generated_test_path"] = str(relative)
+                    except subprocess.TimeoutExpired as exc:
+                        generated_execution = self._build_timeout(commit, exc, started)
             elif safe_path:
                 generated_execution = self._skipped(
-                    "repair", commit, "No supported test command was detected"
+                    "repair", commit, "No supported generated-test runner was detected"
                 )
         finally:
             self._remove_image(baseline_tag)
@@ -173,6 +189,8 @@ class DockerSandbox:
                     f"FROM {base_image}",
                     "RUN useradd --create-home -u 10001 aegis",
                     "ENV PATH=/home/aegis/.local/bin:$PATH",
+                    "ENV HOME=/home/aegis",
+                    "RUN mkdir -p /workspace && chown 10001:10001 /workspace",
                     "WORKDIR /workspace",
                     "COPY --chown=10001:10001 . .",
                     "USER 10001",
@@ -186,7 +204,10 @@ class DockerSandbox:
                 timeout=self.timeout_seconds,
             )
 
-    def _run_image(self, tag: str, command: str, commit: str, branch: str = "repair") -> TestExecution:
+    def _run_image(
+        self, tag: str, command: str, commit: str, branch: str = "repair",
+        *, generated_command: str | None = None,
+    ) -> TestExecution:
         if not self._is_allowed_command(command):
             return self._skipped("repair", commit, "Command was rejected by the safety policy")
         started = time.monotonic()
@@ -195,10 +216,11 @@ class DockerSandbox:
             result = subprocess.run(
                 [
                     "docker", "run", "--name", container_name, "--rm", "--network=none", "--read-only",
+                    "--tmpfs=/run/aegis:rw,nosuid,nodev,size=512m,uid=10001,gid=10001",
                     "--tmpfs=/tmp:rw,noexec,nosuid,size=256m", f"--memory={self.memory}",
                     f"--cpus={self.cpus}", "--pids-limit=256",
                     "--security-opt=no-new-privileges", "--cap-drop=ALL", tag,
-                    "/bin/sh", "-lc", command,
+                    "/bin/sh", "-c", "cp -a /workspace/. /run/aegis/ && cd /run/aegis && " + (generated_command or command),
                 ],
                 capture_output=True,
                 text=True,
@@ -215,6 +237,24 @@ class DockerSandbox:
         finally:
             # A killed Docker CLI does not reliably stop its daemon-managed container.
             self._cleanup(["docker", "container", "rm", "--force", container_name])
+
+    @staticmethod
+    def _generated_command(profile: RepositoryProfile, path: PurePosixPath) -> str | None:
+        target = shlex.quote(str(path))
+        if path.suffix == ".py" and profile.test_command in {"pytest", "pytest -q", "python -m pytest"}:
+            return f"python -m pytest -q -- {target}"
+        if path.suffix in {".js", ".jsx", ".ts", ".tsx"} and (".test." in path.name or ".spec." in path.name):
+            if profile.test_framework == "jest":
+                return f"./node_modules/.bin/jest --runInBand --passWithNoTests=false --runTestsByPath {target}"
+            if profile.test_framework == "vitest":
+                return f"./node_modules/.bin/vitest run --maxWorkers=1 --passWithNoTests=false {target}"
+        return None
+
+    @staticmethod
+    def _build_timeout(commit: str, exc: subprocess.TimeoutExpired, started: float) -> TestExecution:
+        result = DockerSandbox._result("repair", commit, ExecutionStatus.TIMEOUT, None, exc.stdout or "", exc.stderr or "", started)
+        result.environment = {"executor": "docker", "phase": "build"}
+        return result
 
     @staticmethod
     def _build_error(commit: str, result: subprocess.CompletedProcess[str]) -> TestExecution:

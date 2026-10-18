@@ -215,7 +215,7 @@ def test_generated_python_run_targets_the_exact_file(tmp_path: Path, monkeypatch
     profile = RepositoryProfile(languages=["Python"], install_command="pip install .", test_command="pytest -q")
     result = DockerSandbox(5, "128m", 1).execute(tmp_path, "a" * 40, "base", profile, generated("tests/helper.py"))
     command = next(args for args in calls if args[:2] == ["docker", "run"])[-1]
-    assert command == "python -m pytest -q -- tests/helper.py"
+    assert command.endswith("&& python -m pytest -q -- tests/helper.py")
     assert result.environment["generated_test_path"] == "tests/helper.py"
 
 
