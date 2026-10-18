@@ -36,3 +36,11 @@ def test_budget_estimate_is_private_and_explicit(monkeypatch):
         assert response.status_code == 200
         assert response.json()["limit_usd"] == 20
         assert "not provider balance" in response.json()["note"]
+
+
+def test_allowed_browser_origin_can_read_authentication_errors(monkeypatch):
+    monkeypatch.setattr(main.settings, "api_access_token", "private-test-access-code")
+    with TestClient(main.app) as client:
+        response = client.get("/api/verifications", headers={"Origin": "http://localhost:3000"})
+        assert response.status_code == 401
+        assert response.headers.get("access-control-allow-origin") == "http://localhost:3000"
