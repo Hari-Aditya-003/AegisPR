@@ -8,6 +8,8 @@ Project website: [hari-aditya-003.github.io/AegisPR](https://hari-aditya-003.git
 
 Public interactive test build: [Try the coupon-boundary experiment](https://hari-aditya-003.github.io/AegisPR/demo/). This browser test build demonstrates deterministic base/change/repair comparisons. It does not analyze arbitrary PRs or run cloud inference. The full application runs on the Dell; its Nebius key authenticates, but inference currently returns HTTP 402 because usable credits are unavailable.
 
+October 18 status: the hardened Dell app is running in explicit CPU fallback after detecting an NVIDIA kernel/NVML version mismatch. Historical CUDA proof remains documented, but current GPU readiness is blocked pending host driver recovery. See [hardening results and remaining gates](docs/hardening-evidence.md).
+
 ## Why AegisPR
 
 AI review usually returns an opinion. AegisPR turns a claim into an experiment:

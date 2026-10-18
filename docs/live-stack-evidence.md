@@ -1,5 +1,7 @@
 # Dell deployment and sandbox evidence
 
+Current-state note (October 18): this page records the prior healthy CUDA milestone. The hardened stack is now running with explicit CPU fallback because of a host NVIDIA kernel/NVML mismatch. Backend health reports `degraded` and `gpu_accelerator: cpu`; historical CUDA results below are not current live GPU readiness. See [current hardening evidence](hardening-evidence.md).
+
 Verified October 17, 2026, approximately 21:02 IST.
 
 ## Running deployment

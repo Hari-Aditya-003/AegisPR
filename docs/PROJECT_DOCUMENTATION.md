@@ -793,7 +793,7 @@ GPU tests cover:
 
 ### 19.2 Latest verified evidence
 
-The October 18 hardening pass locally verified 113 backend tests (89.49% line coverage), 26 frontend tests (95.42% statement coverage), seven Chromium E2E tests, eight website tests, six GPU-worker CPU-fallback tests, and one seeded repository test. Type checking, production build, npm audit, Python compilation, shell syntax, and Git whitespace checks passed. A fresh Python 3.12 resolved backend environment reported no known vulnerabilities with pip-audit after dependency updates; this does not certify every image, OS package, or attack surface. See [hardening evidence](hardening-evidence.md) for release checks, live observations, and remaining gates rather than assuming an older CI result applies to new commits.
+The October 18 hardening pass locally verified 123 backend tests (89.94% line coverage), 28 frontend tests (95.42% statement coverage), seven Chromium E2E tests, eight website tests, six GPU-worker CPU-fallback tests, and one seeded repository test: 173 automated tests total. Type checking, production build, npm audit, Python compilation, shell syntax, and Git whitespace checks passed. A fresh Python 3.12 environment and both deployed Python package freezes reported no known vulnerabilities with pip-audit; this does not certify every image, OS package, or attack surface. Real Python and Node Docker fixtures both produced base PASS, seeded head FAIL, and manually repaired checks PASS. Current CUDA is blocked by a host driver/NVML mismatch, so the stack explicitly reports CPU fallback. See [hardening evidence](hardening-evidence.md) for release checks, live observations, and remaining gates rather than assuming an older CI result applies to new commits.
 
 ## 20. CI/CD
 

@@ -11,7 +11,7 @@ This file is the source of truth for the Nebius × NVIDIA Global AI Hackathon su
 - **Project website:** <https://hari-aditya-003.github.io/AegisPR/>
 - **License:** MIT
 - **Public test build:** <https://hari-aditya-003.github.io/AegisPR/demo/>
-- **Video:** `[ADD PUBLIC YOUTUBE URL, 3:00 OR SHORTER]`
+- **Video:** `[ADD PUBLIC YOUTUBE URL, STRICTLY UNDER 3:00]`
 
 The website and interactive browser test build are published on GitHub Pages.
 The test build executes a deterministic coupon fixture in JavaScript; it is not
@@ -42,10 +42,12 @@ demonstration; they are not evidence of a completed live model run. Do not submi
 model quality ratings or claim a working Nebius demo until inference succeeds.
 See [live-stack-evidence.md](live-stack-evidence.md).
 
-- **NVIDIA Nemotron 3 Ultra** is called through the OpenAI-compatible Nebius Token Factory API for risk hypotheses, test synthesis, evidence summaries, and minimal repair proposals.
+- **NVIDIA Nemotron** is integrated through Nebius Token Factory for risk hypotheses, test synthesis, evidence summaries, and minimal repair proposals. The current default is `nvidia/Nemotron-3_5-Lightning` as an economical evaluation candidate; Ultra remains an explicit comparison option. No successful live model use or quality score is claimed until credits work.
 - **Dell RTX 3050 Ti** runs the GPU worker. CuPy performs hashed term-document vector construction, cosine similarity scoring, and repository-context ranking before Nemotron receives a bounded prompt.
 - **CUDA telemetry** records the selected device and whether each ranking used CUDA or the visible CPU fallback.
 - **Docker sandboxes** execute untrusted repository checks with no runtime network, dropped Linux capabilities, process limits, and resource limits.
+
+**October 18 update:** the hardened app is currently in explicit CPU fallback because the Dell's loaded NVIDIA driver and installed NVML library differ. Historical CUDA proof above is not current live GPU readiness. Spending/authentication/security/UI improvements and the remaining gates are recorded in [hardening evidence](hardening-evidence.md). Do not copy this kit into a final submission until these gates are checked.
 
 ## Three-minute demo script
 
