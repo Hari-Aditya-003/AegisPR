@@ -14,10 +14,12 @@ export interface TestExecution {
   stdout: string;
   stderr: string;
   duration_ms: number;
+  exit_code?: number | null;
 }
 
 export interface Finding {
   id: string;
+  generated_test_id?: string;
   classification: string;
   severity: string;
   summary: string;
@@ -60,6 +62,7 @@ export interface VerificationRun {
   };
   stages: VerificationStage[];
   findings: Finding[];
+  generated_tests?: Array<{ id: string; file_path: string; test_code: string; test_command?: string | null }>;
   repair?: RepairResult;
   changed_files: string[];
   hypotheses: Array<{ id: string; description: string; test_strategy: string }>;

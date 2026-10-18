@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 
 import { ProofCard } from "@/components/proof-card";
 import { VerificationTimeline } from "@/components/verification-timeline";
-import { apiUrl, requestRepair } from "@/lib/api";
+import { accessChangedEvent, getVerification, requestRepair } from "@/lib/api";
 import type { VerificationRun } from "@/lib/types";
 
 
@@ -23,13 +23,18 @@ export default function VerificationPage() {
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
+    const retry = () => setReloadKey(value => value + 1);
+    window.addEventListener(accessChangedEvent, retry);
+    return () => window.removeEventListener(accessChangedEvent, retry);
+  }, []);
+
+  useEffect(() => {
     let active = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    setError("");
     async function load() {
       try {
-        const response = await fetch(`${apiUrl}/api/verifications/${params.id}`, { cache: "no-store" });
-        if (!response.ok) throw new Error("Verification run was not found.");
-        const nextRun: VerificationRun = await response.json();
+        const nextRun = await getVerification(params.id);
         if (!active) return;
         setRun(nextRun);
         if (!terminalStatuses.has(nextRun.status)) timer = setTimeout(load, 1500);
@@ -57,13 +62,15 @@ export default function VerificationPage() {
     }
   }
 
-  if (error) return <section className="report-shell"><div className="report-error"><h1>Verification unavailable</h1><p>{error}</p></div></section>;
-  if (!run) return <section className="report-shell"><div className="report-loading"><span />Loading evidence workspace…</div></section>;
+  const retryButton = <button className="repair-button" type="button" onClick={() => setReloadKey(value => value + 1)}>Retry loading evidence</button>;
+  if (error && !run) return <section className="report-shell"><div className="report-error" role="alert"><h1>Verification unavailable</h1><p>{error}</p>{retryButton}<a className="text-link" href="/">Start another verification</a></div></section>;
+  if (!run) return <section className="report-shell"><div className="report-loading" role="status"><span aria-hidden="true" />Loading evidence workspace…</div></section>;
 
   const executed = run.findings.length;
   const passed = run.findings.filter((finding) => finding.head_execution.status === "PASSED").length;
   return (
     <section className="report-shell">
+      {error && <div className="error-card" role="alert"><h2>Live updates paused</h2><p>{error}</p>{retryButton}</div>}
       <div className="report-heading">
         <div><p className="eyebrow">Verification run · {run.id.slice(0, 8)}</p><h1>{run.summary?.title ?? "Analyzing pull request"}</h1><p>{run.summary ? `${run.summary.owner}/${run.summary.repository} · PR #${run.summary.number}` : run.pull_request_url}</p></div>
         <span className={`run-status status-${run.status.toLowerCase()}`}>{run.status.replaceAll("_", " ")}</span>
@@ -79,6 +86,11 @@ export default function VerificationPage() {
                 <h3>{finding.summary}</h3>
                 <p>{finding.affected_file ?? "Affected location pending"}</p>
                 <div className="comparison"><span>BASE <b>{finding.base_execution.status}</b></span><span>PR <b>{finding.head_execution.status}</b></span></div>
+                <details className="execution-details"><summary>Inspect branch execution evidence</summary><div className="execution-grid">{[finding.base_execution, finding.head_execution].map(execution => <section key={execution.branch}>
+                  <h4>{execution.branch === "base" ? "Base revision" : "Pull request revision"}</h4>
+                  <dl><div><dt>Commit</dt><dd>{execution.commit || "Not recorded"}</dd></div><div><dt>Duration</dt><dd>{execution.duration_ms} ms</dd></div><div><dt>Exit code</dt><dd>{execution.exit_code ?? "Not recorded"}</dd></div></dl>
+                  <p>Standard output</p><pre>{execution.stdout || "No standard output captured."}</pre><p>Standard error</p><pre>{execution.stderr || "No standard error captured."}</pre>
+                </section>)}</div></details>
                 {finding.root_cause && <div className="root-cause"><span>Likely root cause</span><p>{finding.root_cause}</p></div>}
                 {finding.classification === "REGRESSION" && run.status === "REGRESSION_FOUND" && run.repair?.status !== "RUNNING" && (
                   <button className="repair-button" type="button" disabled={repairing} onClick={() => startRepair(finding.id)}>
@@ -100,16 +112,18 @@ export default function VerificationPage() {
             </section>
           )}
           {repairError && <p className="repair-error" role="alert">{repairError}</p>}
-          <section className="report-card"><h2>Risk hypotheses</h2>{run.hypotheses.map((hypothesis) => <article className="hypothesis" key={hypothesis.id}><span>{hypothesis.id}</span><div><strong>{hypothesis.description}</strong><p>{hypothesis.test_strategy}</p></div></article>)}</section>
+          {!!run.generated_tests?.length && <section className="report-card generated-test-card"><h2>Generated test artifacts</h2>{run.generated_tests.map(test => <details key={test.id}><summary>{test.file_path}</summary><p>Command: <code>{test.test_command ?? "Not recorded"}</code></p><pre>{test.test_code}</pre></details>)}</section>}
+          <section className="report-card"><h2>Risk hypotheses</h2>{!run.hypotheses.length && <p className="empty-state">No risk hypotheses recorded in this run.</p>}{run.hypotheses.map((hypothesis) => <article className="hypothesis" key={hypothesis.id}><span>{hypothesis.id}</span><div><strong>{hypothesis.description}</strong><p>{hypothesis.test_strategy}</p></div></article>)}</section>
         </div>
         <aside className="report-side">
           <ProofCard
             commit={run.summary?.head_commit ?? ""}
             status={run.status}
-            existingTests={{ passed: 0, total: 0 }}
+            existingTests={null}
+            existingSuiteStatus={run.repair?.checks.find(check => check.name === "existing_tests")?.execution.status}
             generatedTests={{ passed, total: executed }}
             regressions={run.metrics.regressions_found}
-            buildStatus={run.status === "RUNNING" ? "PENDING" : "RECORDED"}
+            buildStatus={run.repair?.checks.find(check => check.name === "build")?.execution.status ?? "Not recorded"}
           />
           <section className="metric-card"><h2>Run metrics</h2><dl><div><dt>Files analyzed</dt><dd>{run.metrics.files_analyzed}</dd></div><div><dt>Hypotheses</dt><dd>{run.metrics.hypotheses_generated}</dd></div><div><dt>Generated tests</dt><dd>{run.metrics.generated_tests}</dd></div><div><dt>Context compute</dt><dd>{run.metrics.context_accelerator.toUpperCase()}</dd></div></dl></section>
           {run.error && <section className="error-card"><h2>Environment error</h2><p>{run.error}</p></section>}

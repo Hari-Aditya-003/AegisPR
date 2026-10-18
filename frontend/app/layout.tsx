@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { DeploymentControls } from "@/components/deployment-controls";
 
 import "./globals.css";
 
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           </nav>
           <a className="header-action" href="/#verify-title">Start verification <span aria-hidden="true">↗</span></a>
         </header>
+        <DeploymentControls />
         <main id="main-content">{children}</main>
         <footer>
           <span>AegisPR</span>

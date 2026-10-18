@@ -1,7 +1,8 @@
 interface ProofCardProps {
   commit: string;
   status: string;
-  existingTests: { passed: number; total: number };
+  existingTests: { passed: number; total: number } | null;
+  existingSuiteStatus?: string;
   generatedTests: { passed: number; total: number };
   regressions: number;
   buildStatus: string;
@@ -23,6 +24,7 @@ export function ProofCard({
   commit,
   status,
   existingTests,
+  existingSuiteStatus,
   generatedTests,
   regressions,
   buildStatus,
@@ -37,7 +39,7 @@ export function ProofCard({
       </div>
       <dl className="proof-grid">
         <div><dt>Commit</dt><dd>{commit.slice(0, 8) || "Pending"}</dd></div>
-        <div><dt>Existing tests</dt><dd>{existingTests.passed}/{existingTests.total}</dd></div>
+        <div><dt>Existing-suite check</dt><dd>{existingSuiteStatus ?? (existingTests ? `${existingTests.passed}/${existingTests.total}` : "Not recorded")}</dd></div>
         <div><dt>Generated tests</dt><dd>{generatedTests.passed}/{generatedTests.total}</dd></div>
         <div><dt>Build</dt><dd>{buildStatus}</dd></div>
         <div><dt>Regressions</dt><dd>{regressions}</dd></div>
