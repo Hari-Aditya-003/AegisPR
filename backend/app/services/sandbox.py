@@ -189,6 +189,10 @@ class DockerSandbox:
             dockerfile.write_text("\n".join(
                 [
                     f"FROM {base_image}",
+                    # Normalize the trusted CLI before loading any repository
+                    # npm configuration or dropping to the unprivileged user.
+                    *(["RUN npm install --global --ignore-scripts npm@12.2.0"]
+                      if base_image.startswith("node:") else []),
                     "RUN useradd --create-home -u 10001 aegis",
                     "ENV PATH=/home/aegis/.local/bin:$PATH",
                     "ENV HOME=/home/aegis",

@@ -39,7 +39,10 @@ def check(language: str, root: Path) -> dict:
         result = sandbox.execute(root, ("a" if branch == "base" else "b") * 40, branch, profile, generated)
         results[branch] = result.status.value
         if result.status.value not in {"PASSED", "FAILED"}:
-            raise RuntimeError(f"{language} {branch}: {result.status.value}: {result.stderr[-1500:]}")
+            raise RuntimeError(
+                f"{language} {branch}: {result.status.value}\n"
+                f"stdout:\n{result.stdout[-4000:]}\nstderr:\n{result.stderr[-1500:]}"
+            )
         (root / generated.file_path).unlink(missing_ok=True)
     (root / source).write_text(good)
     checks = sandbox.verify_repair(root, "b" * 40, profile, generated)
