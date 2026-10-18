@@ -21,7 +21,7 @@ function requestHeaders(json = false): Record<string, string> {
 async function responseError(response: Response, fallback: string): Promise<Error> {
   if (response.status === 401) return new Error("Open Private deployment access above and save the deployment access code, then retry.");
   const payload = await response.json().catch(() => ({}));
-  return new Error(typeof payload.detail === "string" ? payload.detail : fallback);
+  return new Error(typeof payload?.detail === "string" ? payload.detail : fallback);
 }
 
 export async function getVerification(runId: string): Promise<VerificationRun> {
