@@ -1,5 +1,7 @@
 from unittest.mock import AsyncMock, MagicMock
 
+import httpx
+import pytest
 from fastapi.testclient import TestClient
 
 from app import main as main_module
@@ -17,6 +19,18 @@ def test_health_is_explicit_about_optional_dependencies() -> None:
     assert payload["status"] in {"ok", "degraded"}
     assert "nebius" in payload["checks"]
     assert "gpu_worker" in payload["checks"]
+
+
+@pytest.mark.parametrize("accelerator,expected", [("cuda", "ok"), ("cpu", "degraded")])
+def test_health_reports_actual_acceleration_not_just_worker_connectivity(monkeypatch, accelerator, expected):
+    monkeypatch.setattr(main_module.settings, "gpu_worker_url", "http://worker.invalid")
+    monkeypatch.setattr(main_module.settings, "nebius_api_key", "test-key")
+    async_client = httpx.AsyncClient
+    transport = httpx.MockTransport(lambda request: httpx.Response(200, json={"accelerator": accelerator}))
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **kwargs: async_client(transport=transport, **kwargs))
+    response = client.get("/health")
+    assert response.json()["status"] == expected
+    assert response.json()["checks"]["gpu_accelerator"] == accelerator
 
 
 def test_create_verification_rejects_invalid_pull_request_url() -> None:
