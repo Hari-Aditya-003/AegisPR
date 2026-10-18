@@ -1,5 +1,7 @@
 import subprocess
+import sys
 from pathlib import Path
+from pathlib import PurePosixPath
 
 import pytest
 
@@ -262,3 +264,28 @@ def test_runtime_uses_bounded_ephemeral_workspace_for_build_outputs(monkeypatch)
     assert "--tmpfs=/run/aegis:rw,nosuid,nodev,size=512m,uid=10001,gid=10001" in command
     assert not any(argument.startswith("--volume") or argument == "-v" for argument in command)
     assert "--network=none" in command
+
+
+def test_generated_paths_cannot_be_interpreted_as_runner_options() -> None:
+    assert not DockerSandbox._is_safe_test_path(PurePosixPath("--config=tests/evil.test.js"))
+
+
+def test_runtime_setup_failure_is_not_reported_as_a_test_failure(monkeypatch) -> None:
+    calls = []
+    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: (calls.append(args) or subprocess.CompletedProcess(args, 125, "", "workspace unavailable")))
+    result = DockerSandbox(5, "128m", 1)._run_image("image", "npm run build", "a" * 40)
+    assert result.status.value == "ERROR"
+    assert "|| exit 125" in calls[0][-1]
+
+
+def test_process_output_has_a_hard_combined_limit_and_retains_only_a_tail() -> None:
+    result = DockerSandbox._run_bounded([sys.executable, "-c", "import os; os.write(1,b'x'*2000000)"], timeout=5)
+    assert result.returncode == 125
+    assert len(result.stdout.encode()) <= 20_000
+    assert "output limit" in result.stderr
+
+
+def test_process_timeout_retains_bounded_partial_output() -> None:
+    with pytest.raises(subprocess.TimeoutExpired) as error:
+        DockerSandbox._run_bounded([sys.executable, "-c", "import time; print('partial',flush=True); time.sleep(10)"], timeout=0.1)
+    assert b"partial" in error.value.stdout
