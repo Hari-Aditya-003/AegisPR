@@ -43,6 +43,11 @@ describe("createVerification", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("not-json", { status: 500 })));
     await expect(createVerification("bad")).rejects.toThrow("Verification could not start");
   });
+
+  it("uses the safe fallback when an error response contains JSON null", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("null", { status: 502 })));
+    await expect(createVerification("bad")).rejects.toThrow("Verification could not start");
+  });
 });
 
 describe("requestRepair", () => {
