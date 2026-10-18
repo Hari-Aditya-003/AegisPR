@@ -207,3 +207,58 @@ def test_repair_unexpected_baseline_failure_still_cleans_image(tmp_path: Path, m
 
     build = next(args for args in calls if args[:2] == ["docker", "build"])
     assert ["docker", "image", "rm", "--force", build[build.index("--tag") + 1]] in calls
+
+
+def test_generated_python_run_targets_the_exact_file(tmp_path: Path, monkeypatch) -> None:
+    calls: list[list[str]] = []
+    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: (calls.append(args) or subprocess.CompletedProcess(args, 0, "1 passed", "")))
+    profile = RepositoryProfile(languages=["Python"], install_command="pip install .", test_command="pytest -q")
+    result = DockerSandbox(5, "128m", 1).execute(tmp_path, "a" * 40, "base", profile, generated("tests/helper.py"))
+    command = next(args for args in calls if args[:2] == ["docker", "run"])[-1]
+    assert command == "python -m pytest -q -- tests/helper.py"
+    assert result.environment["generated_test_path"] == "tests/helper.py"
+
+
+def test_repository_dockerignore_cannot_hide_generated_test(tmp_path: Path, monkeypatch) -> None:
+    (tmp_path / ".dockerignore").write_text("tests/\n")
+    calls = []
+    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: (calls.append(args) or subprocess.CompletedProcess(args, 0, "other tests passed", "")))
+    profile = RepositoryProfile(languages=["Python"], install_command="pip install .", test_command="pytest -q")
+    result = DockerSandbox(5, "128m", 1).execute(tmp_path, "a" * 40, "head", profile, generated("tests/test_generated.py"))
+    assert result.status.value == "SKIPPED"
+    assert "dockerignore" in result.stderr
+    assert not calls
+
+
+def test_unknown_node_test_script_cannot_claim_generated_test_execution(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: subprocess.CompletedProcess(args, 0, "nothing ran", ""))
+    profile = RepositoryProfile(languages=["JavaScript"], install_command="npm ci", test_command="npm test")
+    test = generated("tests/generated.test.js")
+    test.framework = "custom"
+    test.test_command = "npm test"
+    result = DockerSandbox(5, "128m", 1).execute(tmp_path, "a" * 40, "head", profile, test)
+    assert result.status.value == "SKIPPED"
+    assert "runner" in result.stderr
+
+
+def test_build_workspace_is_owned_by_unprivileged_installer(tmp_path: Path, monkeypatch) -> None:
+    instructions = []
+
+    def fake_run(args, **kwargs):
+        instructions.append(Path(args[args.index("--file") + 1]).read_text())
+        return subprocess.CompletedProcess(args, 0, "", "")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    DockerSandbox(5, "128m", 1)._build_image(tmp_path, "node:22-bookworm-slim", "npm ci --ignore-scripts", "test-image")
+    assert "RUN mkdir -p /workspace && chown 10001:10001 /workspace" in instructions[0]
+
+
+def test_runtime_uses_bounded_ephemeral_workspace_for_build_outputs(monkeypatch) -> None:
+    calls = []
+    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: (calls.append(args) or subprocess.CompletedProcess(args, 0, "", "")))
+    DockerSandbox(5, "128m", 1)._run_image("image", "npm run build", "a" * 40)
+    command = calls[0]
+    assert "--read-only" in command
+    assert "--tmpfs=/run/aegis:rw,nosuid,nodev,size=512m,uid=10001,gid=10001" in command
+    assert not any(argument.startswith("--volume") or argument == "-v" for argument in command)
+    assert "--network=none" in command
