@@ -20,6 +20,10 @@ docker compose down
 
 Avoid `docker compose down -v` during routine operations because it removes persisted run history.
 
+It also removes the inference budget ledger and response cache. Back up both `aegispr.sqlite3` and `inference-budget.sqlite3`; never delete the latter as a way to bypass spending limits. Generate separate random `API_ACCESS_TOKEN` and `GPU_WORKER_TOKEN` values in the protected remote `.env` before deploying. Enter only the API access code in the frontend private deployment control, never the Nebius key. All `/api/*` endpoints require `Authorization: Bearer <API_ACCESS_TOKEN>` in production. Health remains accessible without a code and proves configuration, not successful inference.
+
+Default paid admission estimates are $20 total, $0.25 per run including repairs, and five attempts per run. `/api/budget` returns authenticated estimates, not a provider balance. See [credit controls](model-budget.md) and reconcile Nebius billing before changing limits. Set `INFERENCE_BUDGET_USD=0` to block new paid calls while preserving cache use and recorded evidence.
+
 ## Health verification
 
 ```bash
@@ -85,7 +89,7 @@ URL is embedded at build time. Container-to-container traffic still uses port
 From a trusted environment with the API key loaded, query the Token Factory model catalog and confirm the configured `NEBIUS_MODEL` is present. Do not print or record the key. Restart the backend after changing model configuration.
 
 Model IDs are case-sensitive. The live catalog returned
-`nvidia/Nemotron-3-Ultra-550b-a55b`. A model-list success proves authentication,
+`nvidia/Nemotron-3_5-Lightning` and `nvidia/Nemotron-3-Ultra-550b-a55b`. Lightning is now the economical default, pending quality evaluation. A model-list success proves authentication,
 not inference readiness. HTTP 402 from a completion means usable credits are
 unavailable; ask Token Factory support to check the project billing/credit
 status. Backend health reports credential presence only and must not be used

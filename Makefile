@@ -1,9 +1,11 @@
-.PHONY: test test-backend test-frontend test-e2e test-gpu test-demo build up down gpu-check
+.PHONY: test test-backend test-frontend test-e2e test-gpu test-demo test-website build up down gpu-check
 
-test: test-backend test-frontend test-gpu test-demo test-e2e
+PYTEST ?= backend/.venv/bin/pytest
+
+test: test-backend test-frontend test-gpu test-demo test-e2e test-website
 
 test-backend:
-	cd backend && .venv/bin/pytest
+	cd backend && $(abspath $(PYTEST))
 
 test-frontend:
 	cd frontend && npm run test:coverage && npm run typecheck && npm run build && npm audit --audit-level=high
@@ -12,10 +14,13 @@ test-e2e:
 	cd frontend && npm run e2e
 
 test-gpu:
-	PYTHONPATH=gpu-worker backend/.venv/bin/pytest -q gpu-worker/tests
+	PYTHONPATH=gpu-worker $(PYTEST) --no-cov -q gpu-worker/tests
 
 test-demo:
-	cd demo-repositories/demo-store && PYTHONPATH=. ../../backend/.venv/bin/pytest -q
+	cd demo-repositories/demo-store && PYTHONPATH=. $(abspath $(PYTEST)) --no-cov -q
+
+test-website:
+	node --test website/tests/*.test.mjs
 
 build:
 	docker compose build

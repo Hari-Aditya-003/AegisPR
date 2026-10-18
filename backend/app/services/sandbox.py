@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import logging
 import os
+import selectors
 import shlex
+import signal
 import subprocess
 import tempfile
 import time
@@ -197,10 +199,8 @@ class DockerSandbox:
                     f"RUN {install}",
                 ]
             ), encoding="utf-8")
-            return subprocess.run(
-                ["docker", "build", "--file", str(dockerfile), "--tag", tag, str(checkout)],
-                capture_output=True,
-                text=True,
+            return self._run_bounded(
+                ["docker", "build", "--force-rm", "--file", str(dockerfile), "--tag", tag, str(checkout)],
                 timeout=self.timeout_seconds,
             )
 
@@ -213,20 +213,18 @@ class DockerSandbox:
         started = time.monotonic()
         container_name = f"aegispr-test-{uuid4().hex}"
         try:
-            result = subprocess.run(
+            result = self._run_bounded(
                 [
                     "docker", "run", "--name", container_name, "--rm", "--network=none", "--read-only",
                     "--tmpfs=/run/aegis:rw,nosuid,nodev,size=512m,uid=10001,gid=10001",
                     "--tmpfs=/tmp:rw,noexec,nosuid,size=256m", f"--memory={self.memory}",
                     f"--cpus={self.cpus}", "--pids-limit=256",
                     "--security-opt=no-new-privileges", "--cap-drop=ALL", tag,
-                    "/bin/sh", "-c", "cp -a /workspace/. /run/aegis/ && cd /run/aegis && " + (generated_command or command),
+                    "/bin/sh", "-c", "(cp -a /workspace/. /run/aegis/ && cd /run/aegis) || exit 125; cd /run/aegis || exit 125; " + (generated_command or command),
                 ],
-                capture_output=True,
-                text=True,
                 timeout=self.timeout_seconds,
             )
-            status = ExecutionStatus.PASSED if result.returncode == 0 else ExecutionStatus.FAILED
+            status = ExecutionStatus.PASSED if result.returncode == 0 else ExecutionStatus.ERROR if result.returncode == 125 else ExecutionStatus.FAILED
             return self._result(
                 branch, commit, status, result.returncode, result.stdout, result.stderr, started
             )
@@ -237,6 +235,53 @@ class DockerSandbox:
         finally:
             # A killed Docker CLI does not reliably stop its daemon-managed container.
             self._cleanup(["docker", "container", "rm", "--force", container_name])
+
+    @staticmethod
+    def _run_bounded(args: list[str], *, timeout: float) -> subprocess.CompletedProcess[str]:
+        """Drain both pipes without retaining unlimited attacker-controlled logs."""
+        tails = {"stdout": bytearray(), "stderr": bytearray()}
+        output_bytes = 0
+        started = time.monotonic()
+        process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
+        selector = selectors.DefaultSelector()
+        try:
+            for stream, name in ((process.stdout, "stdout"), (process.stderr, "stderr")):
+                selector.register(stream, selectors.EVENT_READ, name)
+            while selector.get_map():
+                remaining = timeout - (time.monotonic() - started)
+                if remaining <= 0:
+                    raise subprocess.TimeoutExpired(args, timeout, output=bytes(tails["stdout"]), stderr=bytes(tails["stderr"]))
+                for key, _ in selector.select(min(remaining, 0.1)):
+                    chunk = os.read(key.fileobj.fileno(), 65_536)
+                    if not chunk:
+                        selector.unregister(key.fileobj)
+                        continue
+                    output_bytes += len(chunk)
+                    tail = tails[key.data]
+                    tail.extend(chunk)
+                    del tail[:-20_000]
+                    if output_bytes > 1_048_576:
+                        return subprocess.CompletedProcess(
+                            args, 125, bytes(tails["stdout"]).decode("utf-8", errors="replace"),
+                            "Sandbox combined output limit exceeded (1 MiB); execution stopped",
+                        )
+            remaining = timeout - (time.monotonic() - started)
+            try:
+                code = process.wait(timeout=max(0, remaining))
+            except subprocess.TimeoutExpired as exc:
+                raise subprocess.TimeoutExpired(args, timeout, output=bytes(tails["stdout"]), stderr=bytes(tails["stderr"])) from exc
+            return subprocess.CompletedProcess(args, code, bytes(tails["stdout"]).decode("utf-8", errors="replace"), bytes(tails["stderr"]).decode("utf-8", errors="replace"))
+        finally:
+            # Stop CLI children as well as the parent; daemon-managed runtime
+            # containers are separately force-removed by _run_image's finally.
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            process.wait(timeout=5)
+            selector.close()
+            process.stdout.close()
+            process.stderr.close()
 
     @staticmethod
     def _generated_command(profile: RepositoryProfile, path: PurePosixPath) -> str | None:
@@ -287,7 +332,7 @@ class DockerSandbox:
     def _is_safe_test_path(path: PurePosixPath) -> bool:
         if path.is_absolute() or ".." in path.parts or not path.parts:
             return False
-        if any(part.startswith(".") for part in path.parts) or "\\" in str(path):
+        if any(part.startswith((".", "-")) for part in path.parts) or "\\" in str(path):
             return False
         if any(ord(character) < 32 or ord(character) == 127 for character in str(path)):
             return False

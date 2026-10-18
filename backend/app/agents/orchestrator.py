@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import shutil
 import time
 from datetime import datetime, timezone
@@ -22,7 +23,8 @@ from app.schemas.verification import (
     VerificationStatus,
 )
 from app.services.context_ranker import ContextRanker
-from app.services.nebius import NebiusGateway
+from app.services.inference_budget import BudgetExceeded, InferenceBudget, current_run
+from app.services.nebius import InferenceUnavailable, NebiusGateway
 from app.services.repository import RepositoryService
 from app.services.sandbox import DockerSandbox
 from app.services.store import VerificationStore
@@ -41,6 +43,8 @@ STAGES = [
     ("report", "Evidence report completed"),
 ]
 
+logger = logging.getLogger(__name__)
+
 
 class Orchestrator:
     def __init__(self, settings: Settings, store: VerificationStore) -> None:
@@ -48,7 +52,14 @@ class Orchestrator:
         self.store = store
         self.repository = RepositoryService(settings.max_diff_characters)
         self.ranker = ContextRanker(settings.gpu_worker_url, settings.gpu_worker_token)
-        self.nebius = NebiusGateway(settings.nebius_api_key, settings.nebius_base_url, settings.nebius_model)
+        self.budget = InferenceBudget(
+            settings.data_path.with_name("inference-budget.sqlite3"),
+            settings.inference_budget_usd, settings.inference_run_budget_usd,
+            settings.inference_max_calls_per_run,
+        )
+        self.nebius = NebiusGateway(
+            settings.nebius_api_key, settings.nebius_base_url, settings.nebius_model, budget=self.budget
+        )
         self.sandbox = DockerSandbox(
             settings.sandbox_timeout_seconds, settings.sandbox_memory, settings.sandbox_cpus
         )
@@ -95,6 +106,7 @@ class Orchestrator:
         workspace = self.settings.workspace_root / f"{run.id}-repair"
         repository = workspace / "repository.git"
         checkout = workspace / "head"
+        context_token = current_run.set(run.id)
         try:
             run.repair.status = RepairStatus.RUNNING
             self._activate(run, "repair")
@@ -135,8 +147,6 @@ class Orchestrator:
             run.repair.summary = proposal.summary
             run.metrics.model_calls += 1
             allowed_paths = set(run.changed_files)
-            if finding.affected_file:
-                allowed_paths.add(finding.affected_file)
             await asyncio.to_thread(
                 self.repository.apply_patch, checkout, proposal.patch, allowed_paths
             )
@@ -171,9 +181,10 @@ class Orchestrator:
             run.completed_at = datetime.now(timezone.utc)
             self.store.save(run)
         except Exception as exc:
+            logger.warning("repair failed run=%s error_type=%s", run.id, type(exc).__name__)
             run.status = VerificationStatus.REGRESSION_FOUND
             run.repair.status = RepairStatus.FAILED
-            run.repair.error = str(exc)[:2000]
+            run.repair.error = self._public_error(exc)
             run.completed_at = datetime.now(timezone.utc)
             for stage in run.stages:
                 if stage.state == StageState.ACTIVE:
@@ -181,13 +192,18 @@ class Orchestrator:
                     stage.detail = "Repair could not complete"
             self.store.save(run)
         finally:
-            shutil.rmtree(workspace, ignore_errors=True)
+            try:
+                self._account_usage(run)
+            finally:
+                current_run.reset(context_token)
+                shutil.rmtree(workspace, ignore_errors=True)
 
     async def verify(self, run_id: str, request: CreateVerificationRequest) -> None:
         run = self._required(run_id)
         workspace = self.settings.workspace_root / run.id
         started = time.monotonic()
         github = GitHubClient(self.settings.github_token)
+        context_token = current_run.set(run.id)
         try:
             run.status = VerificationStatus.RUNNING
             self._activate(run, "ingest")
@@ -260,8 +276,9 @@ class Orchestrator:
             run.metrics.analysis_duration_ms = int((time.monotonic() - started) * 1000)
             self.store.save(run)
         except Exception as exc:
+            logger.warning("verification failed run=%s error_type=%s", run.id, type(exc).__name__)
             run.status = VerificationStatus.ENVIRONMENT_ERROR
-            run.error = str(exc)[:2000]
+            run.error = self._public_error(exc)
             run.completed_at = datetime.now(timezone.utc)
             for stage in run.stages:
                 if stage.state == StageState.ACTIVE:
@@ -269,8 +286,14 @@ class Orchestrator:
                     stage.detail = "This stage could not complete"
             self.store.save(run)
         finally:
-            await github.close()
-            shutil.rmtree(workspace, ignore_errors=True)
+            try:
+                self._account_usage(run)
+            finally:
+                current_run.reset(context_token)
+                try:
+                    await github.close()
+                finally:
+                    shutil.rmtree(workspace, ignore_errors=True)
 
     async def _execute_plan(self, run: VerificationRun, repository: Path, workspace: Path) -> None:
         assert run.summary and run.repository_profile
@@ -329,9 +352,12 @@ class Orchestrator:
                 head_execution=head,
             )
             if classification == Classification.REGRESSION:
-                finding.root_cause = await self.nebius.analyze_root_cause(finding)
-                if finding.root_cause:
-                    run.metrics.model_calls += 1
+                try:
+                    finding.root_cause = await self.nebius.analyze_root_cause(finding)
+                    if finding.root_cause:
+                        run.metrics.model_calls += 1
+                except (InferenceUnavailable, BudgetExceeded) as exc:
+                    finding.explanation_error = str(exc)
             run.findings.append(finding)
             regression = regression or classification == Classification.REGRESSION
             pre_existing = pre_existing or classification == Classification.PRE_EXISTING
@@ -351,6 +377,21 @@ class Orchestrator:
         else:
             run.status = VerificationStatus.VERIFIED_WITHIN_SCOPE
         self._complete(run, "compare", run.status.value)
+
+    @staticmethod
+    def _public_error(exc: Exception) -> str:
+        if isinstance(exc, (InferenceUnavailable, BudgetExceeded)):
+            return str(exc)
+        return "Verification could not complete; check the stage and deployment configuration"
+
+    def _account_usage(self, run: VerificationRun) -> None:
+        usage = self.budget.summary(run.id)
+        run.metrics.model_calls = usage["calls"]
+        run.metrics.input_tokens = usage["input_tokens"]
+        run.metrics.output_tokens = usage["output_tokens"]
+        run.metrics.accounted_cost_usd = usage["accounted_cost_usd"]
+        run.metrics.cache_hits = usage["cache_hits"]
+        self.store.save(run)
 
     def _required(self, run_id: str) -> VerificationRun:
         run = self.store.get(run_id)

@@ -9,6 +9,11 @@ from app.schemas.verification import GeneratedTest, RepositoryProfile
 from app.services.sandbox import DockerSandbox
 
 
+def mock_processes(monkeypatch, fake_run) -> None:
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(DockerSandbox, "_run_bounded", staticmethod(fake_run))
+
+
 def generated(path: str = "") -> GeneratedTest:
     return GeneratedTest(
         id="AEG-1", hypothesis_id="H1", file_path=path,
@@ -68,7 +73,7 @@ def test_repair_verification_runs_existing_generated_and_configured_checks(
         calls.append(args)
         return subprocess.CompletedProcess(args, 0, stdout="passed", stderr="")
 
-    monkeypatch.setattr(subprocess, "run", fake_run)
+    mock_processes(monkeypatch, fake_run)
     sandbox = DockerSandbox(5, "128m", 1)
     profile = RepositoryProfile(
         languages=["Python"],
@@ -99,7 +104,7 @@ def test_generated_test_rejects_symlinked_parent_without_writing_outside_checkou
     outside = tmp_path / "outside"
     outside.mkdir()
     (checkout / "tests").symlink_to(outside, target_is_directory=True)
-    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: subprocess.CompletedProcess(args, 0, "", ""))
+    mock_processes(monkeypatch, lambda args, **kwargs: subprocess.CompletedProcess(args, 0, "", ""))
     profile = RepositoryProfile(languages=["Python"], install_command="pip install .", test_command="pytest -q")
     sandbox = DockerSandbox(5, "128m", 1)
 
@@ -125,7 +130,7 @@ def test_build_does_not_follow_repository_controlled_dockerfile_symlink(tmp_path
             dockerfiles.append(Path(args[args.index("--file") + 1]).read_text())
         return subprocess.CompletedProcess(args, 0, "", "")
 
-    monkeypatch.setattr(subprocess, "run", fake_run)
+    mock_processes(monkeypatch, fake_run)
     sandbox = DockerSandbox(5, "128m", 1)
     sandbox._build_image(checkout, "python:3.12-slim", "pip install .", "test-image")
 
@@ -149,7 +154,7 @@ def test_timed_out_runtime_force_removes_named_container(tmp_path: Path, monkeyp
             raise subprocess.TimeoutExpired(args, 5, output=b"partial output", stderr=b"partial error")
         return subprocess.CompletedProcess(args, 0, "", "")
 
-    monkeypatch.setattr(subprocess, "run", fake_run)
+    mock_processes(monkeypatch, fake_run)
     result = DockerSandbox(5, "128m", 1)._run_image("test-image", "pytest -q", "a" * 40)
 
     assert result.status.value == "TIMEOUT"
@@ -178,7 +183,7 @@ def test_repair_build_timeout_is_recorded_and_all_images_are_cleaned(
                 raise subprocess.TimeoutExpired(args, 5, output=b"build output")
         return subprocess.CompletedProcess(args, 0, "passed", "")
 
-    monkeypatch.setattr(subprocess, "run", fake_run)
+    mock_processes(monkeypatch, fake_run)
     profile = RepositoryProfile(languages=["Python"], install_command="pip install .", test_command="pytest -q")
     checks = DockerSandbox(5, "128m", 1).verify_repair(
         tmp_path, "a" * 40, profile, generated("tests/test_timeout.py"),
@@ -202,7 +207,7 @@ def test_repair_unexpected_baseline_failure_still_cleans_image(tmp_path: Path, m
             raise OSError("Docker daemon unavailable")
         return subprocess.CompletedProcess(args, 0, "", "")
 
-    monkeypatch.setattr(subprocess, "run", fake_run)
+    mock_processes(monkeypatch, fake_run)
     profile = RepositoryProfile(languages=["Python"], install_command="pip install .", test_command="pytest -q")
     with pytest.raises(OSError):
         DockerSandbox(5, "128m", 1).verify_repair(tmp_path, "a" * 40, profile, generated("tests/test_failure.py"))
@@ -213,18 +218,18 @@ def test_repair_unexpected_baseline_failure_still_cleans_image(tmp_path: Path, m
 
 def test_generated_python_run_targets_the_exact_file(tmp_path: Path, monkeypatch) -> None:
     calls: list[list[str]] = []
-    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: (calls.append(args) or subprocess.CompletedProcess(args, 0, "1 passed", "")))
+    mock_processes(monkeypatch, lambda args, **kwargs: (calls.append(args) or subprocess.CompletedProcess(args, 0, "1 passed", "")))
     profile = RepositoryProfile(languages=["Python"], install_command="pip install .", test_command="pytest -q")
     result = DockerSandbox(5, "128m", 1).execute(tmp_path, "a" * 40, "base", profile, generated("tests/helper.py"))
     command = next(args for args in calls if args[:2] == ["docker", "run"])[-1]
-    assert command.endswith("&& python -m pytest -q -- tests/helper.py")
+    assert command.endswith("; python -m pytest -q -- tests/helper.py")
     assert result.environment["generated_test_path"] == "tests/helper.py"
 
 
 def test_repository_dockerignore_cannot_hide_generated_test(tmp_path: Path, monkeypatch) -> None:
     (tmp_path / ".dockerignore").write_text("tests/\n")
     calls = []
-    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: (calls.append(args) or subprocess.CompletedProcess(args, 0, "other tests passed", "")))
+    mock_processes(monkeypatch, lambda args, **kwargs: (calls.append(args) or subprocess.CompletedProcess(args, 0, "other tests passed", "")))
     profile = RepositoryProfile(languages=["Python"], install_command="pip install .", test_command="pytest -q")
     result = DockerSandbox(5, "128m", 1).execute(tmp_path, "a" * 40, "head", profile, generated("tests/test_generated.py"))
     assert result.status.value == "SKIPPED"
@@ -233,7 +238,7 @@ def test_repository_dockerignore_cannot_hide_generated_test(tmp_path: Path, monk
 
 
 def test_unknown_node_test_script_cannot_claim_generated_test_execution(tmp_path: Path, monkeypatch) -> None:
-    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: subprocess.CompletedProcess(args, 0, "nothing ran", ""))
+    mock_processes(monkeypatch, lambda args, **kwargs: subprocess.CompletedProcess(args, 0, "nothing ran", ""))
     profile = RepositoryProfile(languages=["JavaScript"], install_command="npm ci", test_command="npm test")
     test = generated("tests/generated.test.js")
     test.framework = "custom"
@@ -250,14 +255,14 @@ def test_build_workspace_is_owned_by_unprivileged_installer(tmp_path: Path, monk
         instructions.append(Path(args[args.index("--file") + 1]).read_text())
         return subprocess.CompletedProcess(args, 0, "", "")
 
-    monkeypatch.setattr(subprocess, "run", fake_run)
+    mock_processes(monkeypatch, fake_run)
     DockerSandbox(5, "128m", 1)._build_image(tmp_path, "node:22-bookworm-slim", "npm ci --ignore-scripts", "test-image")
     assert "RUN mkdir -p /workspace && chown 10001:10001 /workspace" in instructions[0]
 
 
 def test_runtime_uses_bounded_ephemeral_workspace_for_build_outputs(monkeypatch) -> None:
     calls = []
-    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: (calls.append(args) or subprocess.CompletedProcess(args, 0, "", "")))
+    mock_processes(monkeypatch, lambda args, **kwargs: (calls.append(args) or subprocess.CompletedProcess(args, 0, "", "")))
     DockerSandbox(5, "128m", 1)._run_image("image", "npm run build", "a" * 40)
     command = calls[0]
     assert "--read-only" in command
@@ -272,7 +277,7 @@ def test_generated_paths_cannot_be_interpreted_as_runner_options() -> None:
 
 def test_runtime_setup_failure_is_not_reported_as_a_test_failure(monkeypatch) -> None:
     calls = []
-    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: (calls.append(args) or subprocess.CompletedProcess(args, 125, "", "workspace unavailable")))
+    mock_processes(monkeypatch, lambda args, **kwargs: (calls.append(args) or subprocess.CompletedProcess(args, 125, "", "workspace unavailable")))
     result = DockerSandbox(5, "128m", 1)._run_image("image", "npm run build", "a" * 40)
     assert result.status.value == "ERROR"
     assert "|| exit 125" in calls[0][-1]
@@ -287,5 +292,5 @@ def test_process_output_has_a_hard_combined_limit_and_retains_only_a_tail() -> N
 
 def test_process_timeout_retains_bounded_partial_output() -> None:
     with pytest.raises(subprocess.TimeoutExpired) as error:
-        DockerSandbox._run_bounded([sys.executable, "-c", "import time; print('partial',flush=True); time.sleep(10)"], timeout=0.1)
+        DockerSandbox._run_bounded([sys.executable, "-c", "import time; print('partial',flush=True); time.sleep(10)"], timeout=1)
     assert b"partial" in error.value.stdout

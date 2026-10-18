@@ -93,7 +93,7 @@ class ImpactEdge(BaseModel):
 
 
 class Hypothesis(BaseModel):
-    id: str
+    id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,64}$")
     description: str
     risk_type: str = "business_logic"
     affected_files: list[str] = Field(default_factory=list)
@@ -102,8 +102,8 @@ class Hypothesis(BaseModel):
 
 
 class GeneratedTest(BaseModel):
-    id: str
-    hypothesis_id: str
+    id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,64}$")
+    hypothesis_id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,64}$")
     file_path: str
     framework: str
     test_code: str
@@ -131,6 +131,7 @@ class Finding(BaseModel):
     affected_file: str | None = None
     affected_line: int | None = None
     root_cause: str | None = None
+    explanation_error: str | None = None
     base_execution: TestExecution
     head_execution: TestExecution
 
@@ -156,6 +157,10 @@ class VerificationMetrics(BaseModel):
     generated_tests: int = 0
     regressions_found: int = 0
     model_calls: int = 0
+    input_tokens: int = 0
+    output_tokens: int = 0
+    accounted_cost_usd: float = 0
+    cache_hits: int = 0
     context_accelerator: str = "cpu"
     analysis_duration_ms: int = 0
     sandbox_duration_ms: int = 0

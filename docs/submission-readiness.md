@@ -26,7 +26,7 @@ The [official FAQ](https://nebiusglobalaihackathon.devpost.com/details/faqs) con
 
 ## Model choice with only $25
 
-Current configuration uses `nvidia/Nemotron-3-Ultra-550b-a55b`. That is an integration choice, not evidence that it is the best model for this task. The [official Nemotron page](https://nebius.com/services/token-factory/models/nvidia-nemotron-models-inference) recommends starting with Lightning for efficient coding/reasoning and explicitly advises validating the application's own behavior. Its current public price cards show:
+Current configuration defaults to `nvidia/Nemotron-3_5-Lightning` as an economical evaluation candidate, replacing Ultra. That is a cost choice, not evidence that it is the best model for this task. The [official Nemotron page](https://nebius.com/services/token-factory/models/nvidia-nemotron-models-inference) recommends starting with Lightning for efficient coding/reasoning and explicitly advises validating the application's own behavior. Its current public price cards show:
 
 | Candidate | Input / output USD per million tokens | Proposed role, pending evaluation |
 | --- | --- | --- |
@@ -35,7 +35,7 @@ Current configuration uses `nvidia/Nemotron-3-Ultra-550b-a55b`. That is an integ
 | Nemotron 3 Nano | $0.06 / $0.24 | Alternative if schema compatibility or coding results favor it. |
 | Nemotron 3.5 Super VL | $0.30 / $0.90 | Visual/document workloads; no demonstrated need for vision in this text-only PR flow. |
 
-The same page's older search snippet mentioned plain Nemotron 3 Super. The opened page now highlights Super VL instead. Do not infer plain Super availability, identifier, or prices from that cached snippet; check the authenticated catalog and account price card before any benchmark. Context windows and advertised benchmark scores do not establish AegisPR accuracy. None of these candidates was called or selected by this audit.
+The authenticated catalog and [public machine-readable catalog](https://tokenfactory.nebius.com/api/public/models_info) were also checked without inference: plain `nvidia/nemotron-3-super-120b-a12b` is listed at $0.30/$0.90 per million input/output tokens. See [the exact model registry and budget policy](model-budget.md). Context windows and advertised benchmark scores do not establish AegisPR accuracy. No candidate was called for live quality evaluation by this audit.
 
 For an illustrative 20,000-input/4,000-output-token request, the arithmetic cost is $0.00216 on Lightning/Nano, $0.00960 on Super VL, or $0.03200 on Ultra. These are estimates from the listed prices, not measurements, run limits, or predictions; multi-stage runs, reasoning tokens, retries, and larger prompts change the charge. The [official cost benchmark](https://dev.nebius.com/cookbook/agent-cost-benchmark) measures correctness, tokens, latency and cost together. Its example task is not AegisPR's evaluation set.
 
@@ -50,7 +50,7 @@ Recommended allocation, to be enforced by actual application controls before pub
 
 Start with a sub-$0.50 comparison of Lightning and the existing Ultra configuration on the same fixed PR fixtures. Expand only when a measured failure justifies it. Evaluate valid structured output, executable generated test, correct base/head classification, confirmed repair, false positives, total usage, latency, and dollars per successful verification. Select the cheapest model that meets the acceptance criteria; use a more expensive model only for measured failures and record that escalation. Calling every catalog model would consume credit without proving product quality.
 
-Before a public provider route, implement and verify persistent reservations, per-run/per-stage limits, bounded prompt context, an overall account cap, concurrency limits, capped retries, clear HTTP 402 handling, request authentication and rate limiting. Sum usage from every stage and attempt, including failed/invalid responses when chargeable. A `max_tokens` field alone is not an account spending limit. Do not expose the private key to static hosting. Reserve the judging allocation before spending on comparisons.
+Implemented and unit-tested during hardening: persistent atomic spending reservations, $20 total/$0.25 per-run admission estimates, five provider attempts per run, stage-specific input/output limits, exact-response caching, zero SDK automatic retries, explicit HTTP 402 handling, private deployment authentication, and create/repair rate limiting. These are app-side estimates, not a provider account spending cap or verified balance. Resource/concurrency behavior still needs a load test before any public untrusted multi-user service. Do not expose the private key to static hosting. Reserve the judging allocation before comparisons.
 
 ## Completion evidence to capture
 

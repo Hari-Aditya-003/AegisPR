@@ -26,3 +26,13 @@ def test_cors_preflight_still_works_without_credentials(monkeypatch):
     with TestClient(main.app) as client:
         response = client.options("/api/verifications", headers={"Origin": "http://localhost:3000", "Access-Control-Request-Method": "POST", "Access-Control-Request-Headers": "authorization"})
         assert response.status_code == 200
+
+
+def test_budget_estimate_is_private_and_explicit(monkeypatch):
+    monkeypatch.setattr(main.settings, "api_access_token", "private-test-access-code")
+    with TestClient(main.app) as client:
+        assert client.get("/api/budget").status_code == 401
+        response = client.get("/api/budget", headers={"Authorization": "Bearer private-test-access-code"})
+        assert response.status_code == 200
+        assert response.json()["limit_usd"] == 20
+        assert "not provider balance" in response.json()["note"]

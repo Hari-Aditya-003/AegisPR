@@ -1,9 +1,10 @@
 import asyncio
+import secrets
 
 import httpx
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -39,11 +40,27 @@ app.add_middleware(
 
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
-    response = await call_next(request)
+    token = settings.api_access_token
+    if request.url.path.startswith("/api/") and request.method != "OPTIONS" and (token or settings.app_env == "production"):
+        if not token:
+            response = JSONResponse(status_code=503, content={"detail": "Private deployment access is not configured"})
+        elif not secrets.compare_digest(request.headers.get("Authorization", "").encode(), f"Bearer {token}".encode()):
+            response = JSONResponse(status_code=401, content={"detail": "Enter the private deployment access code"})
+        else:
+            response = await call_next(request)
+    else:
+        response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "no-referrer"
     return response
+
+
+@app.get("/api/budget")
+async def inference_budget():
+    return {**orchestrator.budget.summary(), "limit_usd": orchestrator.budget.limit / 1_000_000,
+            "per_run_limit_usd": orchestrator.budget.per_run / 1_000_000,
+            "note": "App-side accounting estimate, including conservative reservations; not provider balance or a billing guarantee"}
 
 
 @app.get("/health")

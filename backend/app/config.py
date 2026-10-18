@@ -16,9 +16,13 @@ class Settings(BaseSettings):
     api_port: int = 8000
     allowed_origins: str = "http://localhost:3000"
     github_token: str | None = Field(default=None, repr=False)
+    api_access_token: str | None = Field(default=None, repr=False, min_length=16)
     nebius_api_key: str | None = Field(default=None, repr=False)
     nebius_base_url: str = "https://api.tokenfactory.nebius.com/v1/"
-    nebius_model: str = "nvidia/Nemotron-3-Ultra-550b-a55b"
+    nebius_model: str = "nvidia/Nemotron-3_5-Lightning"
+    inference_budget_usd: str = "20"
+    inference_run_budget_usd: str = "0.25"
+    inference_max_calls_per_run: int = Field(default=5, ge=1, le=10)
     gpu_worker_url: str | None = None
     gpu_worker_token: str | None = Field(default=None, repr=False)
     enable_sandbox: bool = False

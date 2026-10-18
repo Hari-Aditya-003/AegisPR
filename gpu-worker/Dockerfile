@@ -4,7 +4,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 python3
 RUN useradd --system --uid 10001 --create-home aegis
 WORKDIR /app
 COPY requirements.txt .
-RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
+RUN pip3 install --no-cache-dir --break-system-packages --upgrade pip==26.2.1 \
+    && pip3 install --no-cache-dir --break-system-packages -r requirements.txt
 COPY app ./app
 USER aegis
 EXPOSE 8091

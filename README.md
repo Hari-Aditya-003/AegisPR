@@ -48,7 +48,7 @@ Browser / Next.js
         ▼
 FastAPI orchestrator ─── GitHub API + git
         │
-        ├── Nebius Token Factory ── NVIDIA Nemotron 3 Ultra
+        ├── Nebius Token Factory ── NVIDIA Nemotron (budgeted)
         │
         ├── Dell RTX 3050 Ti ───── CUDA context ranking
         │
@@ -58,7 +58,7 @@ FastAPI orchestrator ─── GitHub API + git
                  Evidence report
 ```
 
-Nemotron 3 Ultra is served remotely because it is a 550B-class mixture-of-experts model. The Dell RTX 3050 Ti performs a real, bounded CUDA workload: hashed term-document vector construction, cosine scoring, and context prioritization. If the worker is unavailable, AegisPR records a CPU fallback rather than hiding the loss of acceleration.
+Nemotron is served remotely; the default is the economical Lightning candidate, not a claimed quality winner. The Dell RTX 3050 Ti performs a real, bounded CUDA workload: hashed term-document vector construction, cosine scoring, and context prioritization. If the worker is unavailable, AegisPR records a CPU fallback rather than hiding the loss of acceleration.
 
 Start with the [complete project documentation](docs/PROJECT_DOCUMENTATION.md). Focused references cover [architecture](docs/architecture.md), [agent stages](docs/agents.md), [verification semantics](docs/verification.md), [security](docs/security.md), [live Dell GPU evidence](docs/live-gpu-evidence.md), [live deployment and sandbox evidence](docs/live-stack-evidence.md), [operations](docs/RUNBOOK.md), [contributing](docs/CONTRIBUTING.md), and the [hackathon submission kit](docs/hackathon-submission.md).
 
@@ -73,15 +73,16 @@ Requirements:
 
 ```bash
 cp .env.example .env
-# Add NEBIUS_API_KEY and replace GPU_WORKER_TOKEN.
+# Add NEBIUS_API_KEY; replace GPU_WORKER_TOKEN and API_ACCESS_TOKEN
+# with separate random secrets. Example generator: openssl rand -hex 32
 docker compose up --build -d
 docker compose ps
 curl http://localhost:8000/health
 ```
 
-Open `http://localhost:3000`, paste a public GitHub pull request URL, and select **Verify PR**.
+Open `http://localhost:3000`, save the private deployment access code (your `API_ACCESS_TOKEN`, never the provider key), paste a public GitHub pull request URL, and select **Verify PR**. The code is kept only in that tab's session storage. Use HTTPS for any internet-accessible deployment; private Tailscale transport is encrypted but not a public judge URL.
 
-The Compose deployment uses `nvidia/Nemotron-3-Ultra-550b-a55b` through the OpenAI-compatible Nebius endpoint at `https://api.tokenfactory.nebius.com/v1/`. Copy `.env.example` for the exact, case-sensitive model ID and confirm it appears in `/v1/models` before a demo. A successful model-list request does not confirm inference credits; an actual completion must also succeed.
+The Compose default is `nvidia/Nemotron-3_5-Lightning` through the OpenAI-compatible endpoint `https://api.tokenfactory.nebius.com/v1/`. This lowers estimated token cost versus Ultra; output quality still needs a live benchmark. The public and authenticated catalogs list this exact ID. A successful model-list request does not confirm inference credits; an actual completion must also succeed. Read the [model and $25 budget policy](docs/model-budget.md) before enabling paid calls.
 
 ## Dell GPU deployment
 
@@ -107,7 +108,7 @@ Backend:
 
 ```bash
 cd backend
-python3 -m venv .venv
+python3.12 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 .venv/bin/uvicorn app.main:app --reload
 ```
@@ -137,6 +138,7 @@ make test
 | `GET` | `/api/verifications/{id}/impact` | Read impact nodes and edges |
 | `POST` | `/api/verifications/{id}/repair` | Generate an isolated minimal patch and verify it against recorded evidence |
 | `GET` | `/health` | Inspect Nebius, GPU worker, and sandbox configuration |
+| `GET` | `/api/budget` | Authenticated app-side usage/reservation estimate, not provider balance |
 
 Repair requests are accepted only for a confirmed differential regression. A patch remains inside a temporary checkout, and `FIX_VERIFIED` is emitted only when the existing suite, generated regression test, and every configured build or lint check pass.
 
@@ -147,6 +149,10 @@ Repair requests are accepted only for a confirmed differential regression. A pat
 | `NEBIUS_API_KEY` | Production | Server-side Token Factory key |
 | `NEBIUS_BASE_URL` | No | OpenAI-compatible endpoint |
 | `NEBIUS_MODEL` | No | NVIDIA model ID |
+| `API_ACCESS_TOKEN` | Production | Separate private deployment code; all `/api/*` routes require Bearer authentication |
+| `INFERENCE_BUDGET_USD` | No | Persistent total admission estimate, default $20 |
+| `INFERENCE_RUN_BUDGET_USD` | No | Per-run admission estimate, default $0.25 |
+| `INFERENCE_MAX_CALLS_PER_RUN` | No | Provider attempts per verification including repairs, default 5 |
 | `GITHUB_TOKEN` | No | Higher GitHub API rate limits |
 | `GPU_WORKER_TOKEN` | Production | Shared token for the internal GPU worker |
 | `PUBLIC_API_URL` | Production | Browser-visible FastAPI URL used at frontend build time |
@@ -169,7 +175,7 @@ A successful AegisPR verification does not prove that software contains no defec
 
 ## Hackathon fit
 
-AegisPR integrates NVIDIA Nemotron 3 Ultra (`nvidia/Nemotron-3-Ultra-550b-a55b`) through Nebius Token Factory for risk planning, test generation, root-cause analysis, and repair proposals. Token Factory's hosted, OpenAI-compatible API avoids serving the large reasoning model on the 4 GB Dell GPU. Authentication and catalog availability are verified; successful inference, model output quality, and end-to-end latency are not yet verified because of the account credit block. No measured speedup or successful cloud review is claimed.
+AegisPR integrates NVIDIA Nemotron through Nebius Token Factory for risk planning, test generation, root-cause analysis, and repair proposals. The economical Lightning model is the current default; Ultra remains an explicitly configured comparison option. Token Factory's hosted, OpenAI-compatible API avoids serving a large reasoning model on the 4 GB Dell GPU. Authentication and catalog availability are verified; successful inference, model output quality, and end-to-end latency are not yet verified because of the account credit block. No measured speedup or successful cloud review is claimed.
 
 The Dell RTX 3050 Ti independently runs the verified CuPy/CUDA context-ranking workload. Real Docker fixture testing produced baseline PASS, changed code FAIL, and manually repaired code PASS. The Dell is local infrastructure, not a Nebius cloud GPU instance. See [live deployment evidence](docs/live-stack-evidence.md).
 

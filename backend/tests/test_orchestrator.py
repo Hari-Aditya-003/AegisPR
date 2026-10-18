@@ -141,13 +141,14 @@ async def test_workflow_records_environment_error(tmp_path: Path, monkeypatch) -
     request = CreateVerificationRequest(pull_request_url="https://github.com/acme/store/pull/42")
     run = orchestrator.create(request)
     fake_github = MagicMock()
-    fake_github.get_pull_request = AsyncMock(side_effect=RuntimeError("GitHub unavailable"))
+    fake_github.get_pull_request = AsyncMock(side_effect=RuntimeError("private-provider-secret GitHub unavailable"))
     fake_github.close = AsyncMock()
     monkeypatch.setattr(orchestrator_module, "GitHubClient", lambda token: fake_github)
     await orchestrator.verify(run.id, request)
     stored = store.get(run.id)
     assert stored is not None and stored.status == VerificationStatus.ENVIRONMENT_ERROR
-    assert "GitHub unavailable" in (stored.error or "")
+    assert "could not complete" in (stored.error or "")
+    assert "private-provider-secret" not in stored.error
 
 
 @pytest.mark.asyncio
@@ -237,6 +238,7 @@ async def test_repair_workflow_verifies_minimal_patch_with_separate_checks(tmp_p
         "existing_tests", "generated_tests", "build", "lint",
     ]
     orchestrator.repository.apply_patch.assert_called_once()
+    assert orchestrator.repository.apply_patch.call_args.args[2] == set(run.changed_files)
 
 
 def test_repair_request_rejects_non_regression_run(tmp_path: Path) -> None:
