@@ -216,29 +216,32 @@ class DockerSandbox:
             return self._skipped("repair", commit, "Command was rejected by the safety policy")
         started = time.monotonic()
         container_name = f"aegispr-test-{uuid4().hex}"
+        execution_command = generated_command or command
         try:
             result = self._run_bounded(
                 [
                     "docker", "run", "--name", container_name, "--rm", "--network=none", "--read-only",
-                    "--tmpfs=/run/aegis:rw,nosuid,nodev,size=512m,uid=10001,gid=10001",
+                    "--tmpfs=/run/aegis:rw,exec,nosuid,nodev,size=512m,uid=10001,gid=10001",
                     "--tmpfs=/tmp:rw,noexec,nosuid,size=256m", f"--memory={self.memory}",
                     f"--cpus={self.cpus}", "--pids-limit=256",
                     "--security-opt=no-new-privileges", "--cap-drop=ALL", tag,
-                    "/bin/sh", "-c", "(cp -a /workspace/. /run/aegis/ && cd /run/aegis) || exit 125; cd /run/aegis || exit 125; " + (generated_command or command),
+                    "/bin/sh", "-c", "(cp -a /workspace/. /run/aegis/ && cd /run/aegis) || exit 125; cd /run/aegis || exit 125; " + execution_command,
                 ],
                 timeout=self.timeout_seconds,
             )
-            status = ExecutionStatus.PASSED if result.returncode == 0 else ExecutionStatus.ERROR if result.returncode == 125 else ExecutionStatus.FAILED
-            return self._result(
+            status = ExecutionStatus.PASSED if result.returncode == 0 else ExecutionStatus.ERROR if result.returncode in {125, 126, 127} else ExecutionStatus.FAILED
+            execution = self._result(
                 branch, commit, status, result.returncode, result.stdout, result.stderr, started
             )
         except subprocess.TimeoutExpired as exc:
-            return self._result(
+            execution = self._result(
                 branch, commit, ExecutionStatus.TIMEOUT, None, exc.stdout or "", exc.stderr or "", started
             )
         finally:
             # A killed Docker CLI does not reliably stop its daemon-managed container.
             self._cleanup(["docker", "container", "rm", "--force", container_name])
+        execution.environment["command"] = execution_command
+        return execution
 
     @staticmethod
     def _run_bounded(args: list[str], *, timeout: float) -> subprocess.CompletedProcess[str]:
