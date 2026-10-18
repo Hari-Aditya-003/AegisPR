@@ -25,6 +25,7 @@ export interface Finding {
   summary: string;
   affected_file?: string;
   root_cause?: string;
+  explanation_error?: string | null;
   base_execution: TestExecution;
   head_execution: TestExecution;
 }
@@ -72,6 +73,10 @@ export interface VerificationRun {
     generated_tests: number;
     regressions_found: number;
     context_accelerator: string;
+    input_tokens?: number;
+    output_tokens?: number;
+    accounted_cost_usd?: number;
+    cache_hits?: number;
   };
   error?: string;
   disclaimer: string;

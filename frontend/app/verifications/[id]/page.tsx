@@ -92,6 +92,7 @@ export default function VerificationPage() {
                   <p>Standard output</p><pre>{execution.stdout || "No standard output captured."}</pre><p>Standard error</p><pre>{execution.stderr || "No standard error captured."}</pre>
                 </section>)}</div></details>
                 {finding.root_cause && <div className="root-cause"><span>Likely root cause</span><p>{finding.root_cause}</p></div>}
+                {finding.explanation_error && <p className="scope-note">{finding.explanation_error}</p>}
                 {finding.classification === "REGRESSION" && run.status === "REGRESSION_FOUND" && run.repair?.status !== "RUNNING" && (
                   <button className="repair-button" type="button" disabled={repairing} onClick={() => startRepair(finding.id)}>
                     {repairing ? "Generating repair…" : "Generate and verify repair"}
@@ -125,7 +126,11 @@ export default function VerificationPage() {
             regressions={run.metrics.regressions_found}
             buildStatus={run.repair?.checks.find(check => check.name === "build")?.execution.status ?? "Not recorded"}
           />
-          <section className="metric-card"><h2>Run metrics</h2><dl><div><dt>Files analyzed</dt><dd>{run.metrics.files_analyzed}</dd></div><div><dt>Hypotheses</dt><dd>{run.metrics.hypotheses_generated}</dd></div><div><dt>Generated tests</dt><dd>{run.metrics.generated_tests}</dd></div><div><dt>Context compute</dt><dd>{run.metrics.context_accelerator.toUpperCase()}</dd></div></dl></section>
+          <section className="metric-card"><h2>Run metrics</h2><dl><div><dt>Files analyzed</dt><dd>{run.metrics.files_analyzed}</dd></div><div><dt>Hypotheses</dt><dd>{run.metrics.hypotheses_generated}</dd></div><div><dt>Generated tests</dt><dd>{run.metrics.generated_tests}</dd></div><div><dt>Context compute</dt><dd>{run.metrics.context_accelerator.toUpperCase()}</dd></div>
+            {run.metrics.input_tokens !== undefined && <div><dt>Tokens in / out</dt><dd>{run.metrics.input_tokens} / {run.metrics.output_tokens ?? 0}</dd></div>}
+            {run.metrics.cache_hits !== undefined && <div><dt>Cached responses</dt><dd>{run.metrics.cache_hits}</dd></div>}
+            {run.metrics.accounted_cost_usd !== undefined && <div><dt>App cost estimate</dt><dd>${run.metrics.accounted_cost_usd.toFixed(4)}</dd></div>}
+          </dl>{run.metrics.accounted_cost_usd !== undefined && <p className="scope-note">Conservative app accounting, not the provider balance. Unknown usage may retain its maximum reservation.</p>}</section>
           {run.error && <section className="error-card"><h2>Environment error</h2><p>{run.error}</p></section>}
         </aside>
       </div>

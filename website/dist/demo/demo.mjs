@@ -3,6 +3,16 @@ import { verifyBoundary } from './boundary.mjs';
 const byId = id => document.getElementById(id);
 let latest;
 const money = value => value.toFixed(2);
+function invalidateEvidence() {
+  latest = undefined;
+  byId('results').hidden = true;
+  byId('repair-result').hidden = true;
+  byId('input-error').hidden = true;
+  byId('idle').hidden = false;
+  byId('idle').textContent = 'Inputs changed. Run the experiment again to create current evidence.';
+}
+for (const id of ['total', 'discount']) byId(id).addEventListener('input', invalidateEvidence);
+byId('change').addEventListener('change', invalidateEvidence);
 byId('experiment').addEventListener('submit', event => {
   event.preventDefault();
   byId('input-error').hidden = true;

@@ -303,7 +303,7 @@ html { scroll-padding-top: 110px; }
 .access-control form > div { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 14px; }
 .access-control button { border: 1px solid #386462; border-radius: 5px; padding: 9px 11px; color: #b6ffec; background: #103329; cursor: pointer; font-size: 12px; }
 .access-control [role=status] { margin-bottom: 0; }
-html[data-motion=paused] *, html[data-motion=paused] *::before, html[data-motion=paused] *::after { animation-play-state: paused !important; transition: none !important; scroll-behavior: auto !important; }
+html[data-motion=paused] *, html[data-motion=paused] *::before, html[data-motion=paused] *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 .scope-note, .disclaimer { color: #9bb2b5; font-size: 12px; }
 .run-status { max-width: 100%; white-space: normal; line-height: 1.5; }
 .report-main, .report-side, .report-heading > div { min-width: 0; }
