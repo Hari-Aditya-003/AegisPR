@@ -1,5 +1,34 @@
 import { expect, test } from "@playwright/test";
 
+test("paused motion does not hide newly entered evidence panels", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: /Pause animation$/ }).click();
+  const logo = page.getByAltText("AegisPR shield and branching circuit logo");
+  expect(await logo.evaluate(node => getComputedStyle(node).animationName)).toBe("none");
+  await page.getByRole("button", { name: "Safe change", exact: true }).click();
+  const evidence = page.locator(".preview-result");
+  expect(await evidence.evaluate(node => getComputedStyle(node).opacity)).toBe("1");
+  await page.getByRole("button", { name: /Resume animation$/ }).click();
+  expect(await logo.evaluate(node => getComputedStyle(node).animationName)).not.toBe("none");
+});
+
+test("private evidence retries after a session access code without exposing it in the page", async ({ page }) => {
+  await page.route("http://localhost:8000/api/verifications/private-run", async route => {
+    const authorized = route.request().headers().authorization === "Bearer reviewer-session-code";
+    await route.fulfill({ status: authorized ? 404 : 401, contentType: "application/json", body: JSON.stringify({ detail: "No report" }) });
+  });
+  await page.goto("/verifications/private-run");
+  await expect(page.locator(".report-error")).toContainText("save the deployment access code");
+  await page.getByText("Private deployment access", { exact: true }).click();
+  await page.getByLabel("Deployment access code", { exact: true }).fill("reviewer-session-code");
+  await page.getByRole("button", { name: "Save access code", exact: true }).click();
+  await expect(page.locator(".report-error")).toContainText("No report");
+  await expect(page.getByLabel("Deployment access code", { exact: true })).toHaveValue("");
+  expect(await page.evaluate(() => localStorage.length)).toBe(0);
+  await page.getByRole("button", { name: "Clear saved code", exact: true }).click();
+  await expect(page.locator(".report-error")).toContainText("save the deployment access code");
+});
+
 test("visitor can explore example outcomes and test code with the keyboard", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByText("Interactive example · not a live review")).toBeVisible();
