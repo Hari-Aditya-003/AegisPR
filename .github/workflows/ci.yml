@@ -91,6 +91,18 @@ jobs:
       - name: Export fixed-fixture execution receipts
         if: success()
         run: bash scripts/judge-test-build.sh export
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - name: Inspect real controlled reports in Chromium without API mocks
+        run: npm run e2e:judge
+        working-directory: frontend
       - uses: actions/upload-artifact@v4
         if: success()
         with:
