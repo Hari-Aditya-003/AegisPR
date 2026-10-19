@@ -39,7 +39,9 @@ The actual judge API returned 401 without authentication and 200 for the authent
 
 The first real startup caught a permissions issue not established by subprocess mocks: source extracted with restrictive permissions was copied as root, so the non-root runtime user could not import `/app/app/__init__.py`. A regression test was added before changing the Dockerfile to copy application source with `--chown=aegis:aegis`. The rebuilt container started successfully without widening source permissions, and both acceptance fixtures then completed.
 
-The standard local quality matrix passed **203 tests**: 149 backend, 32 frontend, seven mocked-API Chromium journeys, eight website, six CPU-worker and one seeded repository test. Backend line coverage was 90.71%; frontend statement coverage was 95.54%. Type checking, production build and npm audit passed. Separate no-mock browser inspection and CI results must be read from the current release evidence, not inferred from that mocked browser matrix.
+The standard local quality matrix passed **203 tests**: 149 backend, 32 frontend, seven mocked-API Chromium journeys, eight website, six CPU-worker and one seeded repository test. Backend line coverage was 90.71%; frontend statement coverage was 95.54%. Type checking, production build and npm audit passed.
+
+Separately, **four no-mock Chromium checks passed** against the actual Dell judging services through authenticated SSH port forwarding: two unauthenticated-access checks and two authenticated language-report journeys, including their zero-call/zero-token budget checks and actual saved stdout/stderr/commands. This makes 207 automated checks across the standard matrix and real-stack browser suite. The live browser checks found and reproduced full-SHA overflow at a 390px viewport; scoped repair-receipt wrapping fixed it, and the expanded report now fits 390px without document overflow. Desktop/mobile screenshots were inspected with no access code visible. These are controlled-fixture browser results, not live model evidence. Read the current release's CI run separately; a local pass does not establish CI success.
 
 ## Reproduce and inspect
 

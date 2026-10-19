@@ -56,3 +56,14 @@ Repository checks use the production sandbox policy: no runtime network or host 
 - Remote machine: forward both loopback ports through an authenticated SSH connection. A private Tailscale hostname is not a public judge URL. Do not expose this Docker-socket-backed API as an arbitrary-code service.
 
 The CI `judge-test-build` job runs this launcher on Linux and uploads the exported `controlled-fixture-evidence` JSON artifact. Unit tests mock subprocesses and cannot replace this real Docker acceptance job. A source checkout and these instructions make the controlled test build reproducible; they do not satisfy the still-unverified live NVIDIA/Nebius inference requirement.
+
+After starting the stack and exporting evidence, run the separate four-check browser suite:
+
+```bash
+cd frontend
+npm ci
+npx playwright install --with-deps chromium
+npm run e2e:judge
+```
+
+It reads the actual exported Python/Node records, checks API authentication and zero recorded inference usage, loads their real UI reports without API mocks and inspects full execution receipts at desktop/mobile widths. It uses only the fixed local ports above, not production endpoints. Traces, video and screenshots are disabled for this authenticated suite. CI uploads only receipt JSON, not private session state or browser failure diagnostics; keep local failure artifacts private too. The normal seven mocked-API journeys remain under `npm run e2e`.
