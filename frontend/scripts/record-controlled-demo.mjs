@@ -133,6 +133,12 @@ async function runDemo(mode) {
   const page = await context.newPage();
   const video = page.video();
   const pause = ms => page.waitForTimeout(record ? ms : Math.min(ms, 100));
+  const diagnostics = new Set();
+  page.on('pageerror', error => {
+    const label = /hydration|Minified React error #(418|423|425)/i.test(error.message)
+      ? 'DIAGNOSTIC hydration-error' : 'DIAGNOSTIC page-error';
+    if (!diagnostics.has(label)) { diagnostics.add(label); print(label); }
+  });
   try {
     await setupReadOnlyNetwork(context, ids);
     await context.addInitScript(code => {
