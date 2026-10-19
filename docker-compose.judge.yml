@@ -1,0 +1,50 @@
+# Standalone controlled test build. Never merge with production Compose.
+name: aegispr-judge
+services:
+  backend:
+    build:
+      context: ./backend
+    environment:
+      APP_ENV: production
+      API_ACCESS_TOKEN: ${JUDGE_ACCESS_TOKEN:?Run scripts/judge-test-build.sh first}
+      ALLOWED_ORIGINS: http://127.0.0.1:3300,http://localhost:3300
+      NEBIUS_API_KEY: ""
+      GITHUB_TOKEN: ""
+      INFERENCE_BUDGET_USD: "0"
+      INFERENCE_RUN_BUDGET_USD: "0.25"
+      INFERENCE_MAX_CALLS_PER_RUN: "5"
+      ENABLE_SANDBOX: "true"
+      DATA_PATH: /app/data/aegispr.sqlite3
+      WORKSPACE_ROOT: /tmp/aegispr-runs
+    group_add:
+      - ${JUDGE_DOCKER_GID:-0}
+    volumes:
+      - judge-data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "127.0.0.1:18080:8000"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://127.0.0.1:18080
+    environment:
+      NEXT_PUBLIC_API_URL: http://127.0.0.1:18080
+    ports:
+      - "127.0.0.1:3300:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+volumes:
+  judge-data:
