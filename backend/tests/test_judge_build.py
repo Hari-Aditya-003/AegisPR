@@ -89,3 +89,16 @@ def test_launcher_refuses_a_symlinked_private_code(tmp_path, monkeypatch):
     (private / "access-code").symlink_to(outside)
     assert invoke(repo).returncode != 0
     assert outside.read_text() == "preserve"
+
+
+def test_launcher_exports_fixture_reports_without_copying_private_state(tmp_path, monkeypatch):
+    repo, log = launcher(tmp_path, monkeypatch)
+    assert invoke(repo).returncode == 0
+    result = invoke(repo, "export")
+    assert result.returncode == 0, result.stderr
+    entries = [json.loads(line)["args"] for line in log.read_text().splitlines()]
+    copies = [args for args in entries if "cp" in args]
+    assert len(copies) == 1
+    assert "backend:/app/data/judge-evidence/." in copies[0]
+    assert str(repo / "artifacts/judge/evidence") in copies[0]
+    assert "access-code" not in " ".join(copies[0])
