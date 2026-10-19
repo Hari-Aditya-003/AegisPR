@@ -10,7 +10,9 @@ const website = 'https://hari-aditya-003.github.io/AegisPR/';
 const app = 'http://127.0.0.1:3300';
 const health = 'http://127.0.0.1:18880/health';
 const uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
-const scenes = new Set(['preflight', 'brand', 'browser-illustration', 'python-evidence', 'manual-repair', 'node-evidence', 'gpu-health', 'remaining-work']);
+const scenes = new Set(['preflight', 'brand', 'browser-illustration', 'python-evidence', 'manual-repair', 'node-evidence', 'gpu-health', 'remaining-work',
+  'python-navigation', 'python-response-validation', 'python-provenance', 'python-open-branches', 'python-base-reveal', 'python-head-reveal',
+  'node-navigation', 'node-response-validation', 'node-provenance']);
 let currentScene = 'SCENE preflight';
 
 export function matchesHeroTitle(text) {
@@ -185,12 +187,16 @@ async function runDemo(mode) {
       print(`${label}: ${JSON.stringify(fields)}`);
     }
     async function report(run, text) {
+      const language = run === python ? 'python' : 'node';
+      checkpoint(`${language}-navigation`);
       const responsePromise = page.waitForResponse(response => response.url() === `http://127.0.0.1:18080/api/verifications/${run.id}` && response.request().method() === 'GET');
       const response = await observedNavigation(responsePromise, navigate(`${app}/verifications/${run.id}`, text));
+      checkpoint(`${language}-response-validation`);
       assert.equal(response.status(), 200);
       const actual = validateFixture(await response.json());
       assert.equal(actual.summary.base_commit, run.summary.base_commit);
       assert.equal(actual.summary.head_commit, run.summary.head_commit);
+      checkpoint(`${language}-provenance`);
       await page.getByRole('heading', { name: 'Controlled fixture — not a live pull request review', exact: true }).waitFor();
       assert.equal(await page.getByRole('button', { name: 'Generate and verify repair' }).count(), 0);
     }
@@ -221,10 +227,13 @@ async function runDemo(mode) {
     await report(python, 'Real Docker receipts: fixed Python test, no model or live PR.');
     if (mode === '--discover') await discover('Python controlled report');
     await pause(4000);
+    checkpoint('python-open-branches');
     await click(page.locator('summary', { hasText: 'Inspect branch execution evidence' }));
+    checkpoint('python-base-reveal');
     await reveal(page.getByRole('heading', { name: 'Base revision', exact: true }));
     assert.ok((await page.locator('body').innerText()).includes(python.summary.base_commit));
     await pause(5000);
+    checkpoint('python-head-reveal');
     await reveal(page.getByRole('heading', { name: 'Fixture head revision', exact: true }));
     await caption('Actual commits, commands and failure logs make the result inspectable.');
     await pause(5000);
