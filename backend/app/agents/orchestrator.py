@@ -75,6 +75,8 @@ class Orchestrator:
 
     def create_repair(self, run_id: str, request: RepairRequest) -> VerificationRun:
         run = self._required(run_id)
+        if run.evidence_mode == "controlled_fixture":
+            raise ValueError("Controlled fixture reports cannot trigger model repair generation")
         if run.status != VerificationStatus.REGRESSION_FOUND:
             raise ValueError("A repair requires a confirmed regression")
         if not self.settings.enable_sandbox:

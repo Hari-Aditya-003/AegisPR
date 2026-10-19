@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -169,6 +169,7 @@ class VerificationMetrics(BaseModel):
 class VerificationRun(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     pull_request_url: str
+    evidence_mode: Literal["pr_review", "controlled_fixture"] = "pr_review"
     status: VerificationStatus = VerificationStatus.QUEUED
     started_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     completed_at: datetime | None = None

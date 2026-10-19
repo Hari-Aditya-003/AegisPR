@@ -2,6 +2,8 @@
 import importlib
 import json
 import re
+import subprocess
+import sys
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -151,3 +153,27 @@ def test_cli_language_option_persists_complete_report_and_prints_id_only(tmp_pat
 
 def test_legacy_pr_reports_default_to_pr_evidence():
     assert VerificationRun(pull_request_url="https://github.com/acme/store/pull/1").evidence_mode == "pr_review"
+
+
+def test_fixture_module_never_imports_provider_sdk_or_app_startup():
+    result = subprocess.run([
+        sys.executable, "-c",
+        "import sys; import app.services.fixture_acceptance; "
+        "assert 'openai' not in sys.modules; assert 'app.services.nebius' not in sys.modules; "
+        "assert 'app.main' not in sys.modules",
+    ], cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=10)
+    assert result.returncode == 0, result.stderr
+
+
+def test_cli_all_reports_failure_without_hiding_successful_language(tmp_path, monkeypatch, capsys):
+    service = module()
+    settings = Settings(data_path=tmp_path / "data.sqlite3", workspace_root=tmp_path / "work")
+    monkeypatch.setattr(service, "Settings", lambda: settings)
+    fake = sandbox(head="TIMEOUT")
+    monkeypatch.setattr(service, "DockerSandbox", lambda *args: fake)
+    assert service.main([]) == 1
+    runs = VerificationStore(settings.data_path).list()
+    assert len(runs) == 2
+    assert {run.summary.repository for run in runs} == {"coupon-python", "coupon-node"}
+    assert all(run.status == VerificationStatus.INCONCLUSIVE for run in runs)
+    assert capsys.readouterr().out.count('"evidence_mode": "controlled_fixture"') == 2
