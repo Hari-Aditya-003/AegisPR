@@ -114,7 +114,8 @@ for (const language of ["python", "node"] as const) {
       }, code);
       let unsafeBrowserRequest = false;
       page.on("request", request => {
-        if (request.url().includes(code) || !["GET", "OPTIONS"].includes(request.method())) unsafeBrowserRequest = true;
+        const origin = new URL(request.url()).origin;
+        if (!["http://127.0.0.1:3300", apiOrigin].includes(origin) || request.url().includes(code) || !["GET", "OPTIONS"].includes(request.method())) unsafeBrowserRequest = true;
       });
       await page.goto(`/verifications/${run.id}`);
       const provenance = page.getByRole("note", { name: /controlled fixture/i });
@@ -124,6 +125,10 @@ for (const language of ["python", "node"] as const) {
       await expect(page.getByRole("heading", { name: "Fixed fixture test artifacts" })).toBeVisible();
       await expect(page.getByRole("heading", { name: "Prewritten fixture hypothesis" })).toBeVisible();
       await expect(page.getByText("Not used (controlled fixture)", { exact: true })).toBeVisible();
+      const inferenceMetric = page.getByText("Model inference", { exact: true }).locator("..");
+      const labelBox = await inferenceMetric.locator("dt").boundingBox();
+      const valueBox = await inferenceMetric.locator("dd").boundingBox();
+      expect(Boolean(labelBox && valueBox && labelBox.x + labelBox.width + 8 <= valueBox.x), "Run metric labels and values need a readable gap").toBe(true);
       await expect(page.getByRole("button", { name: /generate and verify repair/i })).toHaveCount(0);
       await page.getByText("Inspect branch execution evidence", { exact: true }).click();
       await assertExecution(page.getByRole("heading", { name: "Base revision", exact: true }).locator(".."), run.findings[0].base_execution);
@@ -143,8 +148,8 @@ for (const language of ["python", "node"] as const) {
       await page.setViewportSize({ width: 390, height: 844 });
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
       expect((await page.locator("body").innerText()).includes(code), "Access code must stay absent from rendered text").toBe(false);
-      expect(await page.getByLabel("Deployment access code", { exact: true }).inputValue()).toBe("");
-      expect(unsafeBrowserRequest, "Browser must only read evidence without putting credentials in URLs").toBe(false);
+      expect((await page.getByLabel("Deployment access code", { exact: true }).inputValue()).length === 0, "Access code input must be empty without exposing its value").toBe(true);
+      expect(unsafeBrowserRequest, "Browser must only read local evidence without putting credentials in URLs").toBe(false);
 
       const budgetResponse = await apiGet("/api/budget", code);
       expect(budgetResponse.status).toBe(200);

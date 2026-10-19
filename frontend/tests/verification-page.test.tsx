@@ -57,7 +57,7 @@ describe("VerificationPage", () => {
     expect(screen.getByRole("heading", { name: "Manual repair evidence" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Fixture execution timeline" })).toBeInTheDocument();
     expect(screen.getByText("Fixture head revision")).toBeInTheDocument();
-    expect(within(screen.getByLabelText("Verification proof card")).getByText("Fixed fixture tests")).toBeInTheDocument();
+    expect(within(screen.getByLabelText("Verification proof card")).getByText("Fixture head tests")).toBeInTheDocument();
     expect(screen.queryByText("Generated tests")).not.toBeInTheDocument();
     expect(screen.queryByText(/PR #0/)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /generate and verify repair/i })).not.toBeInTheDocument();
