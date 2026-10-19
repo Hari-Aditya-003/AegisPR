@@ -11,7 +11,11 @@
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "e2e": "next build && playwright test",
-    "e2e:judge": "playwright test --config judge.playwright.config.ts"
+    "e2e:judge": "playwright test --config judge.playwright.config.ts",
+    "demo:test": "node --test scripts/record-controlled-demo.test.mjs",
+    "demo:discover": "node scripts/record-controlled-demo.mjs --discover",
+    "demo:rehearse": "node scripts/record-controlled-demo.mjs --rehearse",
+    "demo:record": "node scripts/record-controlled-demo.mjs --record"
   },
   "dependencies": {
     "@xyflow/react": "12.8.4",
