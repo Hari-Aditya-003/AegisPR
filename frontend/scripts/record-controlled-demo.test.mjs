@@ -10,7 +10,7 @@ import {
 
 const id = '8fbe82b9-ba35-488d-9bcc-54b89fb2ea1c';
 const execution = (status, exitCode) => ({
-  status, exit_code: exitCode, commit: 'a'.repeat(40),
+  status, exit_code: exitCode, commit: (status === 'FAILED' ? 'b' : 'a').repeat(40),
   environment: { executor: 'docker', network: 'none', command: 'pytest -q' },
   stdout: 'actual receipt', stderr: '',
 });
@@ -40,6 +40,11 @@ test('accepts only zero-inference controlled Docker receipts', () => {
     r => { r.metrics.context_accelerator = 'cuda'; },
     r => { delete r.metrics.model_calls; },
     r => { r.findings[0].head_execution.status = 'ERROR'; },
+    r => { r.findings[0].head_execution.commit = 'a'.repeat(40); },
+    r => { r.findings[0].base_execution.commit = 'b'.repeat(40); },
+    r => { r.findings[0].base_execution.exit_code = 1; },
+    r => { r.findings[0].head_execution.exit_code = 0; },
+    r => { r.summary.head_commit = r.summary.base_commit; },
     r => { r.findings[0].base_execution.environment.executor = 'mock'; },
     r => { r.repair.checks.pop(); },
     r => { r.repair.checks[0].execution.status = 'FAILED'; },
