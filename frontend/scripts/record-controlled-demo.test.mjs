@@ -7,6 +7,7 @@ import {
   observedNavigation,
   safeOutput,
   sceneCheckpoint,
+  setupReadOnlyNetwork,
   validateFixture,
   validateRehearsalMarker,
 } from './record-controlled-demo.mjs';
@@ -30,6 +31,26 @@ test('navigation failure still observes the pending response rejection during cl
   rejectResponse(new Error('Context closed'));
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(await observedNavigation(Promise.resolve('receipt'), Promise.resolve()), 'receipt');
+});
+
+test('network setup closes all WebSockets and keeps HTTP requests read-only', async () => {
+  let httpRoute;
+  let socketRoute;
+  await setupReadOnlyNetwork({
+    async route(pattern, handler) { assert.equal(pattern, '**/*'); httpRoute = handler; },
+    async routeWebSocket(pattern, handler) { assert.equal(pattern, '**/*'); socketRoute = handler; },
+  }, [id]);
+  let continued = 0;
+  let aborted = 0;
+  const request = method => ({
+    request: () => ({ url: () => `http://127.0.0.1:18080/api/verifications/${id}`, method: () => method }),
+    continue: async () => { continued++; }, abort: async () => { aborted++; },
+  });
+  await httpRoute(request('GET'));
+  await httpRoute(request('POST'));
+  let closed = false;
+  await socketRoute({ close: async options => { closed = true; assert.equal(options.code, 1008); } });
+  assert.equal(continued, 1); assert.equal(aborted, 1); assert.equal(closed, true);
 });
 
 const id = '8fbe82b9-ba35-488d-9bcc-54b89fb2ea1c';
