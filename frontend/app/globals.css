@@ -334,6 +334,9 @@ html[data-motion=paused] *, html[data-motion=paused] *::before, html[data-motion
 .text-link { display: inline-block; color: #8be1d9; margin-top: 20px; margin-left: 18px; font-size: 13px; text-decoration: underline; text-underline-offset: 4px; }
 .report-shell > .error-card { margin-bottom: 25px; }
 .repair-card pre { overflow-wrap: anywhere; }
+.repair-card .execution-details dl { margin: 0 15px 16px; font-size: 11px; }
+.repair-card .execution-details dl > div { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 8px; margin-bottom: 9px; }
+.repair-card .execution-details dd { margin: 0; overflow-wrap: anywhere; font-family: ui-monospace, monospace; }
 @media (max-width:680px) {
   .deployment-controls { justify-content: space-between; padding-inline: 20px; gap: 8px; font-size: 11px; }
   .access-control form { right: 20px; width: calc(100vw - 40px); }
