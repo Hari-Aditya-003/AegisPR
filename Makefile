@@ -8,7 +8,7 @@ test-backend:
 	cd backend && $(abspath $(PYTEST))
 
 test-frontend:
-	cd frontend && npm run test:coverage && npm run typecheck && npm run build && npm audit --audit-level=high
+	cd frontend && npm run test:coverage && npm run demo:test && npm run typecheck && npm run build && npm audit --audit-level=high
 
 test-e2e:
 	cd frontend && npm run e2e

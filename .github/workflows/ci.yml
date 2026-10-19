@@ -36,6 +36,9 @@ jobs:
         working-directory: frontend
       - run: npm run test:coverage
         working-directory: frontend
+      - name: Test read-only demo recorder guards
+        run: npm run demo:test
+        working-directory: frontend
       - run: npm run typecheck
         working-directory: frontend
       - run: npm run build

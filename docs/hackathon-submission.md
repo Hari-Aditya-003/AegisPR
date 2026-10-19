@@ -20,6 +20,8 @@ The [credential-free full local judging build](judge-test-build.md) also runs th
 real interface/API/Docker executor with prewritten Python and Node fixtures.
 It requires Docker, not paid tokens; it is not live model/PR evidence.
 
+A [captioned capability-preview workflow](demo-recording.md) is also available. Its draft footage must not be substituted for the missing real model/PR demonstration or presented as a completed submission video.
+
 ## Short description
 
 AegisPR is an autonomous pull request verification agent that turns AI review claims into executable experiments. It analyzes a public GitHub pull request, maps the affected code, asks NVIDIA Nemotron on Nebius Token Factory for concrete risk hypotheses and adversarial tests, and executes the same generated test against the base and pull request commits. A test that passes before the change and fails afterward becomes reproducible evidence of a regression. For confirmed regressions, AegisPR can propose a minimal patch and mark it `FIX_VERIFIED` only after the existing suite, generated test, build, and lint checks pass in an isolated workspace.

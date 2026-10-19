@@ -41,6 +41,10 @@ For a separate fixed-fixture acceptance build that cannot spend provider tokens,
 | `make gpu-check` | Verify CuPy sees the NVIDIA device in the worker. |
 | `cd frontend && npm run dev` | Start frontend development mode. |
 | `cd frontend && npm run typecheck` | Run TypeScript validation. |
+| `cd frontend && npm run demo:test` | Run eight read-only recorder/provenance safety guards. |
+| `cd frontend && npm run demo:discover` | Inspect the real demonstration controls without printing private values. |
+| `cd frontend && npm run demo:rehearse` | Rehearse the controlled capability preview without recording. |
+| `cd frontend && npm run demo:record` | Record a locally saved, clearly labeled draft after a matching rehearsal. |
 
 <!-- END AUTO-GENERATED -->
 
