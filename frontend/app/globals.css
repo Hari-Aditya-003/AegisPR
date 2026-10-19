@@ -318,6 +318,9 @@ html[data-motion=paused] *, html[data-motion=paused] *::before, html[data-motion
 .proof-card.neutral .status-dot { background: #93aab3; }
 .proof-grid > div { gap: 12px; }
 .proof-grid dd { text-align: right; }
+.metric-card dl > div { gap: 16px; align-items: flex-start; line-height: 1.6; }
+.metric-card dt { min-width: 0; }
+.metric-card dd { max-width: 58%; text-align: right; overflow-wrap: anywhere; line-height: 1.6; }
 .execution-details, .generated-test-card details { margin-top: 20px; border: 1px solid #26494b; border-radius: 8px; background: #071317; }
 .execution-details summary, .generated-test-card summary { color: #7ce5db; padding: 15px; font-size: 13px; cursor: pointer; line-height: 1.6; overflow-wrap: anywhere; }
 .execution-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding: 0 15px 15px; }

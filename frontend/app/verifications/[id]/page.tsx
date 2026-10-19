@@ -138,7 +138,7 @@ export default function VerificationPage() {
             existingTests={null}
             existingSuiteStatus={run.repair?.checks.find(check => check.name === "existing_tests")?.execution.status}
             generatedTests={{ passed, total: executed }}
-            testLabel={isFixture ? "Fixed fixture tests" : undefined}
+            testLabel={isFixture ? "Fixture head tests" : undefined}
             regressions={run.metrics.regressions_found}
             buildStatus={run.repair?.checks.find(check => check.name === "build")?.execution.status ?? "Not recorded"}
           />
