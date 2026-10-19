@@ -20,6 +20,11 @@ test('hero assertion tolerates rendered line breaks without accepting unrelated 
 
 test('diagnostic checkpoints contain only fixed scene names', () => {
   assert.equal(sceneCheckpoint('python-evidence'), 'SCENE python-evidence');
+  for (const name of ['python-navigation', 'python-response-validation', 'python-provenance',
+    'python-open-branches', 'python-base-reveal', 'python-head-reveal',
+    'node-navigation', 'node-response-validation', 'node-provenance']) {
+    assert.equal(sceneCheckpoint(name), `SCENE ${name}`);
+  }
   assert.throws(() => sceneCheckpoint('c'.repeat(64)), /Unknown scene/);
   assert.throws(() => sceneCheckpoint('https://unsafe.test'), /Unknown scene/);
 });
