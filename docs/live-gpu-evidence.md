@@ -1,6 +1,6 @@
 # Live Dell GPU Verification Evidence
 
-Current-state note (October 18): the evidence below is historical. The Dell currently has loaded kernel driver `595.91.07` and installed NVML library `595.99.02`; even host `nvidia-smi` fails with a driver/library mismatch. The application was restored in explicit CPU fallback mode, not presented as CUDA execution. No reboot, driver rollback, or kernel module unload was performed. See [current hardening evidence](hardening-evidence.md).
+Current-state note (October 19): the evidence below is the original milestone. The October 18 driver mismatch has recovered; driver `595.99.02`, normal GPU Compose, CuPy and authenticated CUDA ranking were rechecked. See the [new recovery receipt](gpu-recovery-2026-10-19.md). The [October 18 hardening receipt](hardening-evidence.md) remains an incident history, not the current GPU state.
 
 Verification date: October 17, 2026  
 Host: `hari-Dell-G15-5510` over the configured Tailscale SSH connection

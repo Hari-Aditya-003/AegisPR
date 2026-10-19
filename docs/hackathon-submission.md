@@ -16,6 +16,9 @@ This file is the source of truth for the Nebius × NVIDIA Global AI Hackathon su
 The website and interactive browser test build are published on GitHub Pages.
 The test build executes a deterministic coupon fixture in JavaScript; it is not
 a public GPU/Nemotron service. Full-stack inference remains blocked by HTTP 402.
+The [credential-free full local judging build](judge-test-build.md) also runs the
+real interface/API/Docker executor with prewritten Python and Node fixtures.
+It requires Docker, not paid tokens; it is not live model/PR evidence.
 
 ## Short description
 
@@ -47,7 +50,7 @@ See [live-stack-evidence.md](live-stack-evidence.md).
 - **CUDA telemetry** records the selected device and whether each ranking used CUDA or the visible CPU fallback.
 - **Docker sandboxes** execute untrusted repository checks with no runtime network, dropped Linux capabilities, process limits, and resource limits.
 
-**October 18 update:** the hardened app is currently in explicit CPU fallback because the Dell's loaded NVIDIA driver and installed NVML library differ. Historical CUDA proof above is not current live GPU readiness. Spending/authentication/security/UI improvements and the remaining gates are recorded in [hardening evidence](hardening-evidence.md). Do not copy this kit into a final submission until these gates are checked.
+**October 19 update:** the host driver recovered to matching `595.99.02`; normal GPU Compose, CuPy and authenticated CUDA ranking have been reverified in the [new GPU receipt](gpu-recovery-2026-10-19.md). The October 18 fallback was temporary. Spending/authentication/security/UI improvements and the remaining gates are recorded in [hardening evidence](hardening-evidence.md). Do not copy this kit into a final submission until live inference, actual PR evidence and the recording are checked.
 
 ## Three-minute demo script
 

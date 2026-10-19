@@ -1,6 +1,6 @@
 # Submission readiness and credit plan
 
-Audit date: October 18, 2026 (Asia/Kolkata). This is an evidence audit, not a guarantee of eligibility, a prize, employment, or security against every attack. Official organizers make eligibility decisions. Do not turn unchecked items into claims in Devpost, the README, the site, or the recording.
+Evidence update: October 19, 2026 (Asia/Kolkata); the rules audit below was performed October 18. This is an evidence audit, not a guarantee of eligibility, a prize, employment, or security against every attack. Official organizers make eligibility decisions. Do not turn unchecked items into claims in Devpost, the README, the site, or the recording.
 
 ## Required gates
 
@@ -14,13 +14,13 @@ The [official FAQ](https://nebiusglobalaihackathon.devpost.com/details/faqs) con
 | --- | --- | --- |
 | Source and licensing | GitHub repository API reports `PUBLIC`, default branch `main`, license key `mit`; root `LICENSE` and README exist | Ready at audit time. Preserve dependency notices and verify rights to all submission assets. |
 | Setup | README includes Compose, local development, environment configuration, Dell scripts and limitations | Re-run a fresh setup from the release commit before recording. |
-| GPU workload | [Live GPU evidence](live-gpu-evidence.md) records prior authenticated CUDA ranking on RTX 3050 Ti | Historical proof only. Current host driver/NVML mismatch blocks CUDA; explicit CPU fallback is running. Restore host readiness and recapture GPU evidence. This is local compute, not a Nebius GPU instance. |
+| GPU workload | [October 19 recovery receipt](gpu-recovery-2026-10-19.md): matching driver `595.99.02`, CuPy arithmetic and authenticated RTX 3050 Ti ranking | Current CUDA reverified and normal GPU Compose restored. This is local compute, not a Nebius GPU instance or measured speedup. Recheck before recording. |
 | Sandbox | [Live stack evidence](live-stack-evidence.md) records baseline PASS, seeded change FAIL, manual repair PASS | Real Docker experiment verified. Generated-model test and repair are not proved by this controlled fixture. |
 | Automated checks | Backend provider mocks, differential unit tests, UI/browser checks, CPU-worker tests and container contracts exist | These validate implementation paths; they do not establish real Nemotron quality, live CUDA on CI, or a successful cloud review. Use current test-run evidence rather than a permanently fixed test count. |
 | Provider runtime | Most recent documented Token Factory completion returns HTTP 402; catalog/authentication succeed | **Blocking:** obtain usable credits and record one successful, bounded inference, then a full PR run. No new live inference calls were made for this audit. |
 | Public website | [Landing page](https://hari-aditya-003.github.io/AegisPR/) and [fixture demo](https://hari-aditya-003.github.io/AegisPR/demo/) each returned HTTP 200 without credentials | Public access checked. A response status alone does not prove browser interaction; smoke-test it in a clean browser. |
 | Public fixture | `website/dist/demo/boundary.mjs` and its tests run a deterministic JavaScript coupon comparison | Working teaching/test fixture; cannot accept arbitrary GitHub PRs, run Docker, or call Nemotron. Label the mode explicitly. |
-| Full application | Dell deployment uses a Tailscale hostname; hardened services run with explicit CPU fallback and degraded acceleration health | Private owner access. Provide a reliable judge-accessible deployment or installable test build with instructions; never advertise Tailscale as a public link. See [current evidence](hardening-evidence.md). |
+| Full application | Dell GPU stack is healthy; separate [local judging build](judge-test-build.md) runs the real interface/API/Docker on fixed fixtures without credentials | Reproducible controlled test build, not successful live Nemotron/PR verification. Production remains private owner access; never advertise Tailscale as a public link. |
 | Recording | Submission kit still contains a video URL placeholder and live model stages not yet recorded | **Blocking:** record actual working behavior and verify the final URL, duration, and visibility. |
 | Survey/disclosures | Submission form explicitly asks which AI tools helped during development | Answer accurately in that field. Product branding need not list development tools. Do not fabricate model ratings or a comparison. |
 

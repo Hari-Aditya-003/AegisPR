@@ -1,6 +1,6 @@
 # Dell deployment and sandbox evidence
 
-Current-state note (October 18): this page records the prior healthy CUDA milestone. The hardened stack is now running with explicit CPU fallback because of a host NVIDIA kernel/NVML mismatch. Backend health reports `degraded` and `gpu_accelerator: cpu`; historical CUDA results below are not current live GPU readiness. See [current hardening evidence](hardening-evidence.md).
+Current-state note (October 19): this page records the original stack milestone. Normal GPU Compose has now been restored after host recovery; backend health again reports `ok` and `gpu_accelerator: cuda`. See the [new CUDA receipt](gpu-recovery-2026-10-19.md) and [credential-free judging build](judge-test-build.md). Live Nemotron inference remains unverified; controlled fixtures are not a model/PR acceptance run.
 
 Verified October 17, 2026, approximately 21:02 IST.
 

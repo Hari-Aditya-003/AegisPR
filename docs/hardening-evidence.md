@@ -2,6 +2,8 @@
 
 This is a dated engineering receipt, not a security certification or a guarantee of eligibility, a prize, or employment. Live, mocked, historical, and illustrative results are kept separate.
 
+October 19 superseding observation: the host driver recovered and real CUDA ranking was reverified; see the [new GPU receipt](gpu-recovery-2026-10-19.md). The driver mismatch and CPU fallback below describe October 18, not current readiness. A [credential-free full local judging build](judge-test-build.md) now exposes actual controlled Docker evidence through the real interface without inference spending.
+
 ## Automated checks
 
 The complete local command `make test PYTEST=backend/.venv312/bin/pytest` passed on Python 3.12.11 and Node 25.9.0:
@@ -33,7 +35,7 @@ The app now checks persistent atomic admission estimates before paid requests: $
 
 No paid inference requests were sent during this pass. Deployed `/api/budget` reported zero calls, tokens and estimated dollars in the new ledger; this does not establish past provider spending. An unauthenticated request returned 401; authenticated budget access returned 200 without exposing credentials. The live browser now shows the private-access guidance rather than a CSP connection failure. The production API requires a separate random deployment access code; the provider key stays server-side.
 
-## Dell deployment and current GPU blocker
+## Dell deployment and October 18 GPU blocker
 
 All three images built and services were restored. The backend uses host port 8080; the frontend uses 3000, and the worker remains loopback-only on 8091. Unrelated services on the Dell were preserved.
 
@@ -61,7 +63,7 @@ Live Node acceptance exposed two additional issues hidden by subprocess mocks: n
 
 ## Unfinished submission gates
 
-1. Restore current CUDA execution after host driver recovery.
+1. CUDA recovery is now verified in the [October 19 receipt](gpu-recovery-2026-10-19.md); retain a fresh preflight before recording.
 2. Resolve usable Nebius credits; the last actual completion returned HTTP 402. Catalog access alone is not inference proof.
 3. Capture a successful bounded real Nemotron call and an actual public PR base/head/repair run; measure model quality rather than inventing a rating.
 4. Provide reliable judge access to the full application or reproducible full test build. GitHub Pages hosts a clearly labeled deterministic browser fixture, not a public model/GPU service.

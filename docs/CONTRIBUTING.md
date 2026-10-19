@@ -21,6 +21,8 @@ cd frontend && npm ci && cd ..
 
 Copy `.env.example` to `.env` only when running Compose. Never commit the resulting file.
 
+For a separate fixed-fixture acceptance build that cannot spend provider tokens, follow the [credential-free judging instructions](judge-test-build.md). It uses its own Compose project, data volume and loopback ports, and must not receive the production `.env`.
+
 ## Commands
 
 <!-- AUTO-GENERATED: derived from Makefile and frontend/package.json -->

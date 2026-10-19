@@ -97,7 +97,9 @@ as proof of a successful live model call.
 
 ## CUDA preflight
 
-If `nvidia-smi` reports NVML driver/library mismatch, do not claim GPU readiness or unload modules/reboot automatically. Check `/proc/driver/nvidia/version` against installed NVIDIA library versions. The October 18 host has loaded `595.91.07` versus installed `595.99.02`; an administrator must arrange a safe reboot or supported driver repair after saving other work. The app was temporarily restored with `docker compose -f docker-compose.yml -f docker-compose.cpu.yml up -d`, and reports degraded CPU acceleration. Once host `nvidia-smi` works, restore the GPU configuration using `docker compose up -d`, rerun the GPU smoke test, and verify `gpu_accelerator: cuda` before recording.
+If `nvidia-smi` reports NVML driver/library mismatch, do not claim GPU readiness or unload modules/reboot automatically. Check `/proc/driver/nvidia/version` against installed NVIDIA library versions. On October 18, loaded `595.91.07` differed from installed `595.99.02`; the app was temporarily restored with `docker compose -f docker-compose.yml -f docker-compose.cpu.yml up -d`. On October 19, host recovery was detected, matching driver `595.99.02` was checked, normal GPU Compose restored and authenticated CUDA ranking reverified. See the [dated receipt](gpu-recovery-2026-10-19.md). For any recurrence, an administrator must arrange safe host recovery after saving other work. Only once host `nvidia-smi` works should normal GPU Compose be restored; rerun the smoke test and require `gpu_accelerator: cuda` before recording.
+
+For no-credit acceptance without touching production services, use the separate [credential-free judging build](judge-test-build.md), not a production `.env` or a public Docker-socket API.
 
 ```bash
 nvidia-smi
