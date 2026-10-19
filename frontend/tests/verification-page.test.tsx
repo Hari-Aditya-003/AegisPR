@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ useParams: () => ({ id: "run-1" }) }));
@@ -32,6 +32,58 @@ const completedRun = {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("VerificationPage", () => {
+  it("distinguishes executed controlled fixture evidence from live PR and model evidence", async () => {
+    const fixtureRun = {
+      ...completedRun,
+      evidence_mode: "controlled_fixture",
+      model_used: "controlled-fixture-no-model",
+      summary: { ...completedRun.summary, title: "Controlled coupon fixture", number: 0 },
+      generated_tests: [{ id: "fixed-1", file_path: "tests/test_boundary.py", test_code: "assert total(10, 20) == 0" }],
+      repair: {
+        finding_id: "finding-1", status: "VERIFIED", patch: "diff --git a/coupon.py b/coupon.py",
+        summary: "Manually authored clamp repair.", checks: [],
+      },
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(fixtureRun), { status: 200 })));
+    render(<VerificationPage />);
+
+    await screen.findByRole("heading", { name: "Controlled coupon fixture" });
+    const provenance = screen.getByRole("note", { name: /controlled fixture/i });
+    expect(provenance).toHaveTextContent(/no model call or live github pull request analysis/i);
+    expect(provenance).toHaveTextContent(/prewritten tests and hypothesis/i);
+    expect(provenance).toHaveTextContent(/docker execution/i);
+    expect(screen.getByRole("heading", { name: "Fixed fixture test artifacts" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Prewritten fixture hypothesis" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Manual repair evidence" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Fixture execution timeline" })).toBeInTheDocument();
+    expect(screen.getByText("Fixture head revision")).toBeInTheDocument();
+    expect(within(screen.getByLabelText("Verification proof card")).getByText("Fixed fixture tests")).toBeInTheDocument();
+    expect(screen.queryByText("Generated tests")).not.toBeInTheDocument();
+    expect(screen.queryByText(/PR #0/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /generate and verify repair/i })).not.toBeInTheDocument();
+  });
+
+  it("never offers a model repair for an unfinished controlled fixture", async () => {
+    const fixtureRun = { ...completedRun, evidence_mode: "controlled_fixture", model_used: "controlled-fixture-no-model" };
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(fixtureRun), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<VerificationPage />);
+    await screen.findByRole("heading", { name: "Coupon support" });
+    expect(screen.queryByRole("button", { name: /generate and verify repair/i })).not.toBeInTheDocument();
+    expect(screen.getByText("Not used (controlled fixture)")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the no-model fixture marker safe when evidence mode is absent on older records", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      ...completedRun, model_used: "controlled-fixture-no-model",
+    }), { status: 200 })));
+    render(<VerificationPage />);
+    await screen.findByRole("heading", { name: "Coupon support" });
+    expect(screen.getByRole("note", { name: /controlled fixture/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /generate and verify repair/i })).not.toBeInTheDocument();
+  });
+
   it("keeps execution proof when explanation is unavailable and labels cost as an app estimate", async () => {
     const run = {
       ...completedRun,
