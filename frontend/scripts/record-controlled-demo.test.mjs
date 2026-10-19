@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   allowedRequest,
   matchesHeroTitle,
+  observedNavigation,
   safeOutput,
   sceneCheckpoint,
   validateFixture,
@@ -20,6 +21,15 @@ test('diagnostic checkpoints contain only fixed scene names', () => {
   assert.equal(sceneCheckpoint('python-evidence'), 'SCENE python-evidence');
   assert.throws(() => sceneCheckpoint('c'.repeat(64)), /Unknown scene/);
   assert.throws(() => sceneCheckpoint('https://unsafe.test'), /Unknown scene/);
+});
+
+test('navigation failure still observes the pending response rejection during cleanup', async () => {
+  let rejectResponse;
+  const response = new Promise((resolve, reject) => { rejectResponse = reject; });
+  await assert.rejects(observedNavigation(response, Promise.reject(new Error('Navigation failed'))), /Navigation failed/);
+  rejectResponse(new Error('Context closed'));
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(await observedNavigation(Promise.resolve('receipt'), Promise.resolve()), 'receipt');
 });
 
 const id = '8fbe82b9-ba35-488d-9bcc-54b89fb2ea1c';
