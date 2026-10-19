@@ -13,7 +13,7 @@ RUN useradd --system --uid 10001 --create-home aegis
 WORKDIR /app
 COPY --from=builder /install /usr/local
 RUN pip install --no-cache-dir --upgrade pip==26.2.1
-COPY app ./app
+COPY --chown=aegis:aegis app ./app
 RUN mkdir -p /app/data /tmp/aegispr-runs && chown -R aegis:aegis /app/data /tmp/aegispr-runs
 USER aegis
 ENV PYTHONUNBUFFERED=1
