@@ -3,10 +3,24 @@ import test from 'node:test';
 
 import {
   allowedRequest,
+  matchesHeroTitle,
   safeOutput,
+  sceneCheckpoint,
   validateFixture,
   validateRehearsalMarker,
 } from './record-controlled-demo.mjs';
+
+test('hero assertion tolerates rendered line breaks without accepting unrelated headings', () => {
+  assert.equal(matchesHeroTitle('Don’t trust a PR.\nProve it.'), true);
+  assert.equal(matchesHeroTitle('Don’t trust a PR. Prove it.'), true);
+  assert.equal(matchesHeroTitle('Different page'), false);
+});
+
+test('diagnostic checkpoints contain only fixed scene names', () => {
+  assert.equal(sceneCheckpoint('python-evidence'), 'SCENE python-evidence');
+  assert.throws(() => sceneCheckpoint('c'.repeat(64)), /Unknown scene/);
+  assert.throws(() => sceneCheckpoint('https://unsafe.test'), /Unknown scene/);
+});
 
 const id = '8fbe82b9-ba35-488d-9bcc-54b89fb2ea1c';
 const execution = (status, exitCode) => ({
