@@ -22,6 +22,11 @@ export function sceneCheckpoint(name) {
   return `SCENE ${name}`;
 }
 
+export async function observedNavigation(responsePromise, navigationPromise) {
+  const [response] = await Promise.all([responsePromise, navigationPromise]);
+  return response;
+}
+
 export function validateFixture(run) {
   const fail = () => { throw new Error('Receipt validation failed'); };
   const checkExecution = (execution, status, code) => execution?.status === status
@@ -176,8 +181,7 @@ async function runDemo(mode) {
     }
     async function report(run, text) {
       const responsePromise = page.waitForResponse(response => response.url() === `http://127.0.0.1:18080/api/verifications/${run.id}` && response.request().method() === 'GET');
-      await navigate(`${app}/verifications/${run.id}`, text);
-      const response = await responsePromise;
+      const response = await observedNavigation(responsePromise, navigate(`${app}/verifications/${run.id}`, text));
       assert.equal(response.status(), 200);
       const actual = validateFixture(await response.json());
       assert.equal(actual.summary.base_commit, run.summary.base_commit);
