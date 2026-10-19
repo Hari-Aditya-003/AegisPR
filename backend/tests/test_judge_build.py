@@ -11,6 +11,13 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def test_backend_image_can_read_a_restrictive_source_checkout():
+    dockerfile = (ROOT / "backend/Dockerfile").read_text()
+    # Secure umask-077 checkouts retain owner-only source modes in COPY.
+    # The unprivileged application user must own that copy, not root.
+    assert "COPY --chown=aegis:aegis app ./app" in dockerfile
+
+
 def test_judge_compose_is_keyless_loopback_only_and_separate():
     config = yaml.safe_load((ROOT / "docker-compose.judge.yml").read_text())
     assert config["name"] == "aegispr-judge"
