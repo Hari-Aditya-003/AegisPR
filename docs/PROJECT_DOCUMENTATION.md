@@ -797,6 +797,8 @@ The October 19 local quality matrix verified 149 backend tests (90.71% line cove
 
 Physical CUDA is restored and reverified on driver `595.99.02`; see the [October 19 GPU receipt](gpu-recovery-2026-10-19.md). The [credential-free local judging build](judge-test-build.md) also executed real Python and Node Docker fixtures through the API/UI stack, producing base PASS, deliberately broken head FAIL, and manually repaired checks PASS. Its persistent records contain actual local Git SHAs and execution receipts, prominently marked `evidence_mode: controlled_fixture`; no model, live GitHub PR or GPU ranking is involved in that mode. These results do not replace the still-unverified live Nebius inference/PR acceptance and submission recording.
 
+Four separate no-mock Chromium checks then passed against the actual judging stack, including private API access, persisted report fidelity, branch/repair execution receipts, zero recorded inference usage and 390px mobile layout. That is 207 automated checks across both suites; see the [full-stack acceptance receipt](judge-build-evidence-2026-10-19.md). CI also runs this separate suite and exports its own JSON receipts.
+
 ## 20. CI/CD
 
 GitHub Actions runs on pushes and pull requests targeting `main`.
