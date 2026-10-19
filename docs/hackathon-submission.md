@@ -1,6 +1,6 @@
 # Hackathon Submission Kit
 
-This file is the source of truth for the Nebius × NVIDIA Global AI Hackathon submission. Replace only the bracketed recording and deployment fields after the live Dell GPU run is captured.
+This is a draft kit for the Nebius × NVIDIA Global AI Hackathon submission. Finalize the claims and bracketed fields only after successful live Nemotron inference, actual PR acceptance, judge access and the final recording are verified. Capturing a Dell GPU run alone does not satisfy those gates.
 
 ## Submission profile
 
@@ -69,7 +69,7 @@ See [live-stack-evidence.md](live-stack-evidence.md).
 ### 0:35–1:05 — Agent reasoning and GPU context
 
 1. Show repository profiling, changed files, and the impact graph.
-2. Show the GPU worker reporting the Dell NVIDIA device and `used_gpu: true`.
+2. Show the GPU worker's actual `accelerator: cuda` result and Dell NVIDIA device metadata; a visible CPU fallback is not CUDA evidence.
 3. Show Nemotron's bounded risk hypotheses and generated adversarial test.
 
 Narration:

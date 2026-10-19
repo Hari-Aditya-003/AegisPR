@@ -878,24 +878,26 @@ Use [hackathon-submission.md](hackathon-submission.md) for the exact voice-over,
 
 ## 23. Current project status
 
-As of October 17, 2026:
+October 19, 2026 snapshot, based on the dated receipts below:
 
 - core product workflow is implemented;
 - optional repair and repair verification are implemented;
 - repository is public and MIT-licensed;
 - README, architecture, security, user journeys, verification semantics, runbook, contribution guide, and submission kit are present;
 - the project website and browser test build are publicly hosted on GitHub Pages;
-- GitHub Actions is green on `main`;
-- the latest complete local matrix passed 69 tests;
+- all five GitHub Actions jobs passed for code revision `ff6a500`, including dependency/secret checks and the real controlled judging build ([CI receipt](https://github.com/Hari-Aditya-003/AegisPR/actions/runs/39252052084)); inspect later revisions separately;
+- the latest local matrix passed 211 standard checks plus four real-stack browser checks (215 total); backend line coverage was 90.71% and frontend statement coverage was 95.54%;
 - the five-hour continuation heartbeat remains enabled;
-- the Dell Tailscale connection, NVIDIA container runtime, and real CuPy CUDA ranking workload are verified on the RTX 3050 Ti;
+- the Dell Tailscale connection, matching NVIDIA driver `595.99.02`, container runtime, CuPy and authenticated CUDA ranking were reverified on the RTX 3050 Ti;
 - all three production services are healthy on the Dell, with the backend on port 8080;
 - the backend production image now includes the Git and Docker tools needed by repository analysis and sandbox execution;
-- live Docker sandbox testing produced baseline PASS, seeded regression FAIL, and manually repaired fixture PASS;
-- the Nebius key authenticates and the configured model is in the catalog, but actual inference is blocked by HTTP 402 (no usable budget);
-- a public full-stack application URL and final YouTube upload remain outstanding;
+- the isolated keyless judging build persisted actual Python/Node Docker receipts with base PASS, deliberately broken head FAIL and manually repaired checks PASS, without model calls;
+- October 17 provider observations authenticated the key and listed the model but returned HTTP 402 for inference; usable credits remain unconfirmed, and no paid inference or repeated 402 probe was attempted in this continuation;
+- the production application's ledger remained at zero calls/tokens and $0 estimated usage, with the $20 total / $0.25 per-run admission limits unchanged; this is not the provider balance;
+- a 104.52-second captioned capability draft was recorded privately and sampled visually; it is not uploaded or a final live-model demonstration;
+- successful live Nemotron inference, actual public-PR acceptance, a judge-accessible full application/test build and the final supported video URL remain completion gates.
 
-The captured worker health and authenticated ranking evidence report `accelerator: cuda`; see [live-gpu-evidence.md](live-gpu-evidence.md). Deployment and deterministic sandbox results are in [live-stack-evidence.md](live-stack-evidence.md). The latter is a manual fixture experiment, not a model-generated public PR review. No documentation or UI should claim a successful live Nemotron run until inference succeeds.
+Current dated receipts are the [October 19 GPU recovery](gpu-recovery-2026-10-19.md), [controlled full-stack acceptance](judge-build-evidence-2026-10-19.md) and [private capability recording](demo-recording.md). The earlier [GPU](live-gpu-evidence.md) and [deployment/sandbox](live-stack-evidence.md) receipts remain historical observations. Fixture results are not a model-generated public PR review. No documentation or UI should claim a successful live Nemotron run until inference succeeds.
 
 ## 24. Limitations and roadmap
 
@@ -909,8 +911,8 @@ The captured worker health and authenticated ranking evidence report `accelerato
 - Docker socket access is a trusted-host boundary;
 - SQLite and in-process background tasks are appropriate for the hackathon MVP, not horizontal scale;
 - no GitHub App, webhook, check-run, comment, or automatic repair PR creation;
-- no authentication or multi-tenant authorization in the application API;
-- no public cloud deployment has been completed yet.
+- shared operator-code API authentication is implemented, including fail-closed production access, but there are no per-user accounts or multi-tenant authorization;
+- the static website/browser illustration are public; a public hosted full-stack inference deployment has not been completed.
 
 ### Recommended next steps
 
