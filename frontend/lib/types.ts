@@ -50,6 +50,7 @@ export interface VerificationRun {
   id: string;
   pull_request_url: string;
   status: string;
+  evidence_mode?: "pr_review" | "controlled_fixture";
   model_used?: string;
   summary?: {
     owner: string;

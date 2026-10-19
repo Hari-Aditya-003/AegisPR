@@ -92,6 +92,9 @@ h1, h2, h3, p { margin-top: 0; }
 .report-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 30px; margin-bottom: 34px; }
 .report-heading h1 { margin-bottom: 10px; font-size: clamp(32px, 4vw, 52px); letter-spacing: -.045em; }
 .report-heading > div > p:last-child { color: var(--muted); }
+.fixture-provenance { margin: 0 0 28px; padding: clamp(20px, 3vw, 28px); border: 1px solid #49d3c0; border-left: 4px solid #49d3c0; border-radius: 12px; background: #0d2428; color: #dceeed; }
+.fixture-provenance h2 { margin: 8px 0 12px; font-size: clamp(18px, 2vw, 23px); line-height: 1.35; }
+.fixture-provenance p { max-width: 88ch; margin: 8px 0 0; line-height: 1.7; }
 .run-status { padding: 10px 13px; border: 1px solid var(--line); border-radius: 999px; color: #9cacc1; font: 11px ui-monospace, monospace; white-space: nowrap; }
 .status-regression_found { border-color: rgba(255,107,107,.45); color: #ff9292; }
 .status-verified_within_scope, .status-fix_verified { border-color: rgba(185,255,102,.45); color: var(--lime); }
