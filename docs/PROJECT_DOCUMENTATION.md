@@ -793,7 +793,9 @@ GPU tests cover:
 
 ### 19.2 Latest verified evidence
 
-The October 18 hardening pass locally verified 123 backend tests (89.94% line coverage), 28 frontend tests (95.42% statement coverage), seven Chromium E2E tests, eight website tests, six GPU-worker CPU-fallback tests, and one seeded repository test: 173 automated tests total. Type checking, production build, npm audit, Python compilation, shell syntax, and Git whitespace checks passed. A fresh Python 3.12 environment and both deployed Python package freezes reported no known vulnerabilities with pip-audit; this does not certify every image, OS package, or attack surface. Real Python and Node Docker fixtures both produced base PASS, seeded head FAIL, and manually repaired checks PASS. Current CUDA is blocked by a host driver/NVML mismatch, so the stack explicitly reports CPU fallback. See [hardening evidence](hardening-evidence.md) for release checks, live observations, and remaining gates rather than assuming an older CI result applies to new commits.
+The October 19 local quality matrix verified 149 backend tests (90.71% line coverage), 32 frontend tests (95.54% statement coverage), seven Chromium E2E tests with intercepted API responses, eight website tests, six GPU-worker CPU-fallback tests, and one seeded repository test: 203 automated tests total. Type checking, production build and npm audit passed. See the [October 18 hardening receipt](hardening-evidence.md) for the earlier security/dependency scan and its explicit limitations; those observations are dated, not a certification of every image, OS package or attack surface.
+
+Physical CUDA is restored and reverified on driver `595.99.02`; see the [October 19 GPU receipt](gpu-recovery-2026-10-19.md). The [credential-free local judging build](judge-test-build.md) also executed real Python and Node Docker fixtures through the API/UI stack, producing base PASS, deliberately broken head FAIL, and manually repaired checks PASS. Its persistent records contain actual local Git SHAs and execution receipts, prominently marked `evidence_mode: controlled_fixture`; no model, live GitHub PR or GPU ranking is involved in that mode. These results do not replace the still-unverified live Nebius inference/PR acceptance and submission recording.
 
 ## 20. CI/CD
 
@@ -804,7 +806,8 @@ GitHub Actions runs on pushes and pull requests targeting `main`.
 | `backend` | Python 3.12, install backend requirements, run pytest. |
 | `frontend` | Node 22, `npm ci`, coverage, typecheck, build, install Chromium, Playwright. |
 | `gpu-worker` | Python 3.12, install CPU-test dependencies, run worker tests. |
-| `security` | `npm audit --audit-level=high` and committed-secret pattern rejection. |
+| `security` | Resolved Python dependency `pip-audit`, `npm audit --audit-level=high` and committed-secret pattern rejection. |
+| `judge-test-build` | Separate keyless Compose stack, real Python/Node Docker fixtures, no-mock Chromium report checks and exported JSON evidence artifact. |
 
 CI is deliberately CPU-compatible. Physical CUDA proof belongs to the Dell smoke test and live deployment checklist.
 
