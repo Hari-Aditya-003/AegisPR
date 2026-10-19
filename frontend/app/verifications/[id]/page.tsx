@@ -116,6 +116,13 @@ export default function VerificationPage() {
               {run.repair.checks.length > 0 && <div className="repair-checks">{run.repair.checks.map((check) => (
                 <div key={check.name}><span>{check.name.replaceAll("_", " ")}</span><strong className={`check-${check.execution.status.toLowerCase()}`}>{check.execution.status}</strong></div>
               ))}</div>}
+              {run.repair.checks.map((check) => <details className="execution-details" key={check.name}>
+                <summary>Inspect repair check: {check.name.replaceAll("_", " ")}</summary>
+                <dl><div><dt>Commit</dt><dd>{check.execution.commit || "Not recorded"}</dd></div><div><dt>Duration</dt><dd>{check.execution.duration_ms} ms</dd></div><div><dt>Exit code</dt><dd>{check.execution.exit_code ?? "Not recorded"}</dd></div></dl>
+                <p>Executed command</p><pre>{check.execution.environment?.command ?? check.command ?? "Not recorded"}</pre>
+                <p>Standard output</p><pre>{check.execution.stdout || "No standard output captured."}</pre>
+                <p>Standard error</p><pre>{check.execution.stderr || "No standard error captured."}</pre>
+              </details>)}
               {run.repair.patch && <details><summary>View isolated patch</summary><pre>{run.repair.patch}</pre></details>}
               {run.repair.error && <p className="repair-error" role="alert">{run.repair.error}</p>}
             </section>
