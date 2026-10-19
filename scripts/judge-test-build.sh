@@ -6,8 +6,8 @@ umask 077
 unset NEBIUS_API_KEY GITHUB_TOKEN GPU_WORKER_TOKEN API_ACCESS_TOKEN
 judge_action="${1:-start}"
 case "$judge_action" in
-  start|verify|status|stop) ;;
-  *) echo "Usage: bash scripts/judge-test-build.sh [start|verify|status|stop]" >&2; exit 2 ;;
+  start|verify|status|export|stop) ;;
+  *) echo "Usage: bash scripts/judge-test-build.sh [start|verify|status|export|stop]" >&2; exit 2 ;;
 esac
 judge_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 judge_state="$judge_root/artifacts/judge"
@@ -55,6 +55,15 @@ case "$judge_action" in
     "${judge_compose[@]}" exec -T backend python -m app.services.fixture_acceptance --language all
     ;;
   status) "${judge_compose[@]}" ps ;;
+  export)
+    if [[ -L "$judge_state/evidence" ]]; then
+      echo "Refusing a symlinked evidence output path." >&2
+      exit 1
+    fi
+    mkdir -p "$judge_state/evidence"
+    "${judge_compose[@]}" cp backend:/app/data/judge-evidence/. "$judge_state/evidence"
+    echo "Controlled fixture JSON evidence exported to $judge_state/evidence"
+    ;;
   stop) "${judge_compose[@]}" down ;;
 esac
 if [[ "$judge_action" == start || "$judge_action" == verify ]]; then

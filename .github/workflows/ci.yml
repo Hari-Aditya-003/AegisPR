@@ -80,3 +80,23 @@ jobs:
       - name: Reject committed secrets
         run: |
           ! git grep -nE '(NEBIUS_API_KEY|GITHUB_TOKEN|GPU_WORKER_TOKEN|API_ACCESS_TOKEN)=[^[:space:]]+' -- ':!*.example'
+
+  judge-test-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - name: Run keyless full-stack controlled acceptance
+        run: bash scripts/judge-test-build.sh start
+      - name: Export fixed-fixture execution receipts
+        if: success()
+        run: bash scripts/judge-test-build.sh export
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: controlled-fixture-evidence
+          path: artifacts/judge/evidence/*.json
+          if-no-files-found: error
+      - name: Stop only the isolated judge services
+        if: always()
+        run: bash scripts/judge-test-build.sh stop
