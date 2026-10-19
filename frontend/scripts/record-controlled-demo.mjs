@@ -27,6 +27,12 @@ export async function observedNavigation(responsePromise, navigationPromise) {
   return response;
 }
 
+export async function setupReadOnlyNetwork(context, ids) {
+  await context.routeWebSocket('**/*', socket => socket.close({ code: 1008, reason: 'Read-only demo' }));
+  await context.route('**/*', route => allowedRequest(route.request().url(), route.request().method(), ids)
+    ? route.continue() : route.abort('blockedbyclient'));
+}
+
 export function validateFixture(run) {
   const fail = () => { throw new Error('Receipt validation failed'); };
   const checkExecution = (execution, status, code) => execution?.status === status
@@ -126,8 +132,7 @@ async function runDemo(mode) {
   const video = page.video();
   const pause = ms => page.waitForTimeout(record ? ms : Math.min(ms, 100));
   try {
-    await context.route('**/*', route => allowedRequest(route.request().url(), route.request().method(), ids)
-      ? route.continue() : route.abort('blockedbyclient'));
+    await setupReadOnlyNetwork(context, ids);
     await context.addInitScript(code => {
       if (location.origin === 'http://127.0.0.1:3300') sessionStorage.setItem('aegispr.deployment-access', code);
       const badge = () => {
