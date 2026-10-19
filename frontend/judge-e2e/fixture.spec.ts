@@ -117,7 +117,8 @@ for (const language of ["python", "node"] as const) {
         const origin = new URL(request.url()).origin;
         if (!["http://127.0.0.1:3300", apiOrigin].includes(origin) || request.url().includes(code) || !["GET", "OPTIONS"].includes(request.method())) unsafeBrowserRequest = true;
       });
-      await page.goto(`/verifications/${run.id}`);
+      // Receipt assertions below define readiness, not unrelated asset loads.
+      await page.goto(`/verifications/${run.id}`, { waitUntil: "domcontentloaded" });
       const provenance = page.getByRole("note", { name: /controlled fixture/i });
       await expect(provenance).toBeVisible();
       await expect(provenance).toContainText("No model call or live GitHub pull request analysis was performed.");
