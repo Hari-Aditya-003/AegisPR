@@ -10,6 +10,17 @@ const website = 'https://hari-aditya-003.github.io/AegisPR/';
 const app = 'http://127.0.0.1:3300';
 const health = 'http://127.0.0.1:18880/health';
 const uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
+const scenes = new Set(['preflight', 'brand', 'browser-illustration', 'python-evidence', 'manual-repair', 'node-evidence', 'gpu-health', 'remaining-work']);
+let currentScene = 'SCENE preflight';
+
+export function matchesHeroTitle(text) {
+  return typeof text === 'string' && /trust.*PR.*Prove/i.test(text.replace(/\s+/g, ' '));
+}
+
+export function sceneCheckpoint(name) {
+  if (!scenes.has(name)) throw new Error('Unknown scene');
+  return `SCENE ${name}`;
+}
 
 export function validateFixture(run) {
   const fail = () => { throw new Error('Receipt validation failed'); };
@@ -83,6 +94,7 @@ async function runDemo(mode) {
   const accessCode = (await readFile(path.join(root, 'artifacts/judge/access-code'), 'utf8')).trim();
   if (!/^[a-f0-9]{64}$/.test(accessCode)) throw new Error('Private local access code unavailable');
   const print = message => console.log(safeOutput(message, [accessCode]));
+  const checkpoint = name => { currentScene = sceneCheckpoint(name); print(currentScene); };
   const evidenceDir = path.join(root, 'artifacts/judge/evidence');
   const receipts = [];
   for (const name of await readdir(evidenceDir)) {
@@ -174,10 +186,12 @@ async function runDemo(mode) {
       assert.equal(await page.getByRole('button', { name: 'Generate and verify repair' }).count(), 0);
     }
 
+    checkpoint('brand');
     await navigate(website, 'AegisPR checks changes with evidence. This hero is illustrative.');
-    assert.match(await page.locator('h1').innerText(), /trust.*PR.*Prove/i);
+    assert.ok(matchesHeroTitle(await page.locator('h1').innerText()));
     if (mode === '--discover') await discover('Landing page');
     await pause(7000);
+    checkpoint('browser-illustration');
     await navigate(`${website}demo/`, 'Browser-only illustration: a coupon must never make a charge negative.');
     if (mode === '--discover') await discover('Browser illustration');
     for (const [selector, value] of [['#total', '10'], ['#discount', '20']]) {
@@ -194,6 +208,7 @@ async function runDemo(mode) {
     assert.match(await page.locator('#repair-result').innerText(), /pass|0|clamp/i);
     await caption('The browser example applies a prewritten clamp, not a model repair.');
     await pause(6000);
+    checkpoint('python-evidence');
     await report(python, 'Real Docker receipts: fixed Python test, no model or live PR.');
     if (mode === '--discover') await discover('Python controlled report');
     await pause(4000);
@@ -204,6 +219,7 @@ async function runDemo(mode) {
     await reveal(page.getByRole('heading', { name: 'Fixture head revision', exact: true }));
     await caption('Actual commits, commands and failure logs make the result inspectable.');
     await pause(5000);
+    checkpoint('manual-repair');
     await reveal(page.getByRole('heading', { name: 'Manual repair evidence', exact: true }));
     await caption('A manually authored repair passes the recorded checks.');
     await click(page.locator('summary', { hasText: 'Inspect repair check: generated tests' }));
@@ -213,11 +229,13 @@ async function runDemo(mode) {
     await click(page.locator('summary', { hasText: 'test_generated.py' }));
     await caption('Fixed test artifact; unsupported build and lint checks stay SKIPPED.');
     await pause(5000);
+    checkpoint('node-evidence');
     await report(node, 'The separate Node fixture also records real isolated execution.');
     if (mode === '--discover') await discover('Node controlled report');
     await reveal(page.getByRole('heading', { name: 'Manual repair evidence', exact: true }));
     assert.equal(node.repair.checks.find(check => check.name === 'build').execution.status, 'PASSED');
     await pause(7000);
+    checkpoint('gpu-health');
     await navigate(health, 'Separate live GPU health: CUDA available. Not model-inference proof.');
     const actualHealth = JSON.parse(await page.locator('pre').innerText());
     assert.equal(actualHealth.status, 'ok');
@@ -229,6 +247,7 @@ async function runDemo(mode) {
     }, actualHealth);
     await caption('“Configured” is configuration only, not a successful Nemotron call.');
     await pause(10000);
+    checkpoint('remaining-work');
     await navigate(website, 'Still pending: funded live Nemotron inference and real PR acceptance.');
     await pause(8000);
     succeeded = true;
@@ -254,7 +273,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
     console.error('Use exactly one mode: --discover, --rehearse, or --record.'); process.exitCode = 2;
   } else {
     runDemo(modes[0]).catch(() => {
-      console.error('CONTROLLED DEMO FAILED — check local access, receipts, tunnels and selectors. No footage published.');
+      console.error(`CONTROLLED DEMO FAILED at ${currentScene} — check local access, receipts, tunnels and selectors. No footage published.`);
       process.exitCode = 1;
     });
   }
