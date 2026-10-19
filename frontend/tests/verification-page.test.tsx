@@ -74,6 +74,31 @@ describe("VerificationPage", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it("exposes the exact manual repair check logs without inferring successful checks", async () => {
+    const run = {
+      ...completedRun,
+      evidence_mode: "controlled_fixture", model_used: "controlled-fixture-no-model", status: "FIX_VERIFIED",
+      repair: {
+        finding_id: "finding-1", status: "VERIFIED", patch: "", summary: "Manual fixture patch.",
+        checks: [{
+          name: "existing_tests", command: "python -m pytest -q",
+          execution: { branch: "repair", commit: "c".repeat(40), status: "PASSED", stdout: "3 passed in 0.03s", stderr: "fixture stderr", duration_ms: 31, exit_code: 0 },
+        }],
+      },
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(run), { status: 200 })));
+    render(<VerificationPage />);
+    await screen.findByRole("heading", { name: "Manual repair evidence" });
+    fireEvent.click(screen.getByText("Inspect repair check: existing tests"));
+    expect(screen.getByText("3 passed in 0.03s")).toBeInTheDocument();
+    expect(screen.getByText("fixture stderr")).toBeInTheDocument();
+    expect(screen.getByText("python -m pytest -q")).toBeInTheDocument();
+    expect(screen.getByText("c".repeat(40))).toBeInTheDocument();
+    expect(screen.getByText("31 ms")).toBeInTheDocument();
+    expect(screen.getByText("0")).toBeInTheDocument();
+    expect(screen.queryByText("RECORDED")).not.toBeInTheDocument();
+  });
+
   it("keeps the no-model fixture marker safe when evidence mode is absent on older records", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
       ...completedRun, model_used: "controlled-fixture-no-model",
