@@ -30,7 +30,9 @@ export function validateFixture(run) {
       .some(key => run.metrics?.[key] !== 0)
     || !run.findings?.length || run.findings.some(finding =>
       !checkExecution(finding.base_execution, 'PASSED', 0)
-      || !checkExecution(finding.head_execution, 'FAILED', 1))
+      || !checkExecution(finding.head_execution, 'FAILED', 1)
+      || finding.base_execution.commit !== run.summary.base_commit
+      || finding.head_execution.commit !== run.summary.head_commit)
     || run.repair?.status !== 'VERIFIED' || !run.repair.patch) fail();
   for (const name of ['existing_tests', 'generated_tests', 'build', 'lint']) {
     const checks = run.repair.checks?.filter(check => check.name === name);
