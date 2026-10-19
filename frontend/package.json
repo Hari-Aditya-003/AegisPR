@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
-    "e2e": "next build && playwright test"
+    "e2e": "next build && playwright test",
+    "e2e:judge": "playwright test --config judge.playwright.config.ts"
   },
   "dependencies": {
     "@xyflow/react": "12.8.4",
