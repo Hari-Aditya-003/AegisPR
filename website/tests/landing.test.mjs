@@ -4,6 +4,11 @@ import { readFileSync } from 'node:fs';
 
 const html = readFileSync(new URL('../dist/index.html', import.meta.url), 'utf8');
 
+test('hero retains the stable project slogan used by the capability recorder', () => {
+  const title = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)[1].replace(/<[^>]*>/g, ' ');
+  assert.match(title, /trust[\s\S]*PR[\s\S]*Prove/);
+});
+
 test('landing page offers three clearly scoped how-to paths and a no-script fallback', () => {
   assert.match(html, /id="how-to-use"/);
   for (const path of ['browser', 'local', 'live']) {
