@@ -2,32 +2,97 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="AegisPR turns pull request risk hypotheses into executable evidence with NVIDIA Nemotron, Nebius, and CUDA.">
-  <meta name="theme-color" content="#05090c">
-  <title>AegisPR — Don't trust a PR. Prove it.</title><link rel="icon" href="./aegispr-logo.jpg" type="image/jpeg"><link rel="stylesheet" href="./styles.css"><link rel="stylesheet" href="./brand.css">
+  <meta name="description" content="AegisPR turns pull request risks into executable evidence. Try the browser demo, run the token-free Docker build, or set up NVIDIA Nemotron-powered verification.">
+  <meta name="theme-color" content="#0b0f10">
+  <title>AegisPR — Don't trust a PR. Prove it.</title>
+  <link rel="icon" href="./aegispr-logo.jpg" type="image/jpeg"><link rel="stylesheet" href="./landing.css">
 </head>
 <body>
   <a class="skip-link" href="#top">Skip to content</a>
-  <header class="nav"><a class="brand" href="#top"><span>A</span>AegisPR</a><button class="motion-toggle" id="motion-control" type="button" aria-pressed="false">Pause animation</button><nav><a href="#workflow">Workflow</a><a href="#architecture">Architecture</a><a href="#use">How to use</a></nav><a class="nav-cta" href="https://github.com/Hari-Aditya-003/AegisPR">View source</a></header>
+  <header class="nav">
+    <a class="brand" href="#top" aria-label="AegisPR home"><span class="brand-mark" aria-hidden="true"></span>Aegis<span class="brand-light">PR</span></a>
+    <nav aria-label="Main navigation"><a href="#features">Capabilities</a><a href="#workflow">Workflow</a><a href="#how-to-use">How to use</a><a href="#faq">FAQ</a></nav>
+    <a class="button primary nav-cta" href="./demo/">Try the demo <span aria-hidden="true">↗</span></a>
+  </header>
   <main id="top">
-    <div class="demo-launch"><a class="button primary" href="./demo/">Open interactive test build ↗</a><p>Try a deterministic boundary check in your browser. <a href="https://github.com/Hari-Aditya-003/AegisPR/blob/main/docs/judge-test-build.md">Run the full local Docker fixture build without tokens.</a> Dell CUDA ranking was reverified October 19; live Nemotron review is still pending usable Nebius credits.</p></div>
-    <section class="hero">
-      <div><p class="kicker">■ NVIDIA Nemotron × Nebius × CUDA</p><h1>Don’t trust a PR.<br><em>Prove it.</em></h1><p class="lede">AegisPR converts code-review claims into controlled experiments. It generates adversarial tests, runs the same test against both commits, and can verify a minimal repair without touching the source repository.</p><div class="actions"><a class="button primary" href="#use">Run the workflow</a><a class="button secondary" href="#architecture">See the architecture</a></div><p class="scope">Built for the Nebius × NVIDIA Global AI Hackathon · Evidence is bounded to executed checks.</p></div>
-      <div class="proof"><div class="window">● ● ● <span>AEGIS / PROOF CARD</span></div><div class="proof-body"><p class="danger">● REGRESSION DETECTED</p><h2>Coupon boundary can produce a negative cart total</h2><div class="result"><span>BASE <b>71be309</b></span><strong>PASS</strong></div><div class="connector"></div><div class="result fail"><span>PR <b>6f47a12</b></span><strong>FAIL</strong></div><div class="metrics"><div><small>Context</small><b>CUDA</b></div><div><small>Tests</small><b>12</b></div><div><small>Reproduced</small><b>1</b></div></div><p class="caption">Illustrative report format, not a claim about a real pull request.</p></div></div>
+    <section class="hero wrap" aria-labelledby="hero-title">
+      <div class="hero-copy"><p class="eyebrow"><span class="status-dot" aria-hidden="true"></span> Evidence-backed code review</p>
+        <h1 id="hero-title">Less guesswork.<br>More <em>proof.</em></h1><p class="hero-tagline">Don’t trust a PR. Prove it.</p>
+        <p class="lede">Turn “this might break” into a test you can run. Compare the same check on both commits, inspect the evidence, and verify a repair before you merge.</p>
+        <div class="tags"><span>Find regressions</span><span>Compare commits</span><span>Verify repairs</span></div>
+        <div class="actions"><a class="button primary" href="./demo/">Explore the demo <span aria-hidden="true">↗</span></a><a class="text-link" href="#how-to-use">How to use <span aria-hidden="true">↓</span></a></div>
+        <p class="caption">No sign-up or tokens for the browser demo.<br>A controlled example, not a live PR review.</p>
+      </div>
+      <div class="hero-visual" aria-label="Illustration of a boundary regression, not live execution">
+        <div class="visual-coordinate" aria-hidden="true">AEGIS / VERIFICATION LAYER <span>01 — 06</span></div>
+        <div class="orbit orbit-one" aria-hidden="true"></div><div class="orbit orbit-two" aria-hidden="true"></div>
+        <div class="shield-art" role="img" aria-label="AegisPR cyan and emerald shield logo"></div>
+        <span class="floating-tag tag-left" aria-hidden="true">&lt;/&gt; same test</span><span class="floating-tag tag-right" aria-hidden="true">+ evidence</span>
+        <div class="proof-card"><div class="proof-top"><span class="eyebrow">Boundary check</span><span class="mini-label">Illustration</span></div><div class="proof-results"><div><span>BASE</span><b class="pass">PASS</b></div><span class="proof-arrow" aria-hidden="true">→</span><div><span>CHANGE</span><b class="fail">FAIL</b></div></div><p>Discount exceeds cart value <span class="fail">−10.00</span></p></div>
+      </div>
     </section>
-    <section class="statement"><p>Most AI review stops at <span>“this might break.”</span></p><h2>AegisPR asks the code to prove it.</h2><div class="brand-signature"><img src="./aegispr-logo.jpg" alt="AegisPR cyan and emerald shield logo" width="1400" height="768" loading="lazy"></div></section>
-    <section class="section" id="workflow"><div class="heading"><p class="eyebrow">The verification chain</p><h2>Reasoning becomes an experiment.</h2><p>Select a stage to see how a pull request becomes reproducible evidence.</p></div><div class="workflow"><ol>
-      <li><button class="stage active" data-stage="0"><span>01</span><b>Map the change</b><small>Diff, profile, impact graph</small></button></li>
-      <li><button class="stage" data-stage="1"><span>02</span><b>Form hypotheses</b><small>Nemotron names failure modes</small></button></li>
-      <li><button class="stage" data-stage="2"><span>03</span><b>Generate tests</b><small>Framework-native adversarial checks</small></button></li>
-      <li><button class="stage" data-stage="3"><span>04</span><b>Execute twice</b><small>Identical check on base and PR</small></button></li>
-      <li><button class="stage" data-stage="4"><span>05</span><b>Publish evidence</b><small>Logs, classifications, proof card</small></button></li>
-      <li><button class="stage" data-stage="5"><span>06</span><b>Repair and re-prove</b><small>Minimal patch, isolated checks</small></button></li>
-    </ol><article class="stage-detail" aria-live="polite"><p id="stage-label">CONTEXT ENGINE</p><h3 id="stage-title">Repository structure before speculation.</h3><p id="stage-copy">AegisPR discovers the stack, changed files, commands, and dependency neighborhood. The Dell NVIDIA GPU ranks relevant context with deterministic CUDA vector scoring.</p><pre>$ aegis analyze owner/repo#42<br><span>✓ 7 changed files indexed</span><br><span>✓ impact neighborhood ranked on cuda</span><br>→ sending bounded context to Nemotron</pre></article></div></section>
-    <section class="architecture" id="architecture"><div class="section"><div class="heading wide"><div><p class="eyebrow">Two compute planes</p><h2>One reasoning plane. One execution plane.</h2></div><p>Nebius serves large-model reasoning. The Dell RTX GPU accelerates context ranking. Docker isolates untrusted repository execution.</p></div><div class="planes"><article><i>01</i><p>Nebius Token Factory</p><h3>NVIDIA Nemotron</h3><ul><li>Risk hypotheses</li><li>Adversarial test design</li><li>Bounded inference spend</li></ul></article><b class="arrow">→</b><article class="core"><i>A</i><p>FastAPI orchestrator</p><h3>Differential verifier</h3><ul><li>Deterministic classifications</li><li>Persistent evidence trail</li><li>Repair verification loop</li></ul></article><b class="arrow">→</b><article><i>02</i><p>Dell Linux compute</p><h3>RTX 3050 Ti + Docker</h3><ul><li>CUDA context scoring</li><li>Base / PR sandboxes</li><li>No runtime network</li></ul></article></div></div></section>
-    <section class="section"><div class="heading"><p class="eyebrow">No vibes, just outcomes</p><h2>A deterministic result matrix.</h2></div><div class="matrix"><b>BASE</b><b>PULL REQUEST</b><b>CONCLUSION</b><span class="pass">PASS</span><span class="fail-tag">FAIL</span><p><strong>Regression introduced</strong><small>Reproducible PR evidence</small></p><span class="fail-tag">FAIL</span><span class="fail-tag">FAIL</span><p><strong>Pre-existing failure</strong><small>Not attributed to the PR</small></p><span class="pass">PASS</span><span class="pass">PASS</span><p><strong>No failure reproduced</strong><small>Verified within tested scope</small></p></div></section>
-    <section class="section" id="use"><div class="use"><div><p class="eyebrow">From zero to evidence</p><h2>Run AegisPR on your GPU host.</h2><p>Clone the repository, add server-side credentials, start the secured Compose stack, then paste a public GitHub pull request URL into the app. Confirmed regressions can optionally enter the isolated repair-verification loop.</p></div><ol><li><span>1</span><div><b>Configure</b><code>cp .env.example .env</code></div></li><li><span>2</span><div><b>Launch</b><code>docker compose up --build -d</code></div></li><li><span>3</span><div><b>Verify</b><code>open http://localhost:3000</code></div></li><li><span>4</span><div><b>Re-prove</b><code>Generate and verify repair</code></div></li></ol><a class="button primary" href="https://github.com/Hari-Aditya-003/AegisPR#quick-start">Open the quick start →</a></div></section>
+    <section class="technology wrap" aria-label="Project architecture technologies"><span>Designed around</span><b>NVIDIA <span>Nemotron</span></b><b>Nebius <span>Token Factory</span></b><b>CUDA <span>context ranking</span></b><b>Docker <span>isolated checks</span></b></section>
+    <aside class="readiness wrap" aria-label="Current verification status"><span class="status-dot" aria-hidden="true"></span><p><strong>What’s available today:</strong> browser demo and reproducible local Docker fixtures. Dell CUDA ranking was verified on October 19, 2026. Live Nemotron inference and PR acceptance are still pending usable Nebius credits.</p><a href="https://github.com/Hari-Aditya-003/AegisPR/blob/main/docs/submission-readiness.md">Read the evidence ↗</a></aside>
+
+    <section class="section wrap" id="features">
+      <div class="section-heading"><div><p class="eyebrow">01 / Built for the review before the merge</p><h2>From a risky change<br>to a <em>clearer decision.</em></h2></div><p>A review comment is a starting point. AegisPR is built to connect it to a repeatable experiment and an inspectable result.</p></div>
+      <div class="features">
+        <article class="feature"><span class="feature-icon" aria-hidden="true">⌁</span><span class="index">01</span><h3>Understand the change.</h3><p>Map changed files and their dependency neighborhood. Rank relevant context on the GPU before asking the model to reason.</p><div class="feature-diagram" aria-hidden="true"><span>diff</span><i>→</i><span>context</span><i>→</i><span class="mint">risk</span></div></article>
+        <article class="feature"><span class="feature-icon" aria-hidden="true">±</span><span class="index">02</span><h3>Test both sides.</h3><p>Run the same targeted test against the base and changed revision. Separate introduced regressions from existing failures.</p><div class="feature-diagram" aria-hidden="true"><span class="mint">base ✓</span><i>/</i><span class="pink">change ×</span></div></article>
+        <article class="feature"><span class="feature-icon" aria-hidden="true">↳</span><span class="index">03</span><h3>Keep the receipts.</h3><p>Inspect exact commits, commands, exit codes and logs. Check a proposed repair in isolation without changing the source repository.</p><div class="feature-diagram" aria-hidden="true"><span>patch</span><i>→</i><span>re-test</span><i>→</i><span class="mint">proof</span></div></article>
+      </div>
+    </section>
+
+    <section class="section workflow-section" id="workflow"><div class="wrap">
+      <div class="section-heading"><div><p class="eyebrow">02 / The verification chain</p><h2>Every claim needs<br><em>an experiment.</em></h2></div><p>Explore the intended live workflow. These examples explain the process; they do not launch a run or spend tokens.</p></div>
+      <div class="workflow"><ol aria-label="Workflow stages">
+        <li><button type="button" class="stage active" data-stage="0"><span>01</span><b>Map the change</b><small>Diff, profile, impact graph</small></button></li>
+        <li><button type="button" class="stage" data-stage="1"><span>02</span><b>Form hypotheses</b><small>Concrete failure modes</small></button></li>
+        <li><button type="button" class="stage" data-stage="2"><span>03</span><b>Generate tests</b><small>Framework-native checks</small></button></li>
+        <li><button type="button" class="stage" data-stage="3"><span>04</span><b>Execute twice</b><small>Same test, two commits</small></button></li>
+        <li><button type="button" class="stage" data-stage="4"><span>05</span><b>Publish evidence</b><small>Logs and classifications</small></button></li>
+        <li><button type="button" class="stage" data-stage="5"><span>06</span><b>Repair and re-prove</b><small>Isolated verification</small></button></li>
+      </ol><article class="stage-detail" aria-live="polite" aria-atomic="true"><p id="stage-label">CONTEXT ENGINE</p><h3 id="stage-title">Repository structure before speculation.</h3><p id="stage-copy">Discover the stack, changed files, commands and dependency neighborhood before selecting relevant context.</p><pre>Map the change → select bounded context</pre></article></div>
+    </div></section>
+
+    <section class="section wrap" id="how-to-use"><div id="use" class="anchor-alias"></div>
+      <div class="section-heading"><div><p class="eyebrow">03 / How to use</p><h2>Your first proof.<br><em>Choose your path.</em></h2></div><p>Start in your browser, inspect real Docker evidence locally, or configure the full PR pipeline. Each path has a different scope.</p></div>
+      <div class="guide-selector" role="group" aria-label="Choose how to use AegisPR">
+        <button type="button" data-guide="browser" aria-pressed="true" aria-controls="guide-browser"><span>01 / No setup</span>Try in your browser <b aria-hidden="true">↗</b></button>
+        <button type="button" data-guide="local" aria-pressed="false" aria-controls="guide-local"><span>02 / No model tokens</span>Run the local build <b aria-hidden="true">↗</b></button>
+        <button type="button" data-guide="live" aria-pressed="false" aria-controls="guide-live"><span>03 / Provider setup required</span>Verify a real PR <b aria-hidden="true">↗</b></button>
+      </div>
+      <noscript><p class="notice">JavaScript is off. All three guides are shown below; the interactive browser demo needs JavaScript.</p></noscript>
+      <div class="guide-panel" id="guide-browser" role="region" aria-labelledby="browser-title">
+        <div class="guide-intro"><p class="eyebrow">The quickest way to understand AegisPR</p><h3 id="browser-title">Break a boundary.<br>See the difference.</h3><p>Experiment with a cart total and a discount. The demo compares fixed JavaScript implementations directly in your browser.</p><a class="button primary" href="./demo/">Open interactive test build <span aria-hidden="true">↗</span></a><p class="caption">No API keys, GPU, Docker or paid calls.<br>Not a live PR review or model-generated test.</p></div>
+        <ol class="guide-steps"><li><span>01</span><div><h4>Open the experiment</h4><p>Start with a cart total of <code>10</code> and a discount of <code>20</code>. Choose the buggy change.</p></div></li><li><span>02</span><div><h4>Run the boundary check</h4><p>The base clamps the total to zero; the changed version returns −10. The same assertion passes on base and fails on the change.</p></div></li><li><span>03</span><div><h4>Inspect the manual repair</h4><p>Try the prewritten repair, then change the inputs and run again. A passing example only verifies that input and assertion.</p></div></li></ol>
+      </div>
+      <div class="guide-panel" id="guide-local" role="region" aria-labelledby="local-title">
+        <div class="guide-intro"><p class="eyebrow">Real execution · controlled fixtures</p><h3 id="local-title">Inspect the full app.<br>Keep your tokens.</h3><p>Use a trusted Linux machine with Git, Bash, OpenSSL and Docker Compose. Internet is needed to download images and dependencies.</p><pre class="setup-code">git clone https://github.com/Hari-Aditya-003/AegisPR.git
+cd AegisPR
+bash scripts/judge-test-build.sh start</pre><a class="text-link" href="https://github.com/Hari-Aditya-003/AegisPR/blob/main/docs/judge-test-build.md">Full local setup and troubleshooting ↗</a></div>
+        <ol class="guide-steps"><li><span>01</span><div><h4>Start the isolated judging build</h4><p>The command launches the real UI and API on loopback ports 3300 / 18080, then executes fixed Python and Node tests in Docker.</p></div></li><li><span>02</span><div><h4>Unlock a printed report URL</h4><p>In “Private deployment access”, enter the local code from <code>artifacts/judge/access-code</code>. Never publish that code or use a provider key here.</p></div></li><li><span>03</span><div><h4>Read the execution receipts</h4><p>Expand base, changed and manual-repair results. Inspect commands, logs and exit codes. Tests and repairs are prewritten; this build uses no model inference or GPU ranking.</p></div></li></ol>
+      </div>
+      <div class="guide-panel" id="guide-live" role="region" aria-labelledby="live-title">
+        <div class="guide-intro"><p class="eyebrow">Full pipeline · setup required</p><h3 id="live-title">From a public PR<br>to tested evidence.</h3><p>Requires a configured private deployment, usable Nebius credits, Docker and the NVIDIA driver / Container Toolkit for GPU ranking.</p><p class="notice">Live inference and an actual PR acceptance run are not yet verified for this deployment. The public website does not run this pipeline.</p><a class="button secondary" href="https://github.com/Hari-Aditya-003/AegisPR#quick-start">Read the deployment guide <span aria-hidden="true">↗</span></a></div>
+        <ol class="guide-steps"><li><span>01</span><div><h4>Configure secrets on the server</h4><p>Copy <code>.env.example</code> to <code>.env</code>, configure the Nebius key and separate worker / app access secrets. Keep all provider keys off the website.</p></div></li><li><span>02</span><div><h4>Start and authenticate</h4><p>Run <code>docker compose up --build -d</code>. Open localhost:3000 and enter the private app access code. Use HTTPS for any internet-accessible deployment.</p></div></li><li><span>03</span><div><h4>Verify, inspect, then re-prove</h4><p>Paste a public GitHub PR URL and select “Verify PR”. Inspect the evidence; optionally verify a repair for a confirmed regression. Keep the $20 total / $0.25 per-run / five-attempt admission limits.</p></div></li></ol>
+      </div>
+    </section>
+
+    <section class="architecture section" id="architecture"><div class="wrap"><div class="section-heading"><div><p class="eyebrow">04 / Under the hood</p><h2>Separate the reasoning.<br><em>Isolate the execution.</em></h2></div><p>The large model runs on Nebius. The Dell GPU ranks context. Docker executes bounded repository checks.</p></div><div class="planes">
+      <article><span class="index">01 / REASON</span><h3>NVIDIA Nemotron</h3><p>Risk hypotheses and test design through Nebius Token Factory, with bounded inference admission and no automatic SDK retries.</p></article><article><span class="index">02 / COORDINATE</span><h3>AegisPR engine</h3><p>FastAPI orchestration, deterministic outcome classification, saved evidence and an isolated repair-verification loop.</p></article><article><span class="index">03 / EXECUTE</span><h3>CUDA + Docker</h3><p>Context scoring on the Dell RTX 3050 Ti. Repository tests run with resource limits and no runtime network.</p></article>
+    </div></div></section>
+
+    <section class="section wrap faq-section" id="faq"><div><p class="eyebrow">05 / A few things worth knowing</p><h2>Clear answers.<br><em>No black box.</em></h2><a class="text-link" href="https://github.com/Hari-Aditya-003/AegisPR/blob/main/docs/PROJECT_DOCUMENTATION.md">Read the documentation ↗</a></div><div class="faq-list">
+      <details><summary>Does the public demo use my tokens?</summary><p>No. It runs a fixed JavaScript experiment in your browser. The local judging build also uses no model tokens. Only the configured live pipeline calls the inference provider.</p></details>
+      <details><summary>Does a passing result mean my PR is safe?</summary><p>No. A result applies only to the executed checks. Passing tests do not prove general correctness or security. Review the assertion, coverage, environment and skipped checks before deciding to merge.</p></details>
+      <details><summary>Will AegisPR edit my GitHub repository?</summary><p>The verification and repair workflow uses isolated checkouts. A repair proposal is tested there; it does not automatically push changes or merge your PR.</p></details>
+      <details><summary>Can I run it without an NVIDIA GPU?</summary><p>The token-free local judging build needs no GPU. The live pipeline can record a CPU fallback for context ranking; that must not be presented as CUDA execution. Large-model inference is served separately by Nebius.</p></details>
+      <details><summary>Can I expose the local judging build publicly?</summary><p>Do not expose its Docker-socket-backed API as an arbitrary-code service. It is a trusted-operator build with loopback ports and a private access code. Read the security documentation before changing deployment boundaries.</p></details>
+    </div></section>
+    <section class="closing wrap"><p class="eyebrow">A stronger review starts with a better question.</p><h2>“Can we <em>reproduce it?</em>”</h2><div class="actions"><a class="button primary" href="./demo/">Find out in the demo <span aria-hidden="true">↗</span></a><a class="text-link" href="https://github.com/Hari-Aditya-003/AegisPR">Explore the source ↗</a></div></section>
   </main>
-  <p class="license-note"><a href="https://github.com/Hari-Aditya-003/AegisPR/blob/main/LICENSE">MIT License</a> · Public source and reproducible setup instructions on GitHub.</p>
-  <footer><a class="brand" href="#top"><span>A</span>AegisPR</a><p>Evidence-backed pull request verification.</p><a href="https://github.com/Hari-Aditya-003/AegisPR">GitHub</a></footer><script src="./script.js"></script><script type="module" src="./motion.mjs"></script>
-</body></html>
+  <footer class="wrap"><div><a class="brand" href="#top"><span class="brand-mark" aria-hidden="true"></span>Aegis<span class="brand-light">PR</span></a><p>Evidence over assumptions.</p></div><div class="footer-links"><a href="https://github.com/Hari-Aditya-003/AegisPR">GitHub ↗</a><a href="https://github.com/Hari-Aditya-003/AegisPR/blob/main/LICENSE">MIT License ↗</a><a href="#how-to-use">How to use ↑</a><button class="motion-toggle" id="motion-control" type="button" aria-pressed="false">Pause animation</button></div></footer>
+  <script src="./script.js"></script><script type="module" src="./motion.mjs"></script><script type="module" src="./guide.mjs"></script>
+</body>
+</html>
