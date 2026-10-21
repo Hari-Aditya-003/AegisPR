@@ -22,6 +22,10 @@ Repository code, pull request text, generated tests, and model output are untrus
 - Frontend and backend set defensive browser headers and exact CORS origins.
 - CI scans dependencies and rejects obvious committed secret assignments.
 
+## Dependency maintenance — October 21, 2026
+
+The UI refresh CI audit flagged the existing Vite 8.3.2 development dependency for launch-editor advisories ([upstream advisory](https://github.com/advisories/GHSA-r825-w8mm-5pxw)). The exact pin is now 8.3.5 with its regenerated lockfile. No application dependencies or audit thresholds were weakened. After the update, `npm audit --audit-level=high` reported zero vulnerabilities; all 32 frontend unit tests, TypeScript checking and the production build passed locally. The local Node 25 runtime emitted Vitest's unsupported-engine warning; CI uses supported Node 22 and must be checked separately. This dependency audit is not proof that the application has no security vulnerabilities.
+
 ## Docker socket boundary
 
 The deployed orchestrator talks to the host Docker daemon to create nested execution sandboxes. Docker socket access is effectively host-level privilege and must remain limited to the orchestrator container and trusted administrators. Generated repository code never receives the socket. For production isolation, replace this with a remote ephemeral executor or Nebius sandbox service.
