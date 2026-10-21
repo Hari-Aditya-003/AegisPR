@@ -1,0 +1,34 @@
+# Public website and usage guide
+
+Updated October 21, 2026. The public landing page is served from `website/dist/` through the GitHub Pages workflow. It is separate from the private Next.js verification application.
+
+## Design
+
+The requested ZeroTrace reference informed the charcoal background, mint accents, dotted field, framed navigation and restrained motion. The page uses AegisPR's own supplied logo and project-specific content; it does not import the reference site's assets or code. The hero retains the established “Don’t trust a PR. Prove it.” slogan required by the capability recorder.
+
+The landing page has its own `landing.css`. Existing `styles.css`, `brand.css` and the browser experiment remain unchanged, avoiding accidental demo styling regressions. There are no added external fonts, trackers, libraries or inference calls.
+
+## How to use
+
+The `#how-to-use` section has three selectable guides:
+
+1. **Browser experiment:** no setup, keys or tokens. Fixed JavaScript implementations demonstrate the base/change/manual-repair comparison.
+2. **Local judging build:** Linux and Docker setup, the launcher command, private access-code instructions, and the actual prewritten Python/Node fixture receipts. No model generation, GPU ranking or live PR claims.
+3. **Live PR workflow:** server-side credentials, provider-credit prerequisites, private app authentication, PR verification and optional repair verification. Current unverified live inference/PR acceptance is explicitly disclosed.
+
+The old `#use` anchor remains as a compatibility alias. All guide content is readable without JavaScript. Toggle buttons expose `aria-pressed` and `aria-controls`; native FAQ disclosures support keyboard use. Decorative motion respects `prefers-reduced-motion`, and the footer provides a pause/resume control that also disables smooth scrolling.
+
+## Verification
+
+Targeted automated checks:
+
+```bash
+node --test website/tests/*.test.mjs frontend/scripts/record-controlled-demo.test.mjs
+git diff --check
+```
+
+October 21 result: **20 checks passed** (12 website checks and 8 recorder guards). New checks cover guide state, content scope, navigation targets, local assets and the recorder's heading contract. The missing guide and later heading regression were each reproduced before their respective fixes.
+
+Browser inspection covered the desktop layout, 390px and 320px widths without horizontal overflow, all three guide choices, Enter-key guide activation, workflow stage changes, FAQ expansion, and the animation pause control. No browser console errors were observed during the checked interactions. These are targeted website checks, not a repeat of the October 19 backend/GPU acceptance matrix, a comprehensive accessibility audit, or new evidence of live model inference.
+
+The private draft video was not re-recorded or uploaded. No Dell service, production authentication, provider key or inference budget was changed.

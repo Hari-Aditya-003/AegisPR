@@ -6,6 +6,8 @@ AegisPR is an autonomous evidence-backed pull request verification agent powered
 
 Project website: [hari-aditya-003.github.io/AegisPR](https://hari-aditya-003.github.io/AegisPR/).
 
+New here? Follow the [How to use guide](https://hari-aditya-003.github.io/AegisPR/#how-to-use) for the browser experiment, token-free local Docker build, or live PR setup. See the [website design and validation notes](docs/website-design.md).
+
 Public interactive test build: [Try the coupon-boundary experiment](https://hari-aditya-003.github.io/AegisPR/demo/). This browser test build demonstrates deterministic base/change/repair comparisons. It does not analyze arbitrary PRs or run cloud inference. The full application runs on the Dell; its Nebius key authenticates, but inference currently returns HTTP 402 because usable credits are unavailable.
 
 October 19 status: the Dell's NVIDIA driver is now consistent at `595.99.02`. Normal GPU Compose is restored; CuPy and authenticated context ranking both executed on the RTX 3050 Ti. See the [current CUDA receipt](docs/gpu-recovery-2026-10-19.md). Successful Nebius inference and an actual PR acceptance run remain blocked by unconfirmed usable credits.
