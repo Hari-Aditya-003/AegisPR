@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from app.evaluation.seeded_dataset import load_cases, observe_case, validate_cases
+from app.evaluation.seeded_dataset import load_cases, materialize_cases, observe_case, validate_cases
 
 
 DATASET = Path(__file__).resolve().parents[2] / "evals" / "seeded-prs" / "cases.json"
@@ -42,3 +42,26 @@ def test_dataset_validation_reports_fixture_counts_not_model_accuracy() -> None:
         "fixtures_verified": 12,
         "model_runs": 0,
     }
+
+
+def test_dataset_materializes_local_base_and_head_git_commits_without_labels_in_repos(tmp_path: Path) -> None:
+    output = tmp_path / "seeded-prs"
+    index = materialize_cases(load_cases(DATASET), output)
+    assert len(index["cases"]) == 12
+    assert output.joinpath("index.json").is_file()
+    for item in index["cases"]:
+        repository = output / item["id"]
+        assert repository.joinpath(".git").is_dir()
+        assert item["base_commit"] != item["head_commit"]
+        assert len(item["base_commit"]) == len(item["head_commit"]) == 40
+        assert not repository.joinpath("labels.json").exists()
+
+
+def test_dataset_materialization_never_overwrites_existing_directory(tmp_path: Path) -> None:
+    output = tmp_path / "existing"
+    output.mkdir()
+    marker = output / "keep.txt"
+    marker.write_text("user content")
+    with pytest.raises(FileExistsError):
+        materialize_cases(load_cases(DATASET), output)
+    assert marker.read_text() == "user content"
