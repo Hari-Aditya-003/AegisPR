@@ -6,6 +6,7 @@ Docker sandbox used for AI-generated tests.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import re
@@ -195,3 +196,27 @@ def materialize_cases(cases: list[SeededCase], destination: Path) -> dict[str, A
         })
     (destination / "index.json").write_text(json.dumps(index, indent=2) + "\n", encoding="utf-8")
     return index
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Validate or materialize trusted synthetic PR fixtures")
+    parser.add_argument("action", choices=("validate", "materialize"))
+    parser.add_argument("--output", type=Path, help="New directory for local two-commit repositories")
+    args = parser.parse_args(argv)
+    dataset = Path(__file__).resolve().parents[3] / "evals" / "seeded-prs" / "cases.json"
+    cases = load_cases(dataset)
+    if args.action == "validate":
+        print(json.dumps(validate_cases(cases), sort_keys=True))
+        return 0
+    if args.output is None:
+        parser.error("materialize requires --output")
+    index = materialize_cases(cases, args.output)
+    print(json.dumps({
+        "repositories": len(index["cases"]), "output": str(args.output.resolve()),
+        "model_runs": 0,
+    }, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
