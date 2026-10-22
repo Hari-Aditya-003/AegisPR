@@ -89,6 +89,58 @@ async def test_execution_workflow_classifies_regression(tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
+async def test_output_difference_needs_two_stable_reruns_before_intent_review(tmp_path: Path) -> None:
+    settings = Settings(data_path=tmp_path / "runs.sqlite3", workspace_root=tmp_path / "work")
+    orchestrator = Orchestrator(settings, VerificationStore(settings.data_path))
+    run = orchestrator.create(CreateVerificationRequest(pull_request_url="https://github.com/acme/store/pull/42"))
+    run.summary = summary()
+    run.repository_profile = RepositoryProfile(languages=["Python"], test_command="pytest -q")
+    run.hypotheses = [Hypothesis(id="H1", description="Discount boundary", test_strategy="Print result")]
+    run.generated_tests = [GeneratedTest(id="T1", hypothesis_id="H1", file_path="tests/test_x.py", framework="pytest", test_code="print('AEGISPR_OUTPUT=0')", mode="output")]
+    orchestrator.repository = MagicMock()
+    orchestrator.sandbox = MagicMock()
+    executions = []
+    for _ in range(3):
+        for branch, value in (("base", 0), ("head", -10)):
+            result = execution(branch, ExecutionStatus.PASSED)
+            result.stdout = f"AEGISPR_OUTPUT={value}\n"
+            executions.append(result)
+    orchestrator.sandbox.execute.side_effect = executions
+
+    await orchestrator._execute_plan(run, tmp_path / "repo", tmp_path / "work")
+
+    assert run.status == VerificationStatus.INCONCLUSIVE
+    assert run.findings[0].classification == "BEHAVIOR_CHANGE"
+    assert len(run.findings[0].confirmation_executions) == 4
+    assert orchestrator.sandbox.execute.call_count == 6
+    assert run.metrics.regressions_found == 0
+
+
+@pytest.mark.asyncio
+async def test_unstable_output_difference_is_inconclusive(tmp_path: Path) -> None:
+    settings = Settings(data_path=tmp_path / "runs.sqlite3", workspace_root=tmp_path / "work")
+    orchestrator = Orchestrator(settings, VerificationStore(settings.data_path))
+    run = orchestrator.create(CreateVerificationRequest(pull_request_url="https://github.com/acme/store/pull/42"))
+    run.summary = summary()
+    run.repository_profile = RepositoryProfile(languages=["Python"], test_command="pytest -q")
+    run.hypotheses = [Hypothesis(id="H1", description="Discount boundary", test_strategy="Print result")]
+    run.generated_tests = [GeneratedTest(id="T1", hypothesis_id="H1", file_path="tests/test_x.py", framework="pytest", test_code="print('AEGISPR_OUTPUT=0')", mode="output")]
+    orchestrator.repository = MagicMock()
+    orchestrator.sandbox = MagicMock()
+    def result(branch, value):
+        item = execution(branch, ExecutionStatus.PASSED)
+        item.stdout = f"AEGISPR_OUTPUT={value}\n"
+        return item
+    orchestrator.sandbox.execute.side_effect = [result("base", 0), result("head", -10), result("base", 0), result("head", 0)]
+
+    await orchestrator._execute_plan(run, tmp_path / "repo", tmp_path / "work")
+
+    assert run.status == VerificationStatus.INCONCLUSIVE
+    assert run.findings[0].classification == "INCONCLUSIVE"
+    assert len(run.findings[0].confirmation_executions) == 2
+
+
+@pytest.mark.asyncio
 async def test_optional_explanation_failure_preserves_reproduced_regression(tmp_path):
     settings = Settings(data_path=tmp_path / "runs.sqlite3", workspace_root=tmp_path / "work")
     orchestrator = Orchestrator(settings, VerificationStore(settings.data_path))
