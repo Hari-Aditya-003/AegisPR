@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import logging
+import json
 import os
+import re
 import selectors
 import shlex
 import signal
@@ -184,6 +186,7 @@ class DockerSandbox:
         self, checkout: Path, base_image: str, install: str, tag: str
     ) -> subprocess.CompletedProcess[str]:
         # Build instructions must never be written through repository-controlled paths.
+        dependency_copy = self._cacheable_dependency_copy(checkout, install)
         with tempfile.TemporaryDirectory(prefix="aegispr-build-") as temporary:
             dockerfile = Path(temporary) / "Dockerfile"
             dockerfile.write_text("\n".join(
@@ -198,15 +201,73 @@ class DockerSandbox:
                     "ENV HOME=/home/aegis",
                     "RUN mkdir -p /workspace && chown 10001:10001 /workspace",
                     "WORKDIR /workspace",
-                    "COPY --chown=10001:10001 . .",
+                    *([dependency_copy] if dependency_copy else []),
                     "USER 10001",
-                    f"RUN {install}",
+                    *([f"RUN {install}"] if dependency_copy else []),
+                    "COPY --chown=10001:10001 . .",
+                    *([] if dependency_copy else [f"RUN {install}"]),
                 ]
             ), encoding="utf-8")
             return self._run_bounded(
                 ["docker", "build", "--force-rm", "--file", str(dockerfile), "--tag", tag, str(checkout)],
                 timeout=self.timeout_seconds,
             )
+
+    @staticmethod
+    def _cacheable_dependency_copy(checkout: Path, install: str) -> str | None:
+        """Use Docker's content cache only when the root manifest is self-contained.
+
+        Local packages, npm workspaces and repository npm config need the full
+        source tree before installation, so they retain the original build order.
+        """
+        if (checkout / ".dockerignore").exists() or (checkout / ".dockerignore").is_symlink():
+            return None
+        if install == "npm ci --ignore-scripts":
+            if any((checkout / name).exists() or (checkout / name).is_symlink()
+                   for name in (".npmrc", "npm-shrinkwrap.json", "node_modules")):
+                return None
+            manifests = [checkout / "package.json", checkout / "package-lock.json"]
+            if any(not path.is_file() or path.is_symlink() or path.stat().st_size > 2_000_000
+                   for path in manifests):
+                return None
+            try:
+                package, lock = (json.loads(path.read_text(encoding="utf-8")) for path in manifests)
+            except (OSError, UnicodeError, ValueError):
+                return None
+            if not isinstance(package, dict) or not isinstance(lock, dict) or package.get("workspaces"):
+                return None
+            dependency_sections = [
+                package.get(section) or {}
+                for section in ("dependencies", "devDependencies", "optionalDependencies", "peerDependencies")
+            ]
+            packages = lock.get("packages") or {}
+            if any(not isinstance(section, dict) for section in dependency_sections) or not isinstance(packages, dict):
+                return None
+            dependencies = [value for section in dependency_sections for value in section.values()]
+            if any(not isinstance(value, str) or value.startswith(("file:", "link:", "workspace:"))
+                   for value in dependencies):
+                return None
+            for entry in packages.values():
+                if not isinstance(entry, dict) or entry.get("link") or str(entry.get("resolved", "")).startswith("file:"):
+                    return None
+            return "COPY --chown=10001:10001 package.json package-lock.json ./"
+        if install == "pip install -r requirements.txt":
+            manifest = checkout / "requirements.txt"
+            if not manifest.is_file() or manifest.is_symlink() or manifest.stat().st_size > 100_000:
+                return None
+            try:
+                lines = manifest.read_text(encoding="utf-8").splitlines()
+            except (OSError, UnicodeError):
+                return None
+            if not any(line.strip() and not line.lstrip().startswith("#") for line in lines):
+                return None
+            if any(
+                not re.fullmatch(r"[A-Za-z0-9_.-]+(?:\[[A-Za-z0-9_,.-]+\])?==[A-Za-z0-9_.+!-]+", line.strip())
+                for line in lines if line.strip() and not line.lstrip().startswith("#")
+            ):
+                return None
+            return "COPY --chown=10001:10001 requirements.txt ./"
+        return None
 
     def _run_image(
         self, tag: str, command: str, commit: str, branch: str = "repair",

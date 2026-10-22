@@ -52,6 +52,32 @@ def test_repository_profile_diff_context_and_impact(tmp_path: Path) -> None:
     assert edges[0].source == "coupon.ts"
 
 
+def test_impact_graph_requires_import_relationship_not_name_mention() -> None:
+    documents = [
+        ContextDocument(path="pkg/utils.py", content="def normalize(value):\n    return value\n", changed=True),
+        ContextDocument(path="pkg/consumer.py", content="from pkg.utils import normalize\n", changed=False),
+        ContextDocument(path="pkg/unrelated.py", content="MESSAGE = 'utils.py was changed'\n", changed=False),
+    ]
+    nodes, edges = RepositoryService().impact_graph(["pkg/utils.py"], documents)
+    assert [(edge.source, edge.target) for edge in edges] == [("pkg/utils.py", "pkg/consumer.py")]
+    assert {node.id for node in nodes} == {"pkg/utils.py", "pkg/consumer.py"}
+
+
+def test_typescript_impact_graph_resolves_relative_import_not_comment() -> None:
+    documents = [
+        ContextDocument(path="src/coupon.ts", content="export const total = 100;", changed=True),
+        ContextDocument(path="src/checkout.ts", content="import { total } from './coupon';", changed=False),
+        ContextDocument(path="src/notes.ts", content="// import { total } from './coupon';", changed=False),
+    ]
+    _, edges = RepositoryService().impact_graph(["src/coupon.ts"], documents)
+    assert [(edge.source, edge.target) for edge in edges] == [("src/coupon.ts", "src/checkout.ts")]
+
+
+def test_python_relative_import_resolves_package_sibling() -> None:
+    document = ContextDocument(path="pkg/consumer.py", content="from .utils import normalize\n", changed=False)
+    assert "pkg/utils.py" in RepositoryService._import_targets(document)
+
+
 def test_mutation_changes_only_added_python_source_in_isolated_checkout(tmp_path: Path) -> None:
     checkout = tmp_path / "checkout"
     checkout.mkdir()

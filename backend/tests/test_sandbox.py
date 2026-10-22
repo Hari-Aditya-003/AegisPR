@@ -269,6 +269,74 @@ def test_build_workspace_is_owned_by_unprivileged_installer(tmp_path: Path, monk
     assert "RUN mkdir -p /workspace && chown 10001:10001 /workspace" in instructions[0]
 
 
+@pytest.mark.parametrize(
+    ("install", "manifest_files", "early_copy"),
+    [
+        ("npm ci --ignore-scripts", {"package.json": '{"dependencies": {}}', "package-lock.json": '{"lockfileVersion": 3}'}, "COPY --chown=10001:10001 package.json package-lock.json ./"),
+        ("pip install -r requirements.txt", {"requirements.txt": "pytest==8.4.2\n"}, "COPY --chown=10001:10001 requirements.txt ./"),
+    ],
+)
+def test_safe_dependency_manifest_is_installed_before_source_copy(
+    tmp_path: Path, monkeypatch, install: str, manifest_files: dict[str, str], early_copy: str,
+) -> None:
+    for name, content in manifest_files.items():
+        (tmp_path / name).write_text(content)
+    instructions = []
+
+    def fake_build(args, **kwargs):
+        instructions.append(Path(args[args.index("--file") + 1]).read_text())
+        return subprocess.CompletedProcess(args, 0, "", "")
+
+    monkeypatch.setattr(DockerSandbox, "_run_bounded", staticmethod(fake_build))
+    base = "node:22-bookworm-slim" if install.startswith("npm") else "python:3.12-slim"
+    DockerSandbox(5, "128m", 1)._build_image(tmp_path, base, install, "test-image")
+    dockerfile = instructions[0]
+    assert dockerfile.index(early_copy) < dockerfile.index(f"RUN {install}")
+    assert dockerfile.index(f"RUN {install}") < dockerfile.index("COPY --chown=10001:10001 . .")
+
+
+@pytest.mark.parametrize("unsafe", [".npmrc", "node_modules", "workspace"])
+def test_node_dependency_cache_falls_back_when_layout_needs_full_source(
+    tmp_path: Path, monkeypatch, unsafe: str,
+) -> None:
+    (tmp_path / "package.json").write_text('{"workspaces": ["packages/*"]}' if unsafe == "workspace" else "{}")
+    (tmp_path / "package-lock.json").write_text('{"lockfileVersion": 3}')
+    if unsafe != "workspace":
+        path = tmp_path / unsafe
+        path.mkdir() if unsafe == "node_modules" else path.write_text("registry=https://example.com")
+    instructions = []
+
+    def fake_build(args, **kwargs):
+        instructions.append(Path(args[args.index("--file") + 1]).read_text())
+        return subprocess.CompletedProcess(args, 0, "", "")
+
+    monkeypatch.setattr(DockerSandbox, "_run_bounded", staticmethod(fake_build))
+    DockerSandbox(5, "128m", 1)._build_image(tmp_path, "node:22-bookworm-slim", "npm ci --ignore-scripts", "test-image")
+    dockerfile = instructions[0]
+    assert dockerfile.index("COPY --chown=10001:10001 . .") < dockerfile.index("RUN npm ci --ignore-scripts")
+
+
+@pytest.mark.parametrize("requirements", ["-r shared.txt\n", "-e .\n", "package @ file:///tmp/package.whl\n"])
+def test_python_dependency_cache_falls_back_for_repository_dependent_install(
+    tmp_path: Path, requirements: str,
+) -> None:
+    (tmp_path / "requirements.txt").write_text(requirements)
+    assert DockerSandbox._cacheable_dependency_copy(tmp_path, "pip install -r requirements.txt") is None
+
+
+def test_dependency_cache_rejects_symlinked_manifest(tmp_path: Path) -> None:
+    outside = tmp_path.parent / "outside-requirements.txt"
+    outside.write_text("pytest==8.4.2\n")
+    (tmp_path / "requirements.txt").symlink_to(outside)
+    assert DockerSandbox._cacheable_dependency_copy(tmp_path, "pip install -r requirements.txt") is None
+
+
+def test_dependency_cache_rejects_malformed_node_dependency_sections(tmp_path: Path) -> None:
+    (tmp_path / "package.json").write_text('{"dependencies": ["unexpected"]}')
+    (tmp_path / "package-lock.json").write_text('{"lockfileVersion": 3}')
+    assert DockerSandbox._cacheable_dependency_copy(tmp_path, "npm ci --ignore-scripts") is None
+
+
 def test_runtime_uses_bounded_ephemeral_workspace_for_build_outputs(monkeypatch) -> None:
     calls = []
     mock_processes(monkeypatch, lambda args, **kwargs: (calls.append(args) or subprocess.CompletedProcess(args, 0, "", "")))

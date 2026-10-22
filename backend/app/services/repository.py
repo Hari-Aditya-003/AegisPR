@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import ast
 import json
 import os
+import posixpath
 import re
 import subprocess
 import tempfile
@@ -203,19 +205,74 @@ class RepositoryService:
         for document in documents:
             if document.path in nodes:
                 continue
+            imports = self._import_targets(document)
             for changed in changed_files:
-                stem = Path(changed).stem
-                if stem and stem.lower() in document.content.lower():
+                if changed in imports:
                     nodes.setdefault(
                         document.path,
                         ImpactNode(
                             id=document.path,
                             label=Path(document.path).name,
-                            reason=f"References {stem}",
+                            reason=f"Imports {Path(changed).name}",
                         ),
                     )
-                    edges.append(ImpactEdge(source=changed, target=document.path, reason="reference"))
+                    edges.append(ImpactEdge(source=changed, target=document.path, reason="import"))
         return list(nodes.values()), edges[:200]
+
+    @staticmethod
+    def _import_targets(document: ContextDocument) -> set[str]:
+        """Resolve direct local imports conservatively; unknown aliases add no edge."""
+        path = PurePosixPath(document.path)
+        targets: set[str] = set()
+        if path.suffix == ".py":
+            try:
+                tree = ast.parse(document.content)
+            except SyntaxError:
+                return targets
+            for node in ast.walk(tree):
+                modules: list[str] = []
+                if isinstance(node, ast.Import):
+                    modules.extend(alias.name for alias in node.names)
+                    root = ""
+                elif isinstance(node, ast.ImportFrom):
+                    root = path.parent.as_posix()
+                    if node.level:
+                        for _ in range(node.level - 1):
+                            root = posixpath.dirname(root)
+                    else:
+                        root = ""
+                    prefix = node.module or ""
+                    modules.append(prefix)
+                    modules.extend(f"{prefix}.{alias.name}" if prefix else alias.name for alias in node.names if alias.name != "*")
+                else:
+                    continue
+                for module in modules:
+                    if not module:
+                        continue
+                    module_path = module.replace(".", "/")
+                    resolved = posixpath.normpath(posixpath.join(root, module_path))
+                    if resolved != ".." and not resolved.startswith("../"):
+                        targets.add(f"{resolved}.py")
+                        targets.add(f"{resolved}/__init__.py")
+            return targets
+        if path.suffix not in {".js", ".jsx", ".ts", ".tsx"}:
+            return targets
+        pattern = re.compile(
+            r"^\s*(?:import|export)\b[^\n;]*?\bfrom\s*['\"](\.[^'\"]+)['\"]|^\s*import\s*['\"](\.[^'\"]+)['\"]",
+            re.MULTILINE,
+        )
+        for match in pattern.finditer(document.content):
+            imported = match.group(1) or match.group(2)
+            resolved = posixpath.normpath(posixpath.join(path.parent.as_posix(), imported))
+            if resolved == ".." or resolved.startswith("../"):
+                continue
+            if PurePosixPath(resolved).suffix in {".js", ".jsx", ".ts", ".tsx"}:
+                targets.add(resolved)
+            else:
+                for extension in (".js", ".jsx", ".ts", ".tsx"):
+                    targets.add(f"{resolved}{extension}")
+                    targets.add(f"{resolved}/index{extension}")
+        return targets
 
     @staticmethod
     def _run(args: list[str]) -> str:
