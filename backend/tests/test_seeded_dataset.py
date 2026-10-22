@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from app.evaluation.seeded_dataset import load_cases, materialize_cases, observe_case, validate_cases
+from app.evaluation.seeded_dataset import load_cases, main, materialize_cases, observe_case, validate_cases
 
 
 DATASET = Path(__file__).resolve().parents[2] / "evals" / "seeded-prs" / "cases.json"
@@ -65,3 +65,11 @@ def test_dataset_materialization_never_overwrites_existing_directory(tmp_path: P
     with pytest.raises(FileExistsError):
         materialize_cases(load_cases(DATASET), output)
     assert marker.read_text() == "user content"
+
+
+def test_seeded_dataset_cli_validates_and_materializes(tmp_path: Path, capsys) -> None:
+    assert main(["validate"]) == 0
+    assert '"model_runs": 0' in capsys.readouterr().out
+    output = tmp_path / "benchmark-repos"
+    assert main(["materialize", "--output", str(output)]) == 0
+    assert output.joinpath("index.json").exists()
