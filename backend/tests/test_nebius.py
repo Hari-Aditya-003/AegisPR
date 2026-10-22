@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from app.schemas.verification import ExecutionStatus, Finding, RepositoryProfile, TestExecution
+from app.schemas.verification import ExecutionStatus, Finding, GeneratedTest, RepositoryProfile, TestExecution
 from app.services.context_ranker import ContextDocument
 from app.services.nebius import NebiusGateway
 
@@ -47,6 +47,99 @@ async def test_structured_model_response_becomes_verification_plan() -> None:
     assert plan.model_used == "nvidia/model"
     assert plan.tests[0].hypothesis_id == "H1"
     create.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_planner_requests_assertionless_bidirectional_output_examples() -> None:
+    gateway = NebiusGateway("key", "https://example.invalid/v1", "nvidia/model")
+    payload = {
+        "hypotheses": [{"id": "H1", "description": "Risk", "affected_files": ["a.py"], "test_strategy": "Observe outputs"}],
+        "tests": [{"id": "T1", "hypothesis_id": "H1", "file_path": "tests/test_examples.py", "framework": "pytest",
+                   "test_code": "def test_example(): print('AEGISPR_OUTPUT=1')", "mode": "output"}],
+    }
+    create = AsyncMock(return_value=SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=json.dumps(payload)))]))
+    gateway.client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+
+    plan = await gateway.create_plan("diff", RepositoryProfile(languages=["Python"]), [])
+
+    prompt = create.await_args.kwargs["messages"][1]["content"]
+    assert plan.tests[0].mode == "output"
+    assert "old implementation" in prompt
+    assert "new implementation" in prompt
+    assert "AEGISPR_OUTPUT=" in prompt
+    assert "no assertions" in prompt
+
+
+@pytest.mark.asyncio
+async def test_intent_review_asks_specific_questions_three_times_and_majority_votes() -> None:
+    gateway = NebiusGateway("key", "https://example.invalid/v1", "nvidia/model")
+    gateway._request = AsyncMock(side_effect=[
+        {"intent": "unintended", "reason": "The PR only promises UI text."},
+        {"intent": "unclear", "reason": "The description is sparse."},
+        {"intent": "unintended", "reason": "The discount changed unexpectedly."},
+    ])
+    finding = Finding(
+        hypothesis_id="H1", generated_test_id="T1", classification="BEHAVIOR_CHANGE",
+        summary="Discount boundary",
+        base_execution=TestExecution(branch="base", commit="a" * 40, status=ExecutionStatus.PASSED, stdout="AEGISPR_OUTPUT=0\n"),
+        head_execution=TestExecution(branch="head", commit="b" * 40, status=ExecutionStatus.PASSED, stdout="AEGISPR_OUTPUT=-10\n"),
+    )
+
+    review = await gateway.classify_intent(
+        finding, title="Change coupon copy", description="Update the label", commit_messages=["Update label"],
+    )
+
+    assert review.verdict == "unintended"
+    assert review.votes == ["unintended", "unclear", "unintended"]
+    assert gateway._request.await_count == 3
+    prompts = [call.args[1][1]["content"] for call in gateway._request.await_args_list]
+    assert all("Update label" in prompt and "-10" in prompt for prompt in prompts)
+    assert all("intentional" in prompt and "pre-existing" in prompt for prompt in prompts)
+    assert len({call.args[0] for call in gateway._request.await_args_list}) == 3
+
+
+@pytest.mark.asyncio
+async def test_intent_review_tie_or_invalid_vote_is_unclear() -> None:
+    gateway = NebiusGateway("key", "https://example.invalid/v1", "nvidia/model")
+    gateway._request = AsyncMock(side_effect=[
+        {"intent": "intended", "reason": "a"},
+        {"intent": "unintended", "reason": "b"},
+        {"intent": "unknown", "reason": "c"},
+    ])
+    finding = Finding(
+        hypothesis_id="H1", generated_test_id="T1", classification="BEHAVIOR_CHANGE", summary="Risk",
+        base_execution=TestExecution(branch="base", commit="a" * 40, status=ExecutionStatus.PASSED, stdout="AEGISPR_OUTPUT=1\n"),
+        head_execution=TestExecution(branch="head", commit="b" * 40, status=ExecutionStatus.PASSED, stdout="AEGISPR_OUTPUT=2\n"),
+    )
+    review = await gateway.classify_intent(finding, title="title", description="", commit_messages=[])
+    assert review.verdict == "unclear"
+
+
+@pytest.mark.asyncio
+async def test_refinement_preserves_test_identity_and_uses_base_error() -> None:
+    gateway = NebiusGateway("key", "https://example.invalid/v1", "nvidia/model")
+    gateway._request = AsyncMock(return_value={"test_code": "def test_fixed(): print('AEGISPR_OUTPUT=0')"})
+    generated = GeneratedTest(id="T1", hypothesis_id="H1", file_path="tests/test_x.py", framework="pytest",
+                              test_code="def test_broken(): missing_name()", mode="output")
+    base = TestExecution(branch="base", commit="a" * 40, status=ExecutionStatus.FAILED, stderr="NameError: missing_name")
+
+    refined = await gateway.refine_test(generated, base, attempt=1)
+
+    assert refined.id == generated.id
+    assert refined.mode == "output"
+    assert "test_fixed" in refined.test_code
+    assert "NameError" in gateway._request.await_args.args[1][1]["content"]
+
+
+@pytest.mark.asyncio
+async def test_refinement_rejects_empty_or_malicious_code() -> None:
+    gateway = NebiusGateway("key", "https://example.invalid/v1", "nvidia/model")
+    gateway._request = AsyncMock(return_value={"test_code": ""})
+    generated = GeneratedTest(id="T1", hypothesis_id="H1", file_path="tests/test_x.py", framework="pytest",
+                              test_code="def test_broken(): missing_name()", mode="output")
+    base = TestExecution(branch="base", commit="a" * 40, status=ExecutionStatus.FAILED)
+    with pytest.raises(ValueError, match="empty refined test"):
+        await gateway.refine_test(generated, base, attempt=1)
 
 
 @pytest.mark.asyncio

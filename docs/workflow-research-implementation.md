@@ -1,0 +1,32 @@
+# Research-driven verification workflow (October 23, 2026)
+
+This page separates **implemented and locally tested code** from **unverified live model behavior**. The design draws on [Testora's behavior-and-intent approach](https://arxiv.org/abs/2503.18597) and [ACH's mutation-guided test-strength idea](https://arxiv.org/abs/2501.12862). AegisPR does not include code copied from either project, and their reported accuracy, time, or cost are not AegisPR measurements.
+
+## Implemented, covered by local tests
+
+1. The planner requests assertionless usage examples. Each generated test is marked `output` or `assertion`. Output tests emit labeled JSON `AEGISPR_OUTPUT=` values; the runner captures Python pytest output and compares canonical JSON from the base and PR commits. Runner chatter and JSON object key order are ignored. Missing, malformed, mismatched-count, failing or timed-out observations are inconclusive rather than regressions.
+2. The single bounded planning request asks for inputs from two perspectives: old-code weaknesses and new-code weaknesses, with normal and edge cases grouped into at most two test files. The request aims for roughly five normal and five edge examples per perspective. The model's actual output count and diversity **have not been measured**. The two-file cap keeps sandbox work and the user's $25 credits bounded; it is not equivalent to a 20-call model fan-out.
+3. A changed output is rerun twice on **each** commit in fresh checkouts. Only a stable match with the first observations remains `BEHAVIOR_CHANGE`; variation becomes `INCONCLUSIVE`. These reruns add Docker work and are not a measured speed improvement.
+4. For one stable behavior change per run, the optional Nemotron intent review receives bounded PR title, description, up to ten commit messages, hypothesis and before/after logs. Three independent requests ask whether the difference is intentional, pre-existing, harmful or needs human review. Majority voting yields `intended`, `unintended` or `unclear`; invalid/tied votes become `unclear`. This is **advisory**. Even three `unintended` votes do not create a confirmed regression or unlock automatic repair. A human should inspect the evidence.
+5. A generated test failing on base can be refined up to two times using its bounded error log. Each revision is executed on a fresh base checkout **before** the PR execution. The original and revised base receipts are retained. If the model or budget is unavailable, the loop stops safely. No automatic SDK retry is enabled.
+6. A Python changed-line operator (`>`, `>=`, `<`, `<=`, `==`, `!=`) can be flipped in an isolated head checkout. A generated test then runs against that mutant. `mutation_catch_rate` is reported only for valid executed mutants, with numerator and denominator visible. This is one deterministic mutant per eligible generated test, not a comprehensive mutation campaign. JavaScript/TypeScript mutation is not yet supported.
+7. The report UI exposes rerun counts, refinement receipts, advisory intent votes and the bounded mutation score without claiming a behavior change is a proven bug. Both run and inference ledgers use SQLite WAL for concurrent reads.
+
+The existing durable admission ledger still enforces **$20 total estimated**, **$0.25 estimated per run** and **five provider attempts per run**, with zero SDK automatic retries. One plan, two refinements and three intent votes would exceed five attempts; optional intent review is skipped when three calls are not available. A model output error or failed provider call does not silently override this cap. Token Factory usable credits remain unconfirmed, so these new model paths have only been exercised with mocks. Do not repeat an HTTP 402 probe until the account is resolved.
+
+## Pending evidence or implementation
+
+| Research suggestion | Honest current state |
+| --- | --- |
+| Real-PR benchmark of 10–20 merged PRs, bugs, false alarms, duration and provider cost | **Not measured.** No live Nemotron inference is available yet. The local tests exercise controlled data and cannot supply real-PR accuracy or cost numbers. Prepare a fixed PR manifest, then record exact commits, selection criteria, human labels, timestamps and provider receipts once credits work. |
+| Stronger tests after an uncaught mutant | Mutation catch/miss is recorded, but automatic model strengthening from an uncaught mutant is not yet wired. It needs another budgeted call and rerun. |
+| Faster sandbox via base/head image reuse, cached dependency layer and parallel execution | Not yet implemented or benchmarked. Current tests still build per generated test and rerun. Do not claim a speedup over Testora. |
+| Import-graph context, batched Git reads, function-level ranking and measured code embeddings | Not yet implemented. The existing Dell CUDA hashed-vector ranking has separate physical-GPU evidence; it is not a Nebius GPU instance or a measured embedding model. |
+| JSON correction retry and model routing | Structured JSON validation, exact-response cache and one configured model exist. Automatic JSON correction or a verified Lightning-versus-larger-model policy has not been tested live. |
+| GitHub PR comment / Action | No opt-in posting feature yet; no comments were sent to third-party repositories. |
+| Tavily runtime search | Not integrated. Do not select “yes” on a submission form until an actual runtime Tavily API call is implemented and verified. |
+| Public full-application judge URL and final video | The public browser fixture and private captioned draft are separate from a reachable full-application test build and a final submission video. These remain gates. |
+
+## Local validation receipt
+
+On October 23, `make test` passed: **173 backend tests at 90.67% coverage**, **33 frontend unit tests**, **7 browser E2E tests**, **16 public-website tests**, plus the configured GPU-worker, demo-repository and recorder checks. The frontend build, typecheck and `npm audit --audit-level=high` also passed. A direct Python audit of pinned requirements reported no known issues; the full transitive Python audit remains a CI check because the local audit tool's temporary Python environment failed to initialize. These are implementation checks, not a live PR benchmark, model-quality rating, security certification or proof that every generated example executes on a public repository. Use [submission readiness](submission-readiness.md) for the outstanding judging gates.

@@ -8,7 +8,7 @@ from app.github.parser import PullRequestReference
 @pytest.mark.asyncio
 async def test_fetches_public_pull_request_metadata() -> None:
     payload = {
-        "title": "Coupon support", "html_url": "https://github.com/acme/store/pull/42",
+        "title": "Coupon support", "body": "Preserve discount floor", "html_url": "https://github.com/acme/store/pull/42",
         "changed_files": 2, "additions": 12, "deletions": 3,
         "base": {"ref": "main", "sha": "a" * 40, "repo": {"clone_url": "https://github.com/acme/store.git", "private": False}},
         "head": {"ref": "coupon", "sha": "b" * 40},
@@ -21,8 +21,25 @@ async def test_fetches_public_pull_request_metadata() -> None:
     )
     summary = await client.get_pull_request(PullRequestReference("acme", "store", 42))
     assert summary.title == "Coupon support"
+    assert summary.description == "Preserve discount floor"
     assert summary.head_commit == "b" * 40
     await client.close()
+
+
+@pytest.mark.asyncio
+async def test_commit_messages_are_bounded_for_intent_review() -> None:
+    def response(request):
+        assert request.url.path == "/repos/acme/store/pulls/42/commits"
+        return httpx.Response(200, json=[{"commit": {"message": "x" * 400}}, {"commit": {"message": "Fix boundary"}}])
+
+    client = GitHubClient()
+    await client._client.aclose()
+    client._client = httpx.AsyncClient(transport=httpx.MockTransport(response), base_url="https://api.github.com")
+    try:
+        messages = await client.get_commit_messages(PullRequestReference("acme", "store", 42))
+        assert messages == ["x" * 300, "Fix boundary"]
+    finally:
+        await client.close()
 
 
 @pytest.mark.asyncio

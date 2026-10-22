@@ -52,7 +52,7 @@ class DockerSandbox:
             return self._skipped(branch, commit, "Generated test path was rejected")
         if (checkout / ".dockerignore").exists() or (checkout / ".dockerignore").is_symlink():
             return self._skipped(branch, commit, "Generated verification does not support repository .dockerignore files")
-        targeted = self._generated_command(profile, relative)
+        targeted = self._generated_command(profile, relative, mode=generated_test.mode)
         if not targeted:
             return self._skipped(branch, commit, "No supported generated-test runner was detected")
         base_image, install = self._runtime(profile)
@@ -140,7 +140,7 @@ class DockerSandbox:
                 else self._skipped("repair", commit, "No supported command was detected")
                 if not command else self._build_error(commit, baseline_build),
             ) for name, command in commands]
-            targeted = self._generated_command(profile, relative) if safe_path else None
+            targeted = self._generated_command(profile, relative, mode=generated_test.mode) if safe_path else None
             if (checkout / ".dockerignore").exists() or (checkout / ".dockerignore").is_symlink():
                 generated_execution = self._skipped("repair", commit, "Generated verification does not support repository .dockerignore files")
             elif safe_path and generated_command and targeted:
@@ -291,10 +291,11 @@ class DockerSandbox:
             process.stderr.close()
 
     @staticmethod
-    def _generated_command(profile: RepositoryProfile, path: PurePosixPath) -> str | None:
+    def _generated_command(profile: RepositoryProfile, path: PurePosixPath, *, mode: str = "assertion") -> str | None:
         target = shlex.quote(str(path))
         if path.suffix == ".py" and profile.test_command in {"pytest", "pytest -q", "python -m pytest"}:
-            return f"python -m pytest -q -- {target}"
+            capture = " -s" if mode == "output" else ""
+            return f"python -m pytest -q{capture} -- {target}"
         if path.suffix in {".js", ".jsx", ".ts", ".tsx"} and (".test." in path.name or ".spec." in path.name):
             if profile.test_framework == "jest":
                 return f"./node_modules/.bin/jest --runInBand --passWithNoTests=false --runTestsByPath {target}"

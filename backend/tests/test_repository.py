@@ -52,6 +52,18 @@ def test_repository_profile_diff_context_and_impact(tmp_path: Path) -> None:
     assert edges[0].source == "coupon.ts"
 
 
+def test_mutation_changes_only_added_python_source_in_isolated_checkout(tmp_path: Path) -> None:
+    checkout = tmp_path / "checkout"
+    checkout.mkdir()
+    (checkout / "coupon.py").write_text("def eligible(amount):\n    return amount > 0\n")
+    diff = "diff --git a/coupon.py b/coupon.py\n--- a/coupon.py\n+++ b/coupon.py\n@@ -2 +2 @@\n-    return amount >= 0\n+    return amount > 0\n"
+
+    mutation = RepositoryService().mutate_changed_python_line(checkout, diff, ["coupon.py"])
+
+    assert mutation == ("coupon.py", "> to >=")
+    assert "amount >= 0" in (checkout / "coupon.py").read_text()
+
+
 def test_repository_command_failure_is_bounded() -> None:
     with pytest.raises(RuntimeError):
         RepositoryService._run(["git", "definitely-not-a-command"])

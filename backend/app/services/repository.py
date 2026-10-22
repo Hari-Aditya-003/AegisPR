@@ -10,6 +10,7 @@ from pathlib import Path, PurePosixPath
 from app.github.parser import parse_pull_request_url
 from app.schemas.verification import ImpactEdge, ImpactNode, RepositoryProfile
 from app.services.context_ranker import ContextDocument
+from app.verification.mutation import changed_python_lines, mutate_python_line
 
 
 class RepositoryService:
@@ -95,6 +96,32 @@ class RepositoryService:
     def checkout(self, repository: Path, commit: str, destination: Path) -> None:
         self._validate_commit(commit)
         self._run(["git", "-C", str(repository), "worktree", "add", "--detach", str(destination), commit])
+
+    def mutate_changed_python_line(
+        self, checkout: Path, diff: str, changed_files: list[str]
+    ) -> tuple[str, str] | None:
+        """Create one bounded mutation in an isolated checkout, never in the user repository."""
+        root = checkout.resolve()
+        allowed = set(changed_files)
+        for relative, line_numbers in changed_python_lines(diff).items():
+            if relative not in allowed or any(part.lower() in {"test", "tests", "__tests__"} for part in PurePosixPath(relative).parts):
+                continue
+            try:
+                self._validate_relative_path(relative)
+                target = checkout / relative
+                if target.is_symlink() or not target.is_file() or not target.resolve().is_relative_to(root):
+                    continue
+                source = target.read_text(encoding="utf-8")
+                if len(source) > 200_000:
+                    continue
+                for line_number in line_numbers:
+                    mutation = mutate_python_line(source, line_number)
+                    if mutation:
+                        target.write_text(mutation.source, encoding="utf-8")
+                        return relative, mutation.operator
+            except (OSError, UnicodeError, ValueError):
+                continue
+        return None
 
     def profile(self, repository: Path, commit: str) -> RepositoryProfile:
         self._validate_commit(commit)

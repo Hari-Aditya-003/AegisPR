@@ -7,6 +7,8 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+import httpx
+
 from app.config import Settings
 from app.github.client import GitHubClient
 from app.github.parser import parse_pull_request_url
@@ -28,7 +30,7 @@ from app.services.nebius import InferenceUnavailable, NebiusGateway
 from app.services.repository import RepositoryService
 from app.services.sandbox import DockerSandbox
 from app.services.store import VerificationStore
-from app.verification.differential import Classification, compare_executions
+from app.verification.differential import Classification, compare_executions, output_observations
 
 
 STAGES = [
@@ -270,7 +272,7 @@ class Orchestrator:
                 for key in ("base", "head", "compare"):
                     self._complete(run, key, "Sandbox disabled; analysis only")
             else:
-                await self._execute_plan(run, repository, workspace)
+                await self._execute_plan(run, repository, workspace, github=github, reference=reference, diff=diff)
 
             self._activate(run, "report")
             self._complete(run, "report", "Auditable evidence stored")
@@ -297,7 +299,10 @@ class Orchestrator:
                 finally:
                     shutil.rmtree(workspace, ignore_errors=True)
 
-    async def _execute_plan(self, run: VerificationRun, repository: Path, workspace: Path) -> None:
+    async def _execute_plan(
+        self, run: VerificationRun, repository: Path, workspace: Path,
+        *, github: GitHubClient | None = None, reference=None, diff: str | None = None,
+    ) -> None:
         assert run.summary and run.repository_profile
         executable_tests = [
             generated
@@ -311,6 +316,7 @@ class Orchestrator:
             return
         regression = False
         pre_existing = False
+        intent_reviewed = False
         sandbox_started = time.monotonic()
         for index, generated in enumerate(executable_tests):
             base_checkout = workspace / f"base-{index}-{generated.id}"
@@ -327,6 +333,28 @@ class Orchestrator:
                 run.repository_profile,
                 generated,
             )
+            refinement_executions = []
+            if base.status == ExecutionStatus.FAILED and self.settings.nebius_api_key:
+                refinement_executions.append(base)
+                for attempt in (1, 2):
+                    try:
+                        refined = await self.nebius.refine_test(generated, base, attempt=attempt)
+                    except (InferenceUnavailable, BudgetExceeded, ValueError) as exc:
+                        logger.info("test refinement stopped run=%s reason=%s", run.id, type(exc).__name__)
+                        break
+                    generated = refined
+                    run.generated_tests = [refined if item.id == refined.id else item for item in run.generated_tests]
+                    retry_checkout = workspace / f"base-{index}-refined-{attempt}-{generated.id}"
+                    await asyncio.to_thread(
+                        self.repository.checkout, repository, run.summary.base_commit, retry_checkout
+                    )
+                    base = await asyncio.to_thread(
+                        self.sandbox.execute, retry_checkout, run.summary.base_commit,
+                        "base", run.repository_profile, generated,
+                    )
+                    refinement_executions.append(base)
+                    if base.status == ExecutionStatus.PASSED:
+                        break
             self._complete(run, "base", base.status.value)
             self._activate(run, "head")
             await asyncio.to_thread(
@@ -341,7 +369,56 @@ class Orchestrator:
                 generated,
             )
             self._complete(run, "head", head.status.value)
-            classification = compare_executions(base, head)
+            classification = compare_executions(base, head, mode=generated.mode)
+            confirmations = []
+            if classification == Classification.BEHAVIOR_CHANGE:
+                expected_base = output_observations(base)
+                expected_head = output_observations(head)
+                for attempt in (1, 2):
+                    for branch, commit, expected in (
+                        ("base", run.summary.base_commit, expected_base),
+                        ("head", run.summary.head_commit, expected_head),
+                    ):
+                        checkout = workspace / f"{branch}-{index}-{attempt}-{generated.id}"
+                        await asyncio.to_thread(self.repository.checkout, repository, commit, checkout)
+                        repeated = await asyncio.to_thread(
+                            self.sandbox.execute, checkout, commit, branch, run.repository_profile, generated
+                        )
+                        confirmations.append(repeated)
+                        if repeated.status != ExecutionStatus.PASSED or output_observations(repeated) != expected:
+                            classification = Classification.INCONCLUSIVE
+                            break
+                    if classification == Classification.INCONCLUSIVE:
+                        break
+            mutation_operator = None
+            mutation_execution = None
+            mutation_caught = None
+            if (diff and head.status == ExecutionStatus.PASSED
+                    and any(path.endswith(".py") for path in run.changed_files)):
+                mutant_checkout = workspace / f"mutant-{index}-{generated.id}"
+                await asyncio.to_thread(
+                    self.repository.checkout, repository, run.summary.head_commit, mutant_checkout
+                )
+                mutation = await asyncio.to_thread(
+                    self.repository.mutate_changed_python_line, mutant_checkout, diff, run.changed_files
+                )
+                if mutation:
+                    _, mutation_operator = mutation
+                    mutation_execution = await asyncio.to_thread(
+                        self.sandbox.execute, mutant_checkout, run.summary.head_commit,
+                        "mutant", run.repository_profile, generated,
+                    )
+                    if generated.mode == "output":
+                        original = output_observations(head)
+                        changed = output_observations(mutation_execution)
+                        if (mutation_execution.status == ExecutionStatus.PASSED
+                                and original is not None and changed is not None):
+                            mutation_caught = original != changed
+                    elif mutation_execution.status in {ExecutionStatus.PASSED, ExecutionStatus.FAILED}:
+                        mutation_caught = mutation_execution.status == ExecutionStatus.FAILED
+                    if mutation_caught is not None:
+                        run.metrics.mutants_valid += 1
+                        run.metrics.mutants_caught += int(mutation_caught)
             hypothesis = next(item for item in run.hypotheses if item.id == generated.hypothesis_id)
             finding = Finding(
                 hypothesis_id=hypothesis.id,
@@ -352,7 +429,33 @@ class Orchestrator:
                 affected_file=hypothesis.affected_files[0] if hypothesis.affected_files else None,
                 base_execution=base,
                 head_execution=head,
+                confirmation_executions=confirmations,
+                refinement_executions=refinement_executions,
+                mutation_operator=mutation_operator,
+                mutation_execution=mutation_execution,
+                mutation_caught=mutation_caught,
             )
+            if (classification == Classification.BEHAVIOR_CHANGE and self.settings.nebius_api_key
+                    and not intent_reviewed
+                    and self.budget.summary(run.id)["calls"] <= self.settings.inference_max_calls_per_run - 3):
+                intent_reviewed = True
+                try:
+                    if github and reference:
+                        try:
+                            run.summary.commit_messages = await github.get_commit_messages(reference)
+                        except httpx.HTTPError:
+                            logger.info("optional PR commit metadata unavailable run=%s", run.id)
+                    review = await self.nebius.classify_intent(
+                        finding,
+                        title=run.summary.title,
+                        description=run.summary.description,
+                        commit_messages=run.summary.commit_messages,
+                    )
+                    finding.intent_classification = review.verdict
+                    finding.intent_votes = review.votes
+                    finding.intent_reason = review.reason
+                except (InferenceUnavailable, BudgetExceeded) as exc:
+                    finding.explanation_error = str(exc)
             if classification == Classification.REGRESSION:
                 try:
                     finding.root_cause = await self.nebius.analyze_root_cause(finding)
@@ -368,12 +471,15 @@ class Orchestrator:
             finding.classification == Classification.REGRESSION.value for finding in run.findings
         )
         run.metrics.sandbox_duration_ms = int((time.monotonic() - sandbox_started) * 1000)
+        if run.metrics.mutants_valid:
+            run.metrics.mutation_catch_rate = run.metrics.mutants_caught / run.metrics.mutants_valid
         if regression:
             run.status = VerificationStatus.REGRESSION_FOUND
         elif pre_existing:
             run.status = VerificationStatus.PRE_EXISTING_FAILURE
         elif any(
-            finding.classification == Classification.INCONCLUSIVE.value for finding in run.findings
+            finding.classification in {Classification.INCONCLUSIVE.value, Classification.BEHAVIOR_CHANGE.value}
+            for finding in run.findings
         ):
             run.status = VerificationStatus.INCONCLUSIVE
         else:

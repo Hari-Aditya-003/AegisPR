@@ -33,6 +33,8 @@ The core result matrix is deterministic:
 | Pass | Pass | No failure reproduced |
 | Fail | Pass | Possible improvement |
 
+The newer output-example path compares labeled JSON observations instead of guessed assertions. A stable difference is rerun twice per commit, then may receive a three-vote **advisory** intent review; it is not automatically called a regression. A bounded Python changed-line mutant can measure whether a test detects one deliberate fault. These paths are locally unit-tested but have not completed live Nemotron inference. See the [research workflow and evidence limits](docs/workflow-research-implementation.md).
+
 ## Features
 
 - Public GitHub pull request ingestion and commit discovery

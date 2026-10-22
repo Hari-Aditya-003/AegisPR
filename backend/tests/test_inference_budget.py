@@ -12,6 +12,12 @@ def ledger(tmp_path: Path, **kwargs) -> InferenceBudget:
     return InferenceBudget(tmp_path / "budget.sqlite3", **kwargs)
 
 
+def test_budget_ledger_uses_wal_for_concurrent_readers(tmp_path: Path) -> None:
+    budget = ledger(tmp_path)
+    with sqlite3.connect(budget.path) as connection:
+        assert connection.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
+
+
 def test_budget_survives_restart_and_accounts_reported_usage(tmp_path):
     budget = ledger(tmp_path)
     ticket = budget.reserve("run1", "plan", MODEL, 1000, 1000)
@@ -78,3 +84,4 @@ def test_unpriced_model_fails_closed_and_cache_hit_is_not_a_paid_call(tmp_path):
 def test_invalid_budget_values_fail_closed(tmp_path, invalid):
     with pytest.raises(ValueError):
         ledger(tmp_path, limit_usd=invalid)
+import sqlite3

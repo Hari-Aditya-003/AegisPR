@@ -125,6 +125,32 @@ describe("VerificationPage", () => {
     expect(screen.getByText(/not the provider balance/i)).toBeInTheDocument();
     expect(screen.getByText("Inspect branch execution evidence")).toBeInTheDocument();
   });
+
+  it("labels output intent and mutation results as bounded advisory evidence", async () => {
+    const run = {
+      ...completedRun,
+      status: "INCONCLUSIVE",
+      findings: [{
+        ...completedRun.findings[0], classification: "BEHAVIOR_CHANGE", severity: "info",
+        base_execution: { ...completedRun.findings[0].base_execution, stdout: "AEGISPR_OUTPUT=0" },
+        head_execution: { ...completedRun.findings[0].head_execution, status: "PASSED", stdout: "AEGISPR_OUTPUT=-10" },
+        confirmation_executions: Array.from({ length: 4 }, (_, i) => ({ branch: i % 2 ? "head" : "base", status: "PASSED" })),
+        intent_classification: "unintended", intent_votes: ["unintended", "unclear", "unintended"],
+        intent_reason: "The PR only describes copy changes.",
+        mutation_operator: "> to >=", mutation_caught: true,
+      }],
+      metrics: { ...completedRun.metrics, regressions_found: 0, mutants_valid: 1, mutants_caught: 1, mutation_catch_rate: 1 },
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(run), { status: 200 })));
+    render(<VerificationPage />);
+    await screen.findByRole("heading", { name: "Coupon support" });
+    expect(screen.getByText(/Advisory intent: unintended/i)).toBeInTheDocument();
+    expect(screen.getByText(/3 model votes/i)).toBeInTheDocument();
+    expect(screen.getByText(/4 confirmation executions/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 of 1 valid mutants caught/i)).toBeInTheDocument();
+    expect(screen.getByText(/not a confirmed regression/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /generate and verify repair/i })).not.toBeInTheDocument();
+  });
   it("renders a completed evidence report", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(completedRun), { status: 200 })));
     render(<VerificationPage />);

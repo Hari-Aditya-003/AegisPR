@@ -55,6 +55,8 @@ class PullRequestSummary(BaseModel):
     repository: str
     number: int
     title: str = ""
+    description: str = ""
+    commit_messages: list[str] = Field(default_factory=list)
     html_url: str
     clone_url: str
     base_ref: str = ""
@@ -108,6 +110,7 @@ class GeneratedTest(BaseModel):
     framework: str
     test_code: str
     test_command: str | None = None
+    mode: Literal["assertion", "output"] = "assertion"
 
 
 class TestExecution(BaseModel):
@@ -134,6 +137,14 @@ class Finding(BaseModel):
     explanation_error: str | None = None
     base_execution: TestExecution
     head_execution: TestExecution
+    confirmation_executions: list[TestExecution] = Field(default_factory=list)
+    refinement_executions: list[TestExecution] = Field(default_factory=list)
+    intent_classification: Literal["intended", "unintended", "unclear"] | None = None
+    intent_votes: list[Literal["intended", "unintended", "unclear"]] = Field(default_factory=list)
+    intent_reason: str | None = None
+    mutation_operator: str | None = None
+    mutation_execution: TestExecution | None = None
+    mutation_caught: bool | None = None
 
 
 class RepairCheck(BaseModel):
@@ -164,6 +175,9 @@ class VerificationMetrics(BaseModel):
     context_accelerator: str = "cpu"
     analysis_duration_ms: int = 0
     sandbox_duration_ms: int = 0
+    mutants_valid: int = 0
+    mutants_caught: int = 0
+    mutation_catch_rate: float | None = None
 
 
 class VerificationRun(BaseModel):

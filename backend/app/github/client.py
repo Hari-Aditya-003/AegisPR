@@ -34,6 +34,7 @@ class GitHubClient:
             repository=reference.repository,
             number=reference.number,
             title=payload.get("title", ""),
+            description=payload.get("body") or "",
             html_url=payload["html_url"],
             clone_url=f"https://github.com/{reference.owner}/{reference.repository}.git",
             base_ref=payload["base"]["ref"],
@@ -44,6 +45,19 @@ class GitHubClient:
             additions=payload.get("additions", 0),
             deletions=payload.get("deletions", 0),
         )
+
+    async def get_commit_messages(self, reference: PullRequestReference) -> list[str]:
+        response = await self._client.get(
+            f"/repos/{reference.owner}/{reference.repository}/pulls/{reference.number}/commits",
+            params={"per_page": 10},
+        )
+        response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, list):
+            return []
+        return [item["commit"]["message"][:300] for item in payload
+                if isinstance(item, dict) and isinstance(item.get("commit"), dict)
+                and isinstance(item["commit"].get("message"), str)][:10]
 
     async def close(self) -> None:
         await self._client.aclose()

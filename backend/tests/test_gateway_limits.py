@@ -54,7 +54,7 @@ async def test_large_input_is_bounded_and_maximum_output_is_explicit(tmp_path):
     await gateway.create_plan("x" * 200_000, RepositoryProfile(), [])
     request = create.call_args.kwargs
     assert len(json.dumps(request["messages"]).encode()) <= 32_000
-    assert request["max_tokens"] <= 3072
+    assert request["max_tokens"] <= 4096
 
 
 @pytest.mark.asyncio

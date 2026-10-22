@@ -51,6 +51,14 @@ def test_output_examples_ignore_runner_noise_and_json_key_order() -> None:
     assert compare_executions(base, head, mode="output") == Classification.NO_FAILURE_REPRODUCED
 
 
+def test_output_examples_accept_runner_prefixed_console_lines() -> None:
+    base = execution("base", ExecutionStatus.PASSED)
+    head = execution("head", ExecutionStatus.PASSED)
+    base.stdout = 'stdout | tests/example.test.ts > example\nAEGISPR_OUTPUT={"amount":0}\n'
+    head.stdout = '  console.log\n    AEGISPR_OUTPUT={"amount":-1}\n'
+    assert compare_executions(base, head, mode="output") == Classification.BEHAVIOR_CHANGE
+
+
 @pytest.mark.parametrize("base_output,head_output", [
     ("", 'AEGISPR_OUTPUT=1\n'),
     ('AEGISPR_OUTPUT=not-json\n', 'AEGISPR_OUTPUT=1\n'),

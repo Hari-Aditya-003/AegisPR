@@ -20,6 +20,8 @@ artifacts/
 data/*.db
 data/*.sqlite*
 *.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
 *.tsbuildinfo
 work/
 website/.sites-runtime/

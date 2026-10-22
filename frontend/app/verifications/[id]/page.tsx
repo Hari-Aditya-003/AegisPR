@@ -94,6 +94,17 @@ export default function VerificationPage() {
                 <h3>{finding.summary}</h3>
                 <p>{finding.affected_file ?? "Affected location pending"}</p>
                 <div className="comparison"><span>BASE <b>{finding.base_execution.status}</b></span><span>{isFixture ? "HEAD" : "PR"} <b>{finding.head_execution.status}</b></span></div>
+                {finding.classification === "BEHAVIOR_CHANGE" && <div className="evidence-footnotes">
+                  <p>Output changed; not a confirmed regression. A human should verify whether this matches the PR intent.</p>
+                  <p>{finding.confirmation_executions?.length ?? 0} confirmation executions recorded.</p>
+                  {finding.intent_classification
+                    ? <p>Advisory intent: {finding.intent_classification} · {finding.intent_votes?.length ?? 0} model votes. {finding.intent_reason}</p>
+                    : <p>Intent not reviewed by a model.</p>}
+                </div>}
+                {!!finding.refinement_executions?.length && <p className="scope-note">Generated test refinement: {finding.refinement_executions.length} base executions recorded.</p>}
+                {finding.mutation_caught !== null && finding.mutation_caught !== undefined && <p className="scope-note">
+                  One changed-line mutant ({finding.mutation_operator}) was {finding.mutation_caught ? "caught" : "not caught"} by this test.
+                </p>}
                 <details className="execution-details"><summary>Inspect branch execution evidence</summary><div className="execution-grid">{[finding.base_execution, finding.head_execution].map(execution => <section key={execution.branch}>
                   <h4>{execution.branch === "base" ? "Base revision" : isFixture ? "Fixture head revision" : "Pull request revision"}</h4>
                   <dl><div><dt>Commit</dt><dd>{execution.commit || "Not recorded"}</dd></div><div><dt>Duration</dt><dd>{execution.duration_ms} ms</dd></div><div><dt>Exit code</dt><dd>{execution.exit_code ?? "Not recorded"}</dd></div></dl>
@@ -146,6 +157,7 @@ export default function VerificationPage() {
             {isFixture && <div><dt>Model inference</dt><dd>Not used (controlled fixture)</dd></div>}
             {run.metrics.input_tokens !== undefined && <div><dt>Tokens in / out</dt><dd>{run.metrics.input_tokens} / {run.metrics.output_tokens ?? 0}</dd></div>}
             {run.metrics.cache_hits !== undefined && <div><dt>Cached responses</dt><dd>{run.metrics.cache_hits}</dd></div>}
+            {!!run.metrics.mutants_valid && <div><dt>Mutation catch rate</dt><dd>{run.metrics.mutants_caught} of {run.metrics.mutants_valid} valid mutants caught ({Math.round((run.metrics.mutation_catch_rate ?? 0) * 100)}%)</dd></div>}
             {run.metrics.accounted_cost_usd !== undefined && <div><dt>App cost estimate</dt><dd>${run.metrics.accounted_cost_usd.toFixed(4)}</dd></div>}
           </dl>{run.metrics.accounted_cost_usd !== undefined && <p className="scope-note">Conservative app accounting, not the provider balance. Unknown usage may retain its maximum reservation.</p>}</section>
           {run.error && <section className="error-card"><h2>Environment error</h2><p>{run.error}</p></section>}

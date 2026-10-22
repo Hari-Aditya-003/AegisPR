@@ -8,7 +8,7 @@ export interface VerificationStage {
 }
 
 export interface TestExecution {
-  branch: "base" | "head" | "repair";
+  branch: "base" | "head" | "repair" | "mutant";
   commit: string;
   status: string;
   stdout: string;
@@ -27,6 +27,14 @@ export interface Finding {
   affected_file?: string;
   root_cause?: string;
   explanation_error?: string | null;
+  confirmation_executions?: TestExecution[];
+  refinement_executions?: TestExecution[];
+  intent_classification?: "intended" | "unintended" | "unclear" | null;
+  intent_votes?: Array<"intended" | "unintended" | "unclear">;
+  intent_reason?: string | null;
+  mutation_operator?: string | null;
+  mutation_execution?: TestExecution | null;
+  mutation_caught?: boolean | null;
   base_execution: TestExecution;
   head_execution: TestExecution;
 }
@@ -79,6 +87,9 @@ export interface VerificationRun {
     output_tokens?: number;
     accounted_cost_usd?: number;
     cache_hits?: number;
+    mutants_valid?: number;
+    mutants_caught?: number;
+    mutation_catch_rate?: number | null;
   };
   error?: string;
   disclaimer: string;

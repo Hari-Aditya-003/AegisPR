@@ -38,6 +38,7 @@ class InferenceBudget:
         self.max_calls = max_calls_per_run
         path.parent.mkdir(parents=True, exist_ok=True)
         with self._connect() as connection:
+            connection.execute("PRAGMA journal_mode=WAL")
             connection.execute("""CREATE TABLE IF NOT EXISTS inference_costs (
                 id TEXT PRIMARY KEY, run_id TEXT NOT NULL, stage TEXT NOT NULL,
                 model TEXT NOT NULL, charge INTEGER NOT NULL, state TEXT NOT NULL,
