@@ -53,6 +53,12 @@ def test_runtime_selection_is_narrow() -> None:
     assert DockerSandbox._runtime(RepositoryProfile(languages=["Rust"])) == (None, None)
 
 
+def test_output_examples_disable_pytest_capture_for_json_observations() -> None:
+    profile = RepositoryProfile(languages=["Python"], test_framework="pytest", test_command="pytest -q")
+    command = DockerSandbox._generated_command(profile, PurePosixPath("tests/test_behavior.py"), mode="output")
+    assert command == "python -m pytest -q -s -- tests/test_behavior.py"
+
+
 def test_repair_commands_record_optional_checks_separately() -> None:
     profile = RepositoryProfile(
         test_command="pytest -q",
