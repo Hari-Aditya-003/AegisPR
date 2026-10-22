@@ -35,6 +35,8 @@ The core result matrix is deterministic:
 
 The newer output-example path compares labeled JSON observations instead of guessed assertions. A stable difference is rerun twice per commit, then may receive a three-vote **advisory** intent review; it is not automatically called a regression. A bounded Python changed-line mutant can measure whether a test detects one deliberate fault. These paths are locally unit-tested but have not completed live Nemotron inference. See the [research workflow and evidence limits](docs/workflow-research-implementation.md).
 
+The [research-feature audit](docs/FEATURE_AUDIT.md) lists what is implemented and what remains. A [12-case seeded evaluation dataset](evals/seeded-prs/README.md) provides executable synthetic base/head examples with hand labels; it is **not** a real-PR benchmark or a measured model accuracy result.
+
 ## Features
 
 - Public GitHub pull request ingestion and commit discovery
