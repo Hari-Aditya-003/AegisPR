@@ -135,3 +135,63 @@ def validate_cases(cases: list[SeededCase]) -> dict[str, int]:
         "intended": counts["intended"], "no_change": counts["no_change"],
         "fixtures_verified": len(cases), "model_runs": 0,
     }
+
+
+def materialize_cases(cases: list[SeededCase], destination: Path) -> dict[str, Any]:
+    """Create local two-commit Git repositories; never publish or overwrite them."""
+    if destination.exists() or destination.is_symlink():
+        raise FileExistsError(f"Dataset output already exists: {destination}")
+    git = shutil.which("git")
+    if not git:
+        raise RuntimeError("Git is required to materialize the seeded dataset")
+    destination.mkdir(parents=True, exist_ok=False)
+    environment = {
+        "PATH": os.defpath, "HOME": str(destination), "LANG": "C", "LC_ALL": "C", "TZ": "UTC",
+        "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1", "GIT_TERMINAL_PROMPT": "0",
+    }
+
+    def command(repository: Path, *arguments: str, date: str = "2000-01-01T00:00:00Z") -> str:
+        result = subprocess.run(
+            [git, "-c", "core.hooksPath=/dev/null", "-c", "user.name=AegisPR Seeded Dataset",
+             "-c", "user.email=seeded-dataset@example.invalid", "-c", "commit.gpgSign=false",
+             "-C", str(repository), *arguments],
+            env={**environment, "GIT_AUTHOR_DATE": date, "GIT_COMMITTER_DATE": date},
+            capture_output=True, text=True, timeout=20,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"Could not materialize seeded case {repository.name}: {result.stderr[-1000:]}")
+        return result.stdout.strip()
+
+    index: dict[str, Any] = {
+        "dataset_id": "aegispr-seeded-prs-v1",
+        "provenance": "Synthetic local Git pairs; labels are hand-authored, no model evaluation performed.",
+        "cases": [],
+    }
+    for case in cases:
+        repository = destination / case.id
+        repository.mkdir()
+        source_path = repository / ("target.py" if case.language == "python" else "target.js")
+        if case.language == "python":
+            (repository / "requirements.txt").write_text("pytest==8.4.1\n", encoding="utf-8")
+        else:
+            (repository / "package.json").write_text(json.dumps({
+                "name": f"aegispr-{case.id}", "private": True, "type": "module",
+                "scripts": {"test": "vitest run"}, "devDependencies": {"vitest": "5.0.3"},
+            }, indent=2) + "\n", encoding="utf-8")
+        source_path.write_text(case.base_source, encoding="utf-8")
+        command(repository, "init", "-b", "main")
+        command(repository, "add", "--all")
+        command(repository, "commit", "-m", "Seeded base implementation")
+        base_commit = command(repository, "rev-parse", "HEAD")
+        source_path.write_text(case.head_source, encoding="utf-8")
+        command(repository, "add", "--", source_path.name)
+        command(repository, "commit", "-m", case.title, date="2000-01-01T00:00:01Z")
+        head_commit = command(repository, "rev-parse", "HEAD")
+        index["cases"].append({
+            "id": case.id, "repository": case.id, "language": case.language,
+            "category": case.category, "intent": case.intent,
+            "title": case.title, "description": case.description,
+            "base_commit": base_commit, "head_commit": head_commit,
+        })
+    (destination / "index.json").write_text(json.dumps(index, indent=2) + "\n", encoding="utf-8")
+    return index
