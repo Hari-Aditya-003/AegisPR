@@ -83,6 +83,52 @@ async def test_truncated_response_is_not_accepted_or_retried(tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_malformed_plan_gets_one_budgeted_correction_request(tmp_path):
+    gateway, create, budget = setup_gateway(tmp_path)
+    broken = response()
+    broken.choices[0].message.content = "{not json"
+    create.side_effect = [broken, response()]
+    token = current_run.set("corrected")
+    try:
+        plan = await gateway.create_plan("diff", RepositoryProfile(), [])
+        assert plan.tests[0].id == "T1"
+        assert create.await_count == 2
+        assert budget.summary("corrected")["calls"] == 2
+        assert "invalid" in create.await_args.kwargs["messages"][1]["content"].lower()
+    finally:
+        current_run.reset(token)
+
+
+@pytest.mark.asyncio
+async def test_plan_correction_respects_one_attempt_run_limit(tmp_path):
+    gateway, create, budget = setup_gateway(tmp_path, max_calls_per_run=1)
+    broken = response()
+    broken.choices[0].message.content = "{not json"
+    create.return_value = broken
+    token = current_run.set("limited")
+    try:
+        with pytest.raises(ValueError, match="limit"):
+            await gateway.create_plan("diff", RepositoryProfile(), [])
+        assert create.await_count == 1
+        assert budget.summary("limited")["calls"] == 1
+    finally:
+        current_run.reset(token)
+
+
+@pytest.mark.asyncio
+async def test_invalid_plan_reference_gets_one_correction_request(tmp_path):
+    gateway, create, _ = setup_gateway(tmp_path)
+    broken = response()
+    payload = json.loads(broken.choices[0].message.content)
+    payload["tests"][0]["hypothesis_id"] = "missing"
+    broken.choices[0].message.content = json.dumps(payload)
+    create.side_effect = [broken, response()]
+    plan = await gateway.create_plan("diff", RepositoryProfile(), [])
+    assert plan.tests[0].hypothesis_id == "H1"
+    assert create.await_count == 2
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("mutation", ["unsafe_id", "orphan", "duplicate", "too_many"])
 async def test_generated_plan_references_and_scope_are_validated(tmp_path, mutation):
     gateway, create, _ = setup_gateway(tmp_path)
