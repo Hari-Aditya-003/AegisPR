@@ -76,6 +76,39 @@ class DockerSandbox:
         finally:
             self._remove_image(tag)
 
+    def run_existing_suite(
+        self, checkout: Path, commit: str, branch: str,
+        profile: RepositoryProfile, *, repetitions: int = 3,
+    ) -> list[TestExecution]:
+        """Run only the detected existing suite in an isolated image, without model code."""
+        if not 1 <= repetitions <= 5:
+            raise ValueError("Existing-suite repetitions must be between one and five")
+        command = profile.test_command
+        if not command or not self._is_allowed_command(command):
+            return [self._skipped(branch, commit, "No approved existing test command was detected")]
+        if (checkout / ".dockerignore").exists() or (checkout / ".dockerignore").is_symlink():
+            return [self._skipped(branch, commit, "Repository .dockerignore cannot be verified")]
+        base_image, install = self._runtime(profile)
+        if not base_image or not install:
+            return [self._skipped(branch, commit, "Unsupported project runtime")]
+        tag = f"aegispr-local-{commit[:12]}-{uuid4().hex[:10]}"
+        started = time.monotonic()
+        try:
+            try:
+                build = self._build_image(checkout, base_image, install, tag)
+            except subprocess.TimeoutExpired as exc:
+                result = self._build_timeout(commit, exc, started)
+                result.branch = branch
+                return [result]
+            if build.returncode != 0:
+                result = self._build_error(commit, build)
+                result.branch = branch
+                return [result]
+            return [self._run_image(tag, command, commit, branch=branch, capture_memory=True)
+                    for _ in range(repetitions)]
+        finally:
+            self._remove_image(tag)
+
     def verify_repair(
         self,
         checkout: Path,
@@ -271,13 +304,22 @@ class DockerSandbox:
 
     def _run_image(
         self, tag: str, command: str, commit: str, branch: str = "repair",
-        *, generated_command: str | None = None,
+        *, generated_command: str | None = None, capture_memory: bool = False,
     ) -> TestExecution:
         if not self._is_allowed_command(command):
             return self._skipped("repair", commit, "Command was rejected by the safety policy")
         started = time.monotonic()
         container_name = f"aegispr-test-{uuid4().hex}"
         execution_command = generated_command or command
+        measured_command = execution_command
+        if capture_memory:
+            measured_command += (
+                "; aegis_status=$?; aegis_peak=$(cat /sys/fs/cgroup/memory.peak 2>/dev/null "
+                "|| cat /sys/fs/cgroup/memory/memory.max_usage_in_bytes 2>/dev/null || true); "
+                "case \"$aegis_peak\" in ''|*[!0-9]*) ;; *) "
+                "printf '\\nAEGISPR_MEMORY_PEAK_BYTES=%s\\n' \"$aegis_peak\";; esac; "
+                "exit \"$aegis_status\""
+            )
         try:
             result = self._run_bounded(
                 [
@@ -286,7 +328,7 @@ class DockerSandbox:
                     "--tmpfs=/tmp:rw,noexec,nosuid,size=256m", f"--memory={self.memory}",
                     f"--cpus={self.cpus}", "--pids-limit=256",
                     "--security-opt=no-new-privileges", "--cap-drop=ALL", tag,
-                    "/bin/sh", "-c", "(cp -a /workspace/. /run/aegis/ && cd /run/aegis) || exit 125; cd /run/aegis || exit 125; " + execution_command,
+                    "/bin/sh", "-c", "(cp -a /workspace/. /run/aegis/ && cd /run/aegis) || exit 125; cd /run/aegis || exit 125; " + measured_command,
                 ],
                 timeout=self.timeout_seconds,
             )
@@ -294,6 +336,11 @@ class DockerSandbox:
             execution = self._result(
                 branch, commit, status, result.returncode, result.stdout, result.stderr, started
             )
+            if capture_memory:
+                marker = re.search(r"(?:^|\n)AEGISPR_MEMORY_PEAK_BYTES=(\d+)(?=\r?\n|$)", execution.stdout)
+                if marker:
+                    execution.environment["peak_memory_bytes"] = int(marker.group(1))
+                    execution.stdout = execution.stdout.replace(marker.group(0), "", 1)
         except subprocess.TimeoutExpired as exc:
             execution = self._result(
                 branch, commit, ExecutionStatus.TIMEOUT, None, exc.stdout or "", exc.stderr or "", started

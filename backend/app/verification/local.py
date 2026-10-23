@@ -9,10 +9,13 @@ from __future__ import annotations
 import ast
 import re
 import statistics
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from app.schemas.verification import ExecutionStatus
 from app.services.repository import RepositoryService
+from app.services.sandbox import DockerSandbox
 
 
 class LocalVerificationError(ValueError):
@@ -152,4 +155,80 @@ def compare_measurements(
         "base_median_peak_bytes": base_memory,
         "head_median_peak_bytes": head_memory,
         "threshold": threshold,
+    }
+
+
+def summarize_suite_outcomes(base: list[str], head: list[str]) -> str:
+    if len(base) < 3 or len(head) < 3:
+        return "inconclusive"
+    if set(base) == {"PASSED"} and set(head) == {"FAILED"}:
+        return "reproducible_regression"
+    if set(base) == {"PASSED"} and set(head) == {"PASSED"}:
+        return "no_failure_observed"
+    if set(base) == {"FAILED"} and set(head) == {"FAILED"}:
+        return "pre_existing_failure"
+    if set(base) == {"FAILED"} and set(head) == {"PASSED"}:
+        return "possible_improvement"
+    return "inconclusive"
+
+
+def execute_committed_suites(
+    repository: Path, base_commit: str, head_commit: str,
+    *, sandbox: DockerSandbox | None = None, repetitions: int = 3,
+) -> dict:
+    """Opt-in Docker comparison of the same detected test command on two commits."""
+    root = Path(repository).resolve()
+    RepositoryService._validate_commit(base_commit)
+    RepositoryService._validate_commit(head_commit)
+    if not 3 <= repetitions <= 5:
+        raise LocalVerificationError("Three to five repetitions are required for a stability check")
+    service = RepositoryService()
+    base_profile = service.profile(root, base_commit)
+    head_profile = service.profile(root, head_commit)
+    command = head_profile.test_command
+    if not command or command != base_profile.test_command or not DockerSandbox._is_allowed_command(command):
+        raise LocalVerificationError("Base and head must have the same approved existing test command")
+    runner = sandbox or DockerSandbox(300, "2g", 2.0)
+    with tempfile.TemporaryDirectory(prefix="aegispr-local-") as temporary:
+        paths = [("base", base_commit, Path(temporary) / "base", base_profile),
+                 ("head", head_commit, Path(temporary) / "head", head_profile)]
+        created: list[Path] = []
+        try:
+            executions = {}
+            for branch, commit, checkout, profile in paths:
+                service.checkout(root, commit, checkout)
+                created.append(checkout)
+                executions[branch] = runner.run_existing_suite(
+                    checkout, commit, branch, profile, repetitions=repetitions,
+                )
+        finally:
+            for checkout in reversed(created):
+                try:
+                    _git(root, "worktree", "remove", "--force", str(checkout))
+                except LocalVerificationError:
+                    # The temporary directory still removes the checkout. A later
+                    # `git worktree prune` can clear stale administrative entries.
+                    pass
+    base, head = executions["base"], executions["head"]
+    status = summarize_suite_outcomes(
+        [item.status.value for item in base], [item.status.value for item in head],
+    )
+    all_passed = status == "no_failure_observed"
+    performance = compare_measurements(
+        [item.duration_ms for item in base] if all_passed else [],
+        [item.duration_ms for item in head] if all_passed else [],
+        [item.environment.get("peak_memory_bytes", 0) for item in base] if all_passed else [],
+        [item.environment.get("peak_memory_bytes", 0) for item in head] if all_passed else [],
+    )
+    return {
+        "status": status,
+        "test_command": command,
+        "base": [{"status": item.status.value, "duration_ms": item.duration_ms,
+                  "peak_memory_bytes": item.environment.get("peak_memory_bytes")}
+                 for item in base],
+        "head": [{"status": item.status.value, "duration_ms": item.duration_ms,
+                  "peak_memory_bytes": item.environment.get("peak_memory_bytes")}
+                 for item in head],
+        "performance": performance,
+        "scope": "Docker-isolated existing suite; timing includes container startup and is a screening signal",
     }
