@@ -28,11 +28,18 @@ def _finite_number(value: object) -> bool:
 
 def load_gpu_artifact(path: Path) -> dict:
     source = Path(path)
+    def bounded_int(value: str) -> int:
+        if len(value) > 309:
+            raise ValueError("GPU artifact integer is too large")
+        return int(value)
+
     try:
         if source.stat().st_size > 1_000_000:
             raise GPUComparisonError("GPU artifact exceeds the 1 MB limit")
-        payload = json.loads(source.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        payload = json.loads(source.read_text(encoding="utf-8"), parse_int=bounded_int)
+    except GPUComparisonError:
+        raise
+    except (OSError, UnicodeError, ValueError) as exc:
         raise GPUComparisonError("GPU artifact could not be read as JSON") from exc
     if not isinstance(payload, dict):
         raise GPUComparisonError("GPU artifact must be a JSON object")
