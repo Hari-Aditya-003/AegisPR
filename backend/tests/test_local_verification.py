@@ -9,9 +9,11 @@ import pytest
 from app.verification.local import (
     LocalVerificationError,
     compare_measurements,
+    execute_committed_suites,
     inspect_committed_change,
 )
 from app.cli import main
+from app.schemas.verification import ExecutionStatus, TestExecution
 
 
 def git(repo: Path, *args: str) -> str:
@@ -109,3 +111,40 @@ def test_performance_comparison_is_inconclusive_without_three_valid_samples() ->
     result = compare_measurements([100, 102], [150, 151], [], [], threshold=0.30)
     assert result["time_status"] == "inconclusive"
     assert result["memory_status"] == "inconclusive"
+
+
+def test_committed_suite_comparison_requires_all_three_head_failures(tmp_path: Path) -> None:
+    repo, _ = initialized_repo(tmp_path)
+    (repo / "requirements.txt").write_text("pytest==8.4.0\n", encoding="utf-8")
+    (repo / "test_api.py").write_text("def test_api(): assert True\n", encoding="utf-8")
+    git(repo, "add", "requirements.txt", "test_api.py")
+    git(repo, "commit", "-qm", "add tests")
+    base = git(repo, "rev-parse", "HEAD")
+    (repo / "api.py").write_text("def public_total(amount): return amount\n", encoding="utf-8")
+    git(repo, "add", "api.py")
+    git(repo, "commit", "-qm", "change implementation")
+    head = git(repo, "rev-parse", "HEAD")
+
+    class FakeSandbox:
+        def __init__(self):
+            self.paths = []
+
+        def run_existing_suite(self, checkout, commit, branch, profile, repetitions=3):
+            self.paths.append(checkout)
+            status = ExecutionStatus.PASSED if branch == "base" else ExecutionStatus.FAILED
+            return [TestExecution(branch=branch, commit=commit, status=status,
+                                  duration_ms=100, environment={"peak_memory_bytes": 100})
+                    for _ in range(repetitions)]
+
+    sandbox = FakeSandbox()
+    report = execute_committed_suites(repo, base, head, sandbox=sandbox, repetitions=3)
+    assert report["status"] == "reproducible_regression"
+    assert report["test_command"] == "pytest -q"
+    assert report["performance"]["time_status"] == "inconclusive"
+    assert all(not path.exists() for path in sandbox.paths)
+
+
+def test_mixed_head_outcomes_are_inconclusive_not_a_confirmed_regression() -> None:
+    from app.verification.local import summarize_suite_outcomes
+
+    assert summarize_suite_outcomes(["PASSED"] * 3, ["FAILED", "PASSED", "FAILED"]) == "inconclusive"

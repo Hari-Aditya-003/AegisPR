@@ -59,6 +59,58 @@ def test_output_examples_disable_pytest_capture_for_json_observations() -> None:
     assert command == "python -m pytest -q -s -- tests/test_behavior.py"
 
 
+def test_existing_suite_reuses_one_image_for_three_isolated_measurements(tmp_path: Path, monkeypatch) -> None:
+    calls = {"build": 0, "run": 0, "removed": []}
+    sandbox = DockerSandbox(5, "128m", 1)
+    profile = RepositoryProfile(languages=["Python"], install_command="pip install .", test_command="pytest -q")
+
+    def build(*args):
+        calls["build"] += 1
+        return subprocess.CompletedProcess([], 0, "", "")
+
+    def run(*args, **kwargs):
+        calls["run"] += 1
+        assert kwargs["capture_memory"] is True
+        return DockerSandbox._result("base", "a" * 40, "PASSED", 0, "ok", "", 0)
+
+    monkeypatch.setattr(sandbox, "_build_image", build)
+    monkeypatch.setattr(sandbox, "_run_image", run)
+    monkeypatch.setattr(sandbox, "_remove_image", lambda tag: calls["removed"].append(tag))
+
+    executions = sandbox.run_existing_suite(tmp_path, "a" * 40, "base", profile, repetitions=3)
+
+    assert len(executions) == 3
+    assert calls["build"] == 1
+    assert calls["run"] == 3
+    assert len(calls["removed"]) == 1
+
+
+def test_existing_suite_rejects_unapproved_command_before_build(tmp_path: Path, monkeypatch) -> None:
+    sandbox = DockerSandbox(5, "128m", 1)
+    monkeypatch.setattr(sandbox, "_build_image", lambda *args: pytest.fail("must not build"))
+    profile = RepositoryProfile(languages=["Python"], install_command="pip install .", test_command="pytest -q; id")
+    result = sandbox.run_existing_suite(tmp_path, "a" * 40, "head", profile)
+    assert len(result) == 1
+    assert result[0].status.value == "SKIPPED"
+
+
+def test_memory_marker_is_recorded_without_changing_test_status(monkeypatch) -> None:
+    seen = []
+
+    def fake_run(args, **kwargs):
+        seen.append(args)
+        return subprocess.CompletedProcess(args, 0, "ok\nAEGISPR_MEMORY_PEAK_BYTES=123456\n", "")
+
+    mock_processes(monkeypatch, fake_run)
+    execution = DockerSandbox(5, "128m", 1)._run_image(
+        "test-image", "pytest -q", "a" * 40, branch="base", capture_memory=True,
+    )
+    assert execution.status.value == "PASSED"
+    assert execution.environment["peak_memory_bytes"] == 123456
+    assert "AEGISPR_MEMORY_PEAK_BYTES" not in execution.stdout
+    assert "/sys/fs/cgroup/memory.peak" in next(args for args in seen if args[:2] == ["docker", "run"])[-1]
+
+
 def test_repair_commands_record_optional_checks_separately() -> None:
     profile = RepositoryProfile(
         test_command="pytest -q",
