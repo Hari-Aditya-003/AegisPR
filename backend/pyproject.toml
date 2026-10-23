@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aegispr"
+version = "0.1.0"
+description = "Evidence-backed pull request verification"
+requires-python = ">=3.12"
+dependencies = ["pydantic>=2.0,<3"]
+
+[project.scripts]
+aegispr = "app.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
