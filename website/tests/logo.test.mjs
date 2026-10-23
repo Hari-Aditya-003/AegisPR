@@ -86,3 +86,8 @@ test('interactive demo wordmark text is not styled as another icon', () => {
   assert.equal(style.border, '0');
   assert.equal(style['font-family'], 'inherit');
 });
+
+test('interactive demo refreshes its brand stylesheet when the logo changes', () => {
+  const demoHtml = readFileSync(new URL('../dist/demo/index.html', import.meta.url), 'utf8');
+  assert.match(demoHtml, /href="\.\.\/brand\.css\?v=[a-zA-Z0-9-]+"/);
+});
