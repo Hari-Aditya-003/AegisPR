@@ -148,3 +148,24 @@ def test_mixed_head_outcomes_are_inconclusive_not_a_confirmed_regression() -> No
     from app.verification.local import summarize_suite_outcomes
 
     assert summarize_suite_outcomes(["PASSED"] * 3, ["FAILED", "PASSED", "FAILED"]) == "inconclusive"
+
+
+def test_local_scan_flags_changed_exported_js_signature_and_removed_auth_call(tmp_path: Path) -> None:
+    repo, base = initialized_repo(tmp_path)
+    (repo / "api.ts").write_text(
+        "export function getAccount(id: string) {\n"
+        "  requireAuth();\n  return id;\n}\n", encoding="utf-8",
+    )
+    git(repo, "add", "api.ts")
+    git(repo, "commit", "-qm", "public API baseline")
+    base = git(repo, "rev-parse", "HEAD")
+    (repo / "api.ts").write_text(
+        "export function getAccount(id: string, role: string) {\n"
+        "  return id;\n}\n", encoding="utf-8",
+    )
+    git(repo, "add", "api.ts")
+    git(repo, "commit", "-qm", "change exported API")
+
+    report = inspect_committed_change(repo, base)
+    assert any("getAccount" in risk for risk in report.api_risks)
+    assert any("auth" in warning.lower() for warning in report.security_warnings)

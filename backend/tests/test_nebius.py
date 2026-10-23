@@ -71,6 +71,27 @@ async def test_planner_requests_assertionless_bidirectional_output_examples() ->
 
 
 @pytest.mark.asyncio
+async def test_planner_requests_bounded_property_api_and_security_checks_without_extra_call() -> None:
+    gateway = NebiusGateway("key", "https://example.invalid/v1", "nvidia/model")
+    payload = {
+        "hypotheses": [{"id": "H1", "description": "Risk", "affected_files": ["api.py"], "test_strategy": "Check contract"}],
+        "tests": [{"id": "T1", "hypothesis_id": "H1", "file_path": "tests/test_contract.py", "framework": "pytest",
+                   "test_code": "def test_contract(): assert True", "mode": "assertion"}],
+    }
+    create = AsyncMock(return_value=SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=json.dumps(payload)))]))
+    gateway.client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    profile = RepositoryProfile(languages=["Python"], property_frameworks=["Hypothesis"])
+
+    await gateway.create_plan("-@login_required\n+def get_user(id): pass", profile, [])
+
+    prompt = create.await_args.kwargs["messages"][1]["content"]
+    assert "Hypothesis" in prompt and "max_examples=100" in prompt
+    assert "authentication" in prompt and "input validation" in prompt
+    assert "public API" in prompt
+    create.assert_awaited_once()
+
+
+@pytest.mark.asyncio
 async def test_intent_review_asks_specific_questions_three_times_and_majority_votes() -> None:
     gateway = NebiusGateway("key", "https://example.invalid/v1", "nvidia/model")
     gateway._request = AsyncMock(side_effect=[

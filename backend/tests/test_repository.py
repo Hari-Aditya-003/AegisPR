@@ -52,6 +52,25 @@ def test_repository_profile_diff_context_and_impact(tmp_path: Path) -> None:
     assert edges[0].source == "coupon.ts"
 
 
+def test_profile_detects_declared_property_testing_packages(tmp_path: Path) -> None:
+    repo, _, head = create_repository(tmp_path)
+    package = json.loads((repo / "package.json").read_text())
+    package["devDependencies"]["fast-check"] = "4.0.0"
+    (repo / "package.json").write_text(json.dumps(package))
+    run(repo, "add", "package.json")
+    run(repo, "commit", "-m", "add property testing")
+    profile = RepositoryService().profile(repo, run(repo, "rev-parse", "HEAD"))
+    assert profile.property_frameworks == ["fast-check"]
+
+    (repo / "package.json").unlink()
+    (repo / "package-lock.json").unlink()
+    (repo / "requirements.txt").write_text("pytest==8.4.0\nhypothesis==6.115.0\n")
+    run(repo, "add", "-A")
+    run(repo, "commit", "-m", "switch to Python property testing")
+    profile = RepositoryService().profile(repo, run(repo, "rev-parse", "HEAD"))
+    assert profile.property_frameworks == ["Hypothesis"]
+
+
 def test_impact_graph_requires_import_relationship_not_name_mention() -> None:
     documents = [
         ContextDocument(path="pkg/utils.py", content="def normalize(value):\n    return value\n", changed=True),
