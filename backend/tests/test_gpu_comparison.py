@@ -46,6 +46,12 @@ def test_comparison_rejects_mismatched_device_and_nonfinite_output() -> None:
         compare_gpu_artifacts(base, head)
 
 
+def test_comparison_rejects_oversized_numeric_value_without_overflow() -> None:
+    base = artifact({"sum": [10 ** 1000]}, {"sum": [10.0, 10.0, 10.0]})
+    with pytest.raises(GPUComparisonError, match="finite"):
+        compare_gpu_artifacts(base, base)
+
+
 def test_gpu_artifact_loader_rejects_oversize_file(tmp_path: Path) -> None:
     path = tmp_path / "large.json"
     path.write_bytes(b"x" * 1_000_001)
