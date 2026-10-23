@@ -1,6 +1,6 @@
 # Hackathon Submission Kit
 
-This is a draft kit for the Nebius × NVIDIA Global AI Hackathon submission. Finalize the claims and bracketed fields only after successful live Nemotron inference, actual PR acceptance, judge access and the final recording are verified. Capturing a Dell GPU run alone does not satisfy those gates.
+This is a draft kit for the Nebius × NVIDIA Global AI Hackathon submission. Finalize the claims and bracketed fields only after an actual PR acceptance run, judge access and the final recording are verified. A bounded model-only connectivity completion succeeded October 23, but neither that nor a dated Dell GPU run satisfies the remaining gates.
 
 ## Submission profile
 
@@ -15,7 +15,7 @@ This is a draft kit for the Nebius × NVIDIA Global AI Hackathon submission. Fin
 
 The website and interactive browser test build are published on GitHub Pages.
 The test build executes a deterministic coupon fixture in JavaScript; it is not
-a public GPU/Nemotron service. Full-stack inference remains blocked by HTTP 402.
+a public GPU/Nemotron service. A model-only connectivity check succeeded October 23; full-stack PR inference has not been verified.
 The [credential-free full local judging build](judge-test-build.md) also runs the
 real interface/API/Docker executor with prewritten Python and Node fixtures.
 It requires Docker, not paid tokens; it is not live model/PR evidence.
@@ -38,21 +38,14 @@ The model proposes experiments, but it does not decide whether they passed. Exit
 
 ## NVIDIA and Nebius usage
 
-**Verified status (October 17):** All three services are healthy on the Dell.
-CUDA ranking and real Docker sandbox differential execution have been tested.
-The Nebius key authenticates and the exact Nemotron ID is in the model catalog,
-but inference returns HTTP 402 (no usable budget). The model descriptions and
-recording script below describe the implemented integration and intended final
-demonstration; they are not evidence of a completed live model run. Do not submit
-model quality ratings or claim a working Nebius demo until inference succeeds.
-See [live-stack-evidence.md](live-stack-evidence.md).
+**Dated evidence:** October 17 and 19 Dell receipts show real CUDA ranking and Docker sandbox differential execution. On October 23 the model completed one bounded JSON connectivity request after credits were added, while the Dell GPU health check was degraded by missing NVIDIA userspace libraries. These observations do not establish a live model-generated PR run or current CUDA readiness. Do not submit model quality ratings or claim a working full-stack Nebius demo until that run succeeds. See [live-stack evidence](live-stack-evidence.md) and the [new model-only receipt](live-nebius-check.md).
 
-- **NVIDIA Nemotron** is integrated through Nebius Token Factory for risk hypotheses, test synthesis, evidence summaries, and minimal repair proposals. The current default is `nvidia/Nemotron-3_5-Lightning` as an economical evaluation candidate; Ultra remains an explicit comparison option. No successful live model use or quality score is claimed until credits work.
+- **NVIDIA Nemotron** is integrated through Nebius Token Factory for risk hypotheses, test synthesis, evidence summaries, and minimal repair proposals. The current default is `nvidia/Nemotron-3_5-Lightning` as an economical evaluation candidate; Ultra remains an explicit comparison option. One model-only completion succeeded, but no PR task quality score or full workflow success is claimed.
 - **Dell RTX 3050 Ti** runs the GPU worker. CuPy performs hashed term-document vector construction, cosine similarity scoring, and repository-context ranking before Nemotron receives a bounded prompt.
 - **CUDA telemetry** records the selected device and whether each ranking used CUDA or the visible CPU fallback.
 - **Docker sandboxes** execute untrusted repository checks with no runtime network, dropped Linux capabilities, process limits, and resource limits.
 
-**October 19 update:** the host driver recovered to matching `595.99.02`; normal GPU Compose, CuPy and authenticated CUDA ranking have been reverified in the [new GPU receipt](gpu-recovery-2026-10-19.md). The October 18 fallback was temporary. Spending/authentication/security/UI improvements and the remaining gates are recorded in [hardening evidence](hardening-evidence.md). Do not copy this kit into a final submission until live inference, actual PR evidence and the recording are checked.
+**October 19/23 update:** normal GPU Compose, CuPy and authenticated CUDA ranking were reverified on October 19 in the [GPU receipt](gpu-recovery-2026-10-19.md), but an October 23 health check found missing NVIDIA userspace libraries. Spending/authentication/security/UI improvements and the remaining gates are recorded in [hardening evidence](hardening-evidence.md). Do not copy this kit into a final submission until current GPU health, actual PR evidence and the recording are checked.
 
 ## Three-minute demo script
 
@@ -120,13 +113,13 @@ The OpenAI-compatible Token Factory interface made it straightforward to place N
 ## Recording checklist
 
 - [x] Dell host is reachable over Tailscale.
-- [x] `nvidia-smi` succeeds on the host.
-- [x] NVIDIA Container Toolkit exposes the GPU inside `gpu-worker`.
+- [ ] `nvidia-smi` succeeds on the host at final recording time (October 23 check was degraded).
+- [ ] NVIDIA Container Toolkit exposes the GPU inside `gpu-worker` at final recording time.
 - [x] Nebius API key is present only in the server-side `.env`.
 - [x] `/v1/models` confirms the configured Nemotron model is available.
-- [x] Health endpoint reports Nebius configured and the GPU worker reachable (credential presence only).
-- [ ] A real inference completes successfully (currently HTTP 402).
-- [x] GPU worker health and authenticated ranking record `accelerator: cuda` and RTX 3050 Ti device metadata.
+- [ ] Health endpoint reports Nebius configured and the GPU worker reachable at final recording time.
+- [x] A bounded model-only inference completes successfully on October 23; full PR inference remains unverified.
+- [ ] GPU worker health and authenticated ranking record `accelerator: cuda` and RTX 3050 Ti metadata at final recording time (dated October 19 receipt exists).
 - [ ] A real public PR completes base and PR execution.
 - [ ] The proof card shows exact commits, commands, logs, exit codes, and durations.
 - [ ] Repair verification reaches `FIX_VERIFIED` with all required checks passing.
@@ -147,5 +140,5 @@ The OpenAI-compatible Token Factory interface made it straightforward to place N
 - [x] Public project website on GitHub Pages
 - [ ] Public YouTube demonstration, three minutes or shorter
 - [x] Live Dell CUDA application-workload evidence captured
-- [ ] Live Nebius inference evidence captured after billing credits become usable
+- [x] Bounded model-only Nebius inference evidence captured after billing credits became usable; full PR inference remains open
 

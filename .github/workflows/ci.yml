@@ -20,6 +20,11 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements.txt
       - run: pip install -r backend/requirements.txt
+      - name: Install and smoke-test the local CLI entry point
+        run: |
+          pip install -e backend
+          aegispr --help
+          aegispr compare-gpu --help
       - run: pytest
         working-directory: backend
 

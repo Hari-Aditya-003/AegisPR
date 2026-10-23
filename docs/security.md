@@ -32,6 +32,8 @@ On October 23 a new local audit identified critical [Next.js image-processing](h
 
 The deployed orchestrator talks to the host Docker daemon to create nested execution sandboxes. Docker socket access is effectively host-level privilege and must remain limited to the orchestrator container and trusted administrators. Generated repository code never receives the socket. For production isolation, replace this with a remote ephemeral executor or Nebius sandbox service.
 
+The separate local `aegispr verify` static command reads only committed Git objects and refuses a dirty worktree. Its opt-in `--docker-tests` executes the repository's existing test command under the same runtime sandbox restrictions, but image builds can run dependency installation code and require Docker-socket access. The CLI must be used only with repositories the operator trusts enough to build. Its guard-removal and signature warnings are conservative patterns, not a security certification. `compare-gpu` reads bounded JSON and never executes GPU code; device fields in that JSON are claims, not attestation.
+
 ## Network policy
 
 Dependency installation happens during image build and therefore has outbound access. Actual test execution uses `--network=none`. Production deployments should add an allowlisted package mirror and image-signature verification.

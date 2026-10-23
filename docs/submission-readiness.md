@@ -1,6 +1,6 @@
 # Submission readiness and credit plan
 
-Evidence update: October 19, 2026 (Asia/Kolkata); the rules audit below was performed October 18. This is an evidence audit, not a guarantee of eligibility, a prize, employment, or security against every attack. Official organizers make eligibility decisions. Do not turn unchecked items into claims in Devpost, the README, the site, or the recording.
+Evidence update: October 23, 2026 (Asia/Kolkata); the rules audit below was performed October 18. This is an evidence audit, not a guarantee of eligibility, a prize, employment, or security against every attack. Official organizers make eligibility decisions. Do not turn unchecked items into claims in Devpost, the README, the site, or the recording.
 
 ## Required gates
 
@@ -14,13 +14,13 @@ The [official FAQ](https://nebiusglobalaihackathon.devpost.com/details/faqs) con
 | --- | --- | --- |
 | Source and licensing | GitHub repository API reports `PUBLIC`, default branch `main`, license key `mit`; root `LICENSE` and README exist | Ready at audit time. Preserve dependency notices and verify rights to all submission assets. |
 | Setup | README includes Compose, local development, environment configuration, Dell scripts and limitations | Re-run a fresh setup from the release commit before recording. |
-| GPU workload | [October 19 recovery receipt](gpu-recovery-2026-10-19.md): matching driver `595.99.02`, CuPy arithmetic and authenticated RTX 3050 Ti ranking | Current CUDA reverified and normal GPU Compose restored. This is local compute, not a Nebius GPU instance or measured speedup. Recheck before recording. |
+| GPU workload | [October 19 recovery receipt](gpu-recovery-2026-10-19.md): matching driver `595.99.02`, CuPy arithmetic and authenticated RTX 3050 Ti ranking. October 23 [health check](live-nebius-check.md) found missing NVIDIA userspace libraries. | CUDA was real on October 19 but is **not currently verified healthy**. This is local compute, not a Nebius GPU instance or measured speedup. Restore and recheck before recording. |
 | Sandbox | [Live stack evidence](live-stack-evidence.md) records baseline PASS, seeded change FAIL, manual repair PASS | Real Docker experiment verified. Generated-model test and repair are not proved by this controlled fixture. |
 | Automated checks | Backend provider mocks, differential unit tests, UI/browser checks, CPU-worker tests and container contracts exist | These validate implementation paths; they do not establish real Nemotron quality, live CUDA on CI, or a successful cloud review. Use current test-run evidence rather than a permanently fixed test count. |
-| Provider runtime | Most recent documented Token Factory completion returns HTTP 402; catalog/authentication succeed | **Blocking:** obtain usable credits and record one successful, bounded inference, then a full PR run. No new live inference calls were made for this audit. |
+| Provider runtime | An October 23 [bounded model-only JSON completion](live-nebius-check.md) succeeded after credits were added. | Model connectivity is verified, but a generated PR plan, actual PR acceptance, quality evaluation and provider-charge reconciliation remain open. Protect the remaining credits. |
 | Public website | [Landing page](https://hari-aditya-003.github.io/AegisPR/) and [fixture demo](https://hari-aditya-003.github.io/AegisPR/demo/) each returned HTTP 200 without credentials | Public access checked. A response status alone does not prove browser interaction; smoke-test it in a clean browser. |
 | Public fixture | `website/dist/demo/boundary.mjs` and its tests run a deterministic JavaScript coupon comparison | Working teaching/test fixture; cannot accept arbitrary GitHub PRs, run Docker, or call Nemotron. Label the mode explicitly. |
-| Full application | Dell GPU stack is healthy; separate [local judging build](judge-test-build.md) runs the real interface/API/Docker on fixed fixtures without credentials | Reproducible controlled test build, not successful live Nemotron/PR verification. Production remains private owner access; never advertise Tailscale as a public link. |
+| Full application | The separate [local judging build](judge-test-build.md) runs the real interface/API/Docker on fixed fixtures without credentials; October 23 production GPU health was degraded. | Reproducible controlled test build, not successful live Nemotron/PR verification. Production remains private owner access; never advertise Tailscale as a public link. |
 | Recording | Submission kit still contains a video URL placeholder and live model stages not yet recorded | **Blocking:** record actual working behavior and verify the final URL, duration, and visibility. |
 | Survey/disclosures | Submission form explicitly asks which AI tools helped during development | Answer accurately in that field. Product branding need not list development tools. Do not fabricate model ratings or a comparison. |
 
@@ -61,4 +61,4 @@ Implemented and unit-tested during hardening: persistent atomic spending reserva
 5. A clean-browser judging journey on the final URL or reproducible test build, including its disclosed limits. Leave enough usable budget for the judging period.
 6. A final recording and submission review: truthful measured model feedback; exact source/demo/video URLs; access instructions; completed applicant declarations; no placeholder fields; no API secrets in logs/screenshots.
 
-Until these observations exist, describe Nemotron as configured/integrated and its inference as unverified. Describe CUDA ranking and controlled Docker differential execution as separately verified. Keep live results, recorded results and deterministic demo mode visually distinct for both human reviewers and automated evaluation.
+Until these observations exist, describe Nemotron as configured/integrated with one successful bounded connectivity completion, not a completed PR review. Describe CUDA ranking as a dated October 19 observation and controlled Docker differential execution separately. Keep live results, recorded results and deterministic demo mode visually distinct for both human reviewers and automated evaluation.

@@ -2,7 +2,7 @@
 
 ## What is verified
 
-Catalog availability and API authentication are verified, not model quality. The most recent completion returned HTTP 402. No live inference requests were made during the October 18 hardening pass. Do not report an output-quality score, latency comparison, successful model-generated repair, or a winning model until a measured acceptance run exists.
+Catalog availability and API authentication are verified. A bounded model-only JSON completion succeeded on October 23 after credits were added; see the [dated receipt](live-nebius-check.md). That does not establish model quality on PRs. Do not report an output-quality score, latency comparison, successful model-generated repair, or a winning model until a measured acceptance run exists.
 
 The default changed from Ultra to `nvidia/Nemotron-3_5-Lightning` as a lower-cost evaluation candidate. The application does not automatically fan out to every model or escalate to a more expensive model. Using every catalog model is neither a correctness test nor a hackathon requirement.
 
@@ -32,7 +32,7 @@ Prices and availability can change; check the account catalog before spending. V
 
 These are **app-side admission estimates, not a guaranteed provider hard spending cap or an account balance**. Tokenization, pricing changes, provider accounting, another app using the same key, prior account usage, or deleting the ledger can make actual bills differ. Reconcile the provider usage page; do not raise limits or enable unattended paid loops without that check. A budget of zero blocks new paid requests (cached responses can still be reused).
 
-## Minimal live evaluation once credits work
+## Minimal live evaluation with the available credits
 
 Use a fixed seeded regression and a no-regression control with exact base/head commits. Compare Lightning against Ultra only if necessary, with the same capped context and a total trial ceiling below $0.50. Capture valid schema, collected executable test, correct differential outcome, false positives, repair checks, provider token usage, latency, and cost per successful verification. Select the cheapest candidate meeting the acceptance criteria. Do not infer quality from price or size.
 
