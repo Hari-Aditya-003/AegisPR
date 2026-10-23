@@ -59,6 +59,13 @@ def test_gpu_artifact_loader_rejects_oversize_file(tmp_path: Path) -> None:
         load_gpu_artifact(path)
 
 
+def test_gpu_artifact_loader_rejects_excessive_json_integer_without_traceback(tmp_path: Path) -> None:
+    path = tmp_path / "large-integer.json"
+    path.write_text('{"number": ' + '9' * 5000 + '}', encoding="utf-8")
+    with pytest.raises(GPUComparisonError, match="JSON"):
+        load_gpu_artifact(path)
+
+
 def test_cli_compares_gpu_artifacts_without_running_code(tmp_path: Path, capsys) -> None:
     base_path, head_path = tmp_path / "base.json", tmp_path / "head.json"
     base_path.write_text(json.dumps(artifact({"sum": [1]}, {"sum": [10, 10, 10]})), encoding="utf-8")
