@@ -64,6 +64,18 @@ jobs:
       - run: PYTHONPATH=. pytest -q tests
         working-directory: gpu-worker
 
+  cli-docker-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install -e backend
+      - name: Verify real isolated base/head test execution without inference
+        run: python scripts/cli-docker-acceptance.py
+
   security:
     runs-on: ubuntu-latest
     steps:
