@@ -9,6 +9,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from app.verification.local import LocalVerificationError, execute_committed_suites, inspect_committed_change
+from app.verification.gpu import GPUComparisonError, compare_gpu_artifacts, load_gpu_artifact
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -22,7 +23,29 @@ def main(argv: list[str] | None = None) -> int:
         "--docker-tests", action="store_true",
         help="opt in to three isolated base/head test runs (may download dependencies during image build)",
     )
+    gpu = commands.add_parser("compare-gpu", help="compare caller-supplied CUDA result files; does not run kernels")
+    gpu.add_argument("--base", type=Path, required=True, help="base CUDA result JSON")
+    gpu.add_argument("--head", type=Path, required=True, help="changed CUDA result JSON")
+    gpu.add_argument("--json", action="store_true", help="machine-readable result")
     args = parser.parse_args(argv)
+    if args.command == "compare-gpu":
+        try:
+            result = compare_gpu_artifacts(load_gpu_artifact(args.base), load_gpu_artifact(args.head))
+        except GPUComparisonError as exc:
+            print(f"AegisPR could not compare GPU results: {exc}", file=sys.stderr)
+            return 2
+        if args.json:
+            print(json.dumps(result, indent=2))
+        else:
+            print(f"GPU numeric comparison: {result['numeric_status']}")
+            for name in result["different_cases"]:
+                print(f"OUTPUT DIFFERENCE: {name}")
+            for name, timing in result["performance"].items():
+                print(f"GPU timing {name}: {timing['status']}")
+            print(result["scope"])
+        return 1 if result["different_cases"] or any(
+            timing["status"] == "possible_regression" for timing in result["performance"].values()
+        ) else 0
     try:
         report = inspect_committed_change(args.repo, args.base)
         docker = execute_committed_suites(args.repo, report.base_commit, report.head_commit) if args.docker_tests else None
