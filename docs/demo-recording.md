@@ -1,6 +1,6 @@
 # Draft capability recording
 
-This is a **capability preview, not the final end-to-end hackathon submission video**. Successful live Nemotron inference and actual PR acceptance remain unverified until usable credits are confirmed. Do not replace those missing observations with fixture footage or invent model feedback.
+This is a **capability preview, not the final end-to-end hackathon submission video**. A separate, small live Nemotron connectivity check succeeded on October 23, 2026, but actual PR acceptance remains unverified. Do not replace missing PR evidence with fixture footage or invent model feedback.
 
 The recorder separates three evidence modes:
 
@@ -51,6 +51,12 @@ An earlier recording attempt and browser check timed out while the local SSH-for
 
 The final local regression run passed 211 standard checks plus those four real-stack browser checks (215 total), including eight recorder privacy/provenance guards. Type checking, production build and npm audit also passed. The separate production application's authenticated budget ledger remained at zero calls, zero input/output tokens and $0 estimated usage, with the $20 total / $0.25 per-run admission limits unchanged. This ledger is application-side accounting, not confirmation of provider balance. Local results do not establish that a later CI run passed.
 
+## October 23 live credit-check recording
+
+The later [live credit-check receipt](live-nebius-check.md) records a successful **model-only** JSON response from `nvidia/Nemotron-3_5-Lightning`. The first deliberately tiny output cap truncated one response; the final 512-token-cap request returned `{"status":"ready"}`. Both calls together used 74 input and 388 output tokens, with **$0.000099 app-estimated** cost. This is not a full PR review, GPU ranking, or provider invoice.
+
+The local, Git-ignored `artifacts/demo/live-nebius-credit-check-retry-2026-10-23.webm` is a 17.76-second, 1280×720 VP8 silent recording with English captions. SHA-256: `f3a7a67ac27d28ac530485f433cc73c4462545546bfc613cdfe903018c06eb4c`. A sampled frame was visually inspected and shows the truthful live-model caption and cost estimate. The recording does not display credentials, but this was **sampled review, not a frame-by-frame privacy audit**. Do not upload it as the final submission video without owner review and approval.
+
 ## Before final submission
 
-After usable credits are confirmed, complete and measure the actual NVIDIA/Nebius PR workflow within the application's spending limits. Replace the relevant draft scenes with real generated-test/PR/repair evidence and truthful model feedback. Review every frame for secrets, misleading labels and unsupported claims; verify duration, English content, public viewing and current organizer video requirements. Upload only with the account owner's approval and use the resulting supported video-platform URL in the submission form. A local WebM or GitHub Pages link is not automatically a valid replacement for that field.
+Complete and measure the actual NVIDIA/Nebius PR workflow within the application's spending limits after the Dell GPU worker is repaired and a suitable PR is selected. Replace the relevant draft scenes with real generated-test/PR/repair evidence and truthful model feedback. Review every frame for secrets, misleading labels and unsupported claims; verify duration, English content, public viewing and current organizer video requirements. Upload only with the account owner's approval and use the resulting supported video-platform URL in the submission form. A local WebM or GitHub Pages link is not automatically a valid replacement for that field.

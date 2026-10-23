@@ -1,6 +1,6 @@
 # Research-feature audit — October 23, 2026
 
-This checks both user-supplied research lists against the source and verified tests. The lists are design suggestions, not evidence that AegisPR has run on real PRs. “Implemented” means code and local tests exist; it does **not** imply a live Nebius result.
+This checks both user-supplied research lists against the source and verified tests. The lists are design suggestions, not evidence that AegisPR has run on real PRs. “Implemented” means code and local tests exist; the October 23 live Nemotron connectivity check does **not** imply a full PR run.
 
 | Requested capability | Status and evidence limit |
 | --- | --- |
@@ -25,4 +25,4 @@ This checks both user-supplied research lists against the source and verified te
 | Tavily runtime API search | Not integrated or called. Submission answer remains “no.” |
 | Judge-accessible full app and final demo video | Public browser fixture and private captioned draft exist, but neither proves a public full-app live PR run. Final URL/video remain open. |
 
-The app-side ledger still admits at most **$20 estimated total, $0.25 estimated per run, and five provider attempts per run**, with zero SDK retries. The new correction request can consume one of those attempts; it does not bypass the cap. Usable Token Factory credits remain unconfirmed, so no paid inference was attempted for this audit. Read the [seeded dataset instructions](../evals/seeded-prs/README.md) and [research workflow](workflow-research-implementation.md) before quoting any performance number.
+The app-side ledger still admits at most **$20 estimated total, $0.25 estimated per run, and five provider attempts per run**, with zero SDK retries. The new correction request can consume one of those attempts; it does not bypass the cap. Usable Token Factory credits were confirmed sufficiently for the [October 23 model-only check](live-nebius-check.md), but no model-generated PR plan, end-to-end acceptance, comparative quality, or benchmark metric has been measured. Read the [seeded dataset instructions](../evals/seeded-prs/README.md) and [research workflow](workflow-research-implementation.md) before quoting any performance number.
