@@ -73,6 +73,7 @@ class RepositoryProfile(BaseModel):
     framework: str | None = None
     package_manager: str | None = None
     test_framework: str | None = None
+    property_frameworks: list[str] = Field(default_factory=list)
     install_command: str | None = None
     test_command: str | None = None
     build_command: str | None = None

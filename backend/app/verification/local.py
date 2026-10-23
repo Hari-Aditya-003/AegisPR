@@ -79,8 +79,20 @@ def _public_signatures(source: str | None) -> dict[str, str]:
 _GUARDS = (
     ("auth", re.compile(r"^\s*@(?:login_required|permission_required|require_auth|authenticated|authorize)\b")),
     ("auth", re.compile(r"\bDepends\(\s*(?:get_current_user|require_[A-Za-z_]*auth|verify_token)\b")),
+    ("auth", re.compile(r"\b(?:requireAuth|assertAuthenticated|authorize|checkPermission)\s*\(")),
     ("validation", re.compile(r"^\s*@(?:validate|validate_input|validated)\b")),
+    ("validation", re.compile(r"\b(?:validateInput|assertValidInput|parseAndValidate)\s*\(")),
 )
+
+
+def _simple_js_exports(source: str | None) -> dict[str, str]:
+    """Inspect simple named exports only; this is not a TypeScript compiler."""
+    if source is None:
+        return {}
+    pattern = re.compile(
+        r"(?m)^\s*export\s+(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(([^)]{0,1000})\)"
+    )
+    return {name: re.sub(r"\s+", "", params) for name, params in pattern.findall(source)}
 
 
 def _removed_guards(diff: str, path: str) -> list[str]:
@@ -124,6 +136,14 @@ def inspect_committed_change(repository: Path, base_ref: str = "HEAD~1") -> Loca
                     api_risks.append(f"{path}: public Python API {name} removed; review compatibility (not confirmed break)")
                 elif after[name] != signature:
                     api_risks.append(f"{path}: public Python API {name} signature changed; review compatibility (not confirmed break)")
+        elif path.endswith((".js", ".jsx", ".ts", ".tsx")):
+            before = _simple_js_exports(_source(root, base, path))
+            after = _simple_js_exports(_source(root, head, path))
+            for name, signature in before.items():
+                if name not in after:
+                    api_risks.append(f"{path}: simple exported JS/TS function {name} removed; review compatibility (not confirmed break)")
+                elif after[name] != signature:
+                    api_risks.append(f"{path}: simple exported JS/TS function {name} signature changed; review compatibility (not confirmed break)")
         diff = _git(root, "diff", "--no-ext-diff", "--unified=0", base, head, "--", path)
         security_warnings.extend(_removed_guards(diff, path))
     return LocalChangeReport(base, head, paths, api_risks, security_warnings)

@@ -148,6 +148,7 @@ class RepositoryService:
                 framework="Next.js" if "next" in all_dependencies else None,
                 package_manager="npm",
                 test_framework=next((name for name in ("vitest", "jest", "mocha") if name in all_dependencies), None),
+                property_frameworks=["fast-check"] if "fast-check" in all_dependencies else [],
                 install_command=install,
                 test_command=(
                     "npm test -- --run"
@@ -164,10 +165,17 @@ class RepositoryService:
             )
 
         if "pyproject.toml" in file_set or "requirements.txt" in file_set:
+            requirements = (
+                self._run(["git", "-C", str(repository), "show", f"{commit}:requirements.txt"])
+                if "requirements.txt" in file_set else ""
+            )
             return RepositoryProfile(
-                languages=languages or ["Python"],
+                languages=languages if "Python" in languages else ["Python", *languages],
                 package_manager="pip",
                 test_framework="pytest" if any("pytest" in path for path in files) else None,
+                property_frameworks=["Hypothesis"] if re.search(
+                    r"(?im)^\s*hypothesis(?:\[[^\]]+\])?\s*(?:[=<>~!]|$)", requirements
+                ) else [],
                 install_command="pip install -r requirements.txt" if "requirements.txt" in file_set else "pip install .",
                 test_command="pytest -q",
                 important_files=sorted(file_set.intersection({"pyproject.toml", "requirements.txt", "pytest.ini"})),

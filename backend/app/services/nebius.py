@@ -131,6 +131,14 @@ randomness, network calls, and nondeterministic object ordering. Print a JSON ob
 case and output keys so corresponding observations have the same order on both commits.
 Mark such tests mode="output".
 Only use mode="assertion" when an objective expected result is known from repository contracts.
+Prioritize testable authentication, authorization, input validation, data-exposure, and public API
+compatibility risks when the diff touches those contracts. A removed guard or signature change is
+a hypothesis, never a confirmed vulnerability or break until an executable comparison proves it.
+If PROFILE lists Hypothesis or fast-check and there is an objective invariant, one assertion-mode
+test may use that installed property framework instead of hand-picked examples. Bound the run to
+100 examples: Hypothesis @settings(max_examples=100) or fast-check {{numRuns:100}}. Use a fixed
+seed or deterministic settings where supported. Never import a property library absent from PROFILE,
+install dependencies, call the network, or expand beyond the two-test plan and existing token budget.
 Tests must fit the detected framework. Return strict JSON with keys hypotheses and tests. Each
 hypothesis requires id, description, risk_type, affected_files, test_strategy, testable. Each test
 requires id, hypothesis_id, file_path, framework, test_code, mode, and optional test_command.
