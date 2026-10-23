@@ -17,6 +17,15 @@ class GPUComparisonError(ValueError):
     pass
 
 
+def _finite_number(value: object) -> bool:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    try:
+        return math.isfinite(float(value))
+    except OverflowError:
+        return False
+
+
 def load_gpu_artifact(path: Path) -> dict:
     source = Path(path)
     try:
@@ -43,12 +52,12 @@ def _validated(payload: dict) -> tuple[dict, dict[str, list[float]], dict[str, l
             raise GPUComparisonError("GPU case names must be short nonempty strings")
         if not isinstance(values, list) or not values or len(values) > 10_000:
             raise GPUComparisonError("GPU outputs must be bounded nonempty numeric arrays")
-        if any(isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) for value in values):
+        if any(not _finite_number(value) for value in values):
             raise GPUComparisonError("GPU outputs must contain only finite numbers")
         samples = latency[name]
         if not isinstance(samples, list) or not 3 <= len(samples) <= 5:
             raise GPUComparisonError("GPU latency requires three to five samples per case")
-        if any(isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0 for value in samples):
+        if any(not _finite_number(value) or value <= 0 for value in samples):
             raise GPUComparisonError("GPU latency samples must be finite positive numbers")
     return device, outputs, latency
 
