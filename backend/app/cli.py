@@ -29,6 +29,9 @@ def main(argv: list[str] | None = None) -> int:
     except LocalVerificationError as exc:
         print(f"AegisPR could not verify: {exc}", file=sys.stderr)
         return 2
+    except OSError:
+        print("AegisPR could not verify: Docker or a local runtime dependency is unavailable", file=sys.stderr)
+        return 2
     payload = asdict(report)
     if docker:
         payload["docker_tests"] = docker
@@ -36,7 +39,11 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(payload, indent=2))
     else:
         print(f"AegisPR: {report.base_commit[:12]} → {report.head_commit[:12]}")
-        print(f"Reviewed {len(report.changed_files)} committed files. No model calls or repository code execution.")
+        print(f"Reviewed {len(report.changed_files)} committed files. No model calls.")
+        if docker:
+            print("Repository tests were executed inside isolated Docker containers.")
+        else:
+            print("Static review did not execute repository code.")
         for risk in report.api_risks:
             print(f"API REVIEW: {risk}")
         for warning in report.security_warnings:
