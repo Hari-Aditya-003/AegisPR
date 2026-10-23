@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import subprocess
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -169,3 +170,23 @@ def test_local_scan_flags_changed_exported_js_signature_and_removed_auth_call(tm
     report = inspect_committed_change(repo, base)
     assert any("getAccount" in risk for risk in report.api_risks)
     assert any("auth" in warning.lower() for warning in report.security_warnings)
+
+
+def test_cli_reports_docker_runtime_failure_without_traceback(tmp_path: Path, capsys) -> None:
+    repo, base = initialized_repo(tmp_path)
+    with patch("app.cli.execute_committed_suites", side_effect=OSError("docker unavailable")):
+        assert main(["verify", "--repo", str(repo), "--base", base, "--docker-tests"]) == 2
+    output = capsys.readouterr()
+    assert "could not verify" in output.err.lower()
+    assert "Traceback" not in output.err
+
+
+def test_cli_docker_output_does_not_claim_no_code_execution(tmp_path: Path, capsys) -> None:
+    repo, base = initialized_repo(tmp_path)
+    docker_result = {
+        "status": "no_failure_observed", "test_command": "pytest -q",
+        "performance": {"time_status": "inconclusive", "memory_status": "inconclusive"},
+    }
+    with patch("app.cli.execute_committed_suites", return_value=docker_result):
+        assert main(["verify", "--repo", str(repo), "--base", base, "--docker-tests"]) == 0
+    assert "No repository code execution" not in capsys.readouterr().out
