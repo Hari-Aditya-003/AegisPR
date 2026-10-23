@@ -317,7 +317,7 @@ The default model is:
 nvidia/Nemotron-3_5-Lightning
 ```
 
-The configured model must be confirmed against `/v1/models` before a live demonstration. Lightning is a lower-cost evaluation candidate, not a measured quality winner. Ultra is an explicit alternative, not an automatic escalation. No successful live inference or measured model comparison is claimed while credits return HTTP 402.
+The configured model must be confirmed against `/v1/models` before a live demonstration. Lightning is a lower-cost evaluation candidate, not a measured quality winner. Ultra is an explicit alternative, not an automatic escalation. One bounded model-only JSON completion succeeded on October 23 after credits were added; no PR-task quality rating or measured model comparison is claimed.
 
 ### 10.1 Model calls
 
@@ -878,33 +878,32 @@ Use [hackathon-submission.md](hackathon-submission.md) for the exact voice-over,
 
 ## 23. Current project status
 
-October 19, 2026 snapshot, based on the dated receipts below:
+October 24, 2026 snapshot, based on the dated receipts below:
 
 - core product workflow is implemented;
 - optional repair and repair verification are implemented;
 - repository is public and MIT-licensed;
 - README, architecture, security, user journeys, verification semantics, runbook, contribution guide, and submission kit are present;
 - the project website and browser test build are publicly hosted on GitHub Pages;
-- all five GitHub Actions jobs passed for code revision `ff6a500`, including dependency/secret checks and the real controlled judging build ([CI receipt](https://github.com/Hari-Aditya-003/AegisPR/actions/runs/39252052084)); inspect later revisions separately;
-- the latest local matrix passed 211 standard checks plus four real-stack browser checks (215 total); backend line coverage was 90.71% and frontend statement coverage was 95.54%;
-- the five-hour continuation heartbeat remains enabled;
-- the Dell Tailscale connection, matching NVIDIA driver `595.99.02`, container runtime, CuPy and authenticated CUDA ranking were reverified on the RTX 3050 Ti;
-- all three production services are healthy on the Dell, with the backend on port 8080;
+- all six GitHub Actions jobs passed for revision `32f9203`, including the real controlled CLI Docker acceptance plus backend, GPU-worker, security, frontend and controlled judging checks ([CI receipt](https://github.com/Hari-Aditya-003/AegisPR/actions/runs/40040038098));
+- the October 23 local matrix passed 206 backend tests at 90.05% coverage plus the other listed checks in [the live model receipt](live-nebius-check.md); the newer CLI/backend suite passed 229 tests at 88.70% coverage locally;
+- the Dell Tailscale connection and CUDA ranking were verified on October 19, but an October 24 read-only host check found `nvidia-smi` missing; current GPU readiness is not established;
 - the backend production image now includes the Git and Docker tools needed by repository analysis and sandbox execution;
 - the isolated keyless judging build persisted actual Python/Node Docker receipts with base PASS, deliberately broken head FAIL and manually repaired checks PASS, without model calls;
-- October 17 provider observations authenticated the key and listed the model but returned HTTP 402 for inference; usable credits remain unconfirmed, and no paid inference or repeated 402 probe was attempted in this continuation;
-- the production application's ledger remained at zero calls/tokens and $0 estimated usage, with the $20 total / $0.25 per-run admission limits unchanged; this is not the provider balance;
+- an October 23 bounded model-only Nemotron completion succeeded after credits were added; app-side estimates recorded two calls, 74 input and 388 output tokens, and $0.000099 estimated total, not a provider invoice or PR acceptance run;
+- the $20 total / $0.25 per-run / five-attempt admission limits and zero SDK automatic retries remain unchanged;
+- a token-free pre-push CLI, optional repeated Docker suite comparison, and caller-supplied GPU result comparator are implemented with the explicit limitations in [the local verification guide](pre-push-verification.md);
 - a 104.52-second captioned capability draft was recorded privately and sampled visually; it is not uploaded or a final live-model demonstration;
-- successful live Nemotron inference, actual public-PR acceptance, a judge-accessible full application/test build and the final supported video URL remain completion gates.
+- actual public-PR acceptance, current CUDA health, a judge-accessible full application/test build and the final supported video URL remain completion gates.
 
-Current dated receipts are the [October 19 GPU recovery](gpu-recovery-2026-10-19.md), [controlled full-stack acceptance](judge-build-evidence-2026-10-19.md) and [private capability recording](demo-recording.md). The earlier [GPU](live-gpu-evidence.md) and [deployment/sandbox](live-stack-evidence.md) receipts remain historical observations. Fixture results are not a model-generated public PR review. No documentation or UI should claim a successful live Nemotron run until inference succeeds.
+Current dated receipts include the [October 19 GPU recovery](gpu-recovery-2026-10-19.md), [October 23 model-only completion](live-nebius-check.md), [controlled full-stack acceptance](judge-build-evidence-2026-10-19.md) and [private capability recording](demo-recording.md). The earlier [GPU](live-gpu-evidence.md) and [deployment/sandbox](live-stack-evidence.md) receipts remain historical observations. Fixture results and a model-only JSON completion are not a model-generated public PR review.
 
 ## 24. Limitations and roadmap
 
 ### Current limitations
 
 - public GitHub pull requests only;
-- one execution per branch, so flaky tests are not automatically repeated;
+- output-example differences receive two additional runs per branch; assertion-mode failures are not yet independently repeated;
 - Python and JavaScript/TypeScript execution profiles only;
 - model-generated tests depend on the detected repository test command;
 - dependency installation has network access during image build;
@@ -916,8 +915,8 @@ Current dated receipts are the [October 19 GPU recovery](gpu-recovery-2026-10-19
 
 ### Recommended next steps
 
-1. Resolve Nebius billing/credits with support and confirm a real inference succeeds.
-2. Complete a real public-PR end-to-end run and capture evidence.
+1. Preserve the limited usable Nebius credit and complete one bounded real public-PR end-to-end run with captured evidence.
+2. Restore and reverify current NVIDIA GPU health without changing unrelated host services.
 3. Publish the live application behind HTTPS with authentication or bounded hackathon access.
 4. Keep the GitHub Pages project website and test build in sync with releases.
 5. Record and publish the three-minute demonstration.

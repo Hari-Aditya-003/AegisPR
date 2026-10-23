@@ -52,5 +52,5 @@ The command requires identical device metadata and case names, compares numerica
 
 - No MCP server is exposed. Agents use the CLI/JSON interface; an MCP adapter is a future integration.
 - Security checks are narrow heuristics. They do not replace a security review or adversarial tests.
-- The optional Docker mode requires a running daemon. It was unit-tested with a fake executor on the local Mac because Docker was unavailable during this change; CI has a separate real Docker fixture build, not a real run of this new CLI.
+- The optional Docker mode requires a running daemon. The local Mac had none. On October 24, the new [CLI Docker acceptance job](https://github.com/Hari-Aditya-003/AegisPR/actions/runs/40040038098) executed the actual `aegispr verify --docker-tests` path against a controlled two-commit fixture: three base passes, three changed-head failures, zero model calls. This is not a real public PR or a performance benchmark.
 - No automated Nebius GPU base/head runner or public real-PR benchmark has been verified. Do not describe the GPU JSON comparator as either one.
