@@ -203,7 +203,7 @@ button, a, article { -webkit-tap-highlight-color: transparent; }
 .site-header { min-height: 80px; background: #050a0dd9; border-color: #143038; }
 .brand { font-size: 24px; gap: 8px; }
 .brand-light { font-weight: 350; color: #b9e3e0; }
-.brand-shield { width: 42px; height: 48px; clip-path: none; background: url('/brand/aegispr-logo.jpg') 50% 11% / 173px auto no-repeat; }
+.brand-shield { flex: 0 0 42px; width: 42px; height: 48px; clip-path: none; background: url('/brand/aegispr-logo.jpg') center -8px / 144px auto no-repeat; }
 .header-action { display: inline-flex; align-items: center; gap: 22px; padding: 11px 17px; border: 1px solid #1c5149; border-radius: 7px; font-size: 12px; background: #0a221d; color: #baffeb; transition: background .25s, box-shadow .25s; }
 .header-action:hover { background: #103a2d; box-shadow: 0 0 25px #00e5a421; }
 nav { gap: 24px; }

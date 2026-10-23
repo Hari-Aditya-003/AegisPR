@@ -76,3 +76,13 @@ test('interactive demo uses the same shield and split wordmark as the public web
   assert.match(demoHtml, /class="brand-mark" aria-hidden="true"/);
   assert.match(demoHtml, /Aegis<span class="brand-light">PR<\/span>/);
 });
+
+test('interactive demo wordmark text is not styled as another icon', () => {
+  const demoCss = readFileSync(new URL('../dist/brand.css', import.meta.url), 'utf8');
+  const style = declarationsFor(demoCss, '.brand .brand-light');
+  assert.equal(style.display, 'inline');
+  assert.equal(style.width, 'auto');
+  assert.equal(style.height, 'auto');
+  assert.equal(style.border, '0');
+  assert.equal(style['font-family'], 'inherit');
+});

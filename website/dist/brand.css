@@ -3,7 +3,7 @@
 body{background:radial-gradient(ellipse at 85% 0%,#00372e70,transparent 36%),var(--bg)}
 ::selection{background:#00e5a449;color:white}
 .nav{position:sticky;top:0;z-index:5;background:#050a0de8;backdrop-filter:blur(18px);border-color:#143038}
-.brand{font-size:23px;letter-spacing:-.04em}.brand span{width:42px;height:48px;border:0;font-size:0;background:url('./aegispr-logo.jpg') 50% 11% / 173px auto no-repeat}
+.brand{font-size:23px;letter-spacing:-.04em}.brand .brand-mark{flex:0 0 42px;width:42px;height:48px;border:0;font-size:0;background:url('./aegispr-logo.jpg') center -8px / 144px auto no-repeat}.brand .brand-light{display:inline;width:auto;height:auto;border:0;background:none;color:#b9e3e0;font-family:inherit;font-weight:350}
 .nav-cta{border:1px solid #1c5149;border-radius:7px;background:#0a221d;color:#baffeb;transition:background .25s,box-shadow .25s}.nav-cta:hover{background:#103a2d;box-shadow:0 0 25px #00e5a421}
 .hero{position:relative;gap:55px;overflow:hidden;min-height:800px}
 .hero:before{content:'';position:absolute;inset:0;background-image:linear-gradient(#04d4dd09 1px,transparent 1px),linear-gradient(90deg,#04d4dd09 1px,transparent 1px);background-size:54px 54px;mask-image:linear-gradient(black,transparent);pointer-events:none}
