@@ -1,26 +1,26 @@
 # Hackathon Submission Kit
 
-This is a draft kit for the Nebius × NVIDIA Global AI Hackathon submission. Finalize the claims and bracketed fields only after an actual PR acceptance run, judge access and the final recording are verified. A bounded model-only connectivity completion succeeded October 23, but neither that nor a dated Dell GPU run satisfies the remaining gates.
+This is a draft kit for the Nebius × NVIDIA Global AI Hackathon submission. Finalize the claims and bracketed fields only after an actual PR acceptance run, judge access and the final recording are verified. A bounded model-only connectivity completion succeeded October 23; two October 24 live PR planning calls were truncated before test generation. Neither those calls nor a dated Dell GPU run satisfies the remaining gates. The owner will create and upload the final video themselves; do not generate or upload one on their behalf.
 
 ## Submission profile
 
 - **Project:** AegisPR
 - **Tagline:** Don't trust a PR. Prove it.
-- **Track:** Coding and Agentic Engineering
+- **Track:** Best Apps and Agents (owner-selected October 24; organizer eligibility remains authoritative)
 - **Source:** <https://github.com/Hari-Aditya-003/AegisPR>
 - **Project website:** <https://hari-aditya-003.github.io/AegisPR/>
 - **License:** MIT
 - **Public test build:** <https://hari-aditya-003.github.io/AegisPR/demo/>
-- **Video:** `[ADD PUBLIC YOUTUBE URL, STRICTLY UNDER 3:00]`
+- **Video:** `[OWNER TO ADD PUBLIC YOUTUBE URL, STRICTLY UNDER 3:00]`
 
 The website and interactive browser test build are published on GitHub Pages.
 The test build executes a deterministic coupon fixture in JavaScript; it is not
-a public GPU/Nemotron service. A model-only connectivity check succeeded October 23; full-stack PR inference has not been verified.
+a public GPU/Nemotron service. A model-only connectivity check succeeded October 23. Two October 24 controlled public-PR calls reached Nemotron but were [truncated before plan generation](live-pr-attempt-2026-10-24.md); full-stack PR inference has not been verified.
 The [credential-free full local judging build](judge-test-build.md) also runs the
 real interface/API/Docker executor with prewritten Python and Node fixtures.
 It requires Docker, not paid tokens; it is not live model/PR evidence.
 
-A [captioned capability-preview workflow](demo-recording.md) is also available. Its draft footage must not be substituted for the missing real model/PR demonstration or presented as a completed submission video.
+A [captioned capability-preview workflow](demo-recording.md) is also available. Its draft footage must not be substituted for the missing real model/PR demonstration or presented as a completed submission video. The owner has explicitly taken responsibility for preparing the final YouTube video; the AegisPR build workflow will not prepare or upload it.
 
 ## Short description
 

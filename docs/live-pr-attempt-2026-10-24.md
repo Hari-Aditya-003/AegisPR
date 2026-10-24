@@ -1,0 +1,14 @@
+# October 24 live GitHub PR acceptance attempt
+
+This records **two unsuccessful, billed model calls**, not a completed AegisPR review, bug-detection result, or benchmark. The source is a deliberately seeded [public draft PR](https://github.com/Hari-Aditya-003/AegisPR-acceptance/pull/1) in a separate controlled fixture repository. It is not an independently occurring open-source regression. The baseline commit is `1bfad69ed176946d23068f68eee8cadfdd3e3361`; the PR commit is `4f89ac80cc3cb11a5c646d8cae0851e964a689e1`. The PR removes coupon-total clamping, while its three existing tests still pass. It must not be merged.
+
+| Run | Production planner | Observed result | App-side cost estimate |
+| --- | --- | --- | ---: |
+| `a1956a08-67ca-4062-83ad-c1fa42fa2470` | October 19 Dell image, 3,072 output-token cap | GitHub ingest passed, one changed file analyzed, CUDA context ranking completed; Nemotron response hit `finish_reason=length`; no valid plan/test/branch execution | $0.000774; 598 input and 3,072 output tokens |
+| `0c88cfcf-75ca-479a-bd27-054eb0a02a7e` | Updated checked backend, 4,096 output-token cap | Same ingest and CUDA stages passed; model response was again truncated; no valid plan/test/branch execution | $0.001043; 995 input and 4,096 output tokens |
+
+Both runs ended `ENVIRONMENT_ERROR` at the hypotheses stage. They prove a real GitHub PR was ingested, live Nemotron calls occurred through Token Factory, and the Dell CUDA ranker participated. They **do not** prove that Nemotron generated a usable test, that a regression was found, or that sandbox execution and repair worked for this PR. The app ledger after the second run showed four historical provider calls, 1,667 input tokens, 7,556 output tokens and **$0.001916 estimated lifetime use**. These are AegisPR's accounting figures, not a provider invoice or guaranteed remaining credit.
+
+The stale backend image was replaced without changing its `.env`, GPU worker, frontend, or other containers. Before the replacement, both SQLite databases were backed up in the private data volume and the old image was tagged `aegispr-backend:pre-20261024-model-review`. Afterward `/health` reported Nebius configured, sandbox enabled and GPU accelerator `cuda`; the failed run and budget ledger were still readable.
+
+The next source change (`420ae11`) makes the single planning response compact: one hypothesis/test file covering both old-code and new-code input angles, at most eight labeled examples, with an 8,192-token first-response allowance. This is a deliberate credit/response-reliability tradeoff from the former twenty-example request, **not yet live-validated**. Unit tests and the full backend suite passed locally (230 tests, 88.77% coverage). No further paid request should be made without a fresh owner decision. Do not cite this document as a successful acceptance run.
