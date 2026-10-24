@@ -1,6 +1,6 @@
 # Hackathon Submission Kit
 
-This is a draft kit for the Nebius × NVIDIA Global AI Hackathon submission. Finalize the claims and bracketed fields only after an actual PR acceptance run, judge access and the final recording are verified. A bounded model-only connectivity completion succeeded October 23; two October 24 live PR planning calls were truncated before test generation. Neither those calls nor a dated Dell GPU run satisfies the remaining gates. The owner will create and upload the final video themselves; do not generate or upload one on their behalf.
+This is a draft kit for the Nebius × NVIDIA Global AI Hackathon submission. Finalize the claims and bracketed fields only after an actual PR acceptance run, judge access and the final recording are verified. A bounded model-only connectivity completion succeeded October 23; three October 24 live PR planning calls were truncated before test generation. A later compatibility fix is tested locally but not yet validated against Nebius. Neither those calls nor a dated Dell GPU run satisfies the remaining gates. The owner will create and upload the final video themselves; do not generate or upload one on their behalf.
 
 ## Submission profile
 
@@ -15,7 +15,7 @@ This is a draft kit for the Nebius × NVIDIA Global AI Hackathon submission. Fin
 
 The website and interactive browser test build are published on GitHub Pages.
 The test build executes a deterministic coupon fixture in JavaScript; it is not
-a public GPU/Nemotron service. A model-only connectivity check succeeded October 23. Two October 24 controlled public-PR calls reached Nemotron but were [truncated before plan generation](live-pr-attempt-2026-10-24.md); full-stack PR inference has not been verified.
+a public GPU/Nemotron service. A model-only connectivity check succeeded October 23. Three October 24 controlled public-PR calls reached Nemotron but were [truncated before plan generation](live-pr-attempt-2026-10-24.md); full-stack PR inference has not been verified.
 The [credential-free full local judging build](judge-test-build.md) also runs the
 real interface/API/Docker executor with prewritten Python and Node fixtures.
 It requires Docker, not paid tokens; it is not live model/PR evidence.
