@@ -54,7 +54,11 @@ async def test_large_input_is_bounded_and_maximum_output_is_explicit(tmp_path):
     await gateway.create_plan("x" * 200_000, RepositoryProfile(), [])
     request = create.call_args.kwargs
     assert len(json.dumps(request["messages"]).encode()) <= 32_000
-    assert request["max_tokens"] <= 4096
+    assert request["max_tokens"] == 8192
+    prompt = request["messages"][1]["content"]
+    assert "at most one test file" in prompt
+    assert "both old-code and new-code" in prompt
+    assert "at most eight" in prompt
 
 
 @pytest.mark.asyncio
