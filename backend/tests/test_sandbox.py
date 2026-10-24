@@ -1,6 +1,7 @@
 import subprocess
 import sys
 import runpy
+import shlex
 from pathlib import Path
 from pathlib import PurePosixPath
 from types import SimpleNamespace
@@ -57,6 +58,26 @@ def test_output_examples_disable_pytest_capture_for_json_observations() -> None:
     profile = RepositoryProfile(languages=["Python"], test_framework="pytest", test_command="pytest -q")
     command = DockerSandbox._generated_command(profile, PurePosixPath("tests/test_behavior.py"), mode="output")
     assert command == "python -m pytest -q -s -- tests/test_behavior.py"
+
+
+def test_output_example_without_collected_pytest_case_runs_as_script() -> None:
+    profile = RepositoryProfile(languages=["Python"], test_framework="pytest", test_command="pytest -q")
+    code = "from coupon import apply_coupon; print('AEGISPR_OUTPUT=' + str(apply_coupon(5, 8)))"
+    command = DockerSandbox._generated_command(
+        profile, PurePosixPath("tests/test_coupon_edge.py"), mode="output", code=code,
+    )
+    parts = shlex.split(command)
+    assert parts[:2] == ["python", "-c"]
+    assert "runpy.run_path('tests/test_coupon_edge.py'" in parts[2]
+
+
+def test_output_example_with_pytest_case_retains_collection() -> None:
+    profile = RepositoryProfile(languages=["Python"], test_framework="pytest", test_command="pytest -q")
+    command = DockerSandbox._generated_command(
+        profile, PurePosixPath("tests/test_coupon_edge.py"), mode="output",
+        code="def test_boundary():\n    print('AEGISPR_OUTPUT=0')\n",
+    )
+    assert command == "python -m pytest -q -s -- tests/test_coupon_edge.py"
 
 
 def test_existing_suite_reuses_one_image_for_three_isolated_measurements(tmp_path: Path, monkeypatch) -> None:
