@@ -38,14 +38,14 @@ The model proposes experiments, but it does not decide whether they passed. Exit
 
 ## NVIDIA and Nebius usage
 
-**Dated evidence:** October 17 and 19 Dell receipts show real CUDA ranking and Docker sandbox differential execution. On October 23 the model completed one bounded JSON connectivity request after credits were added, while the Dell GPU health check was degraded by missing NVIDIA userspace libraries. These observations do not establish a live model-generated PR run or current CUDA readiness. Do not submit model quality ratings or claim a working full-stack Nebius demo until that run succeeds. See [live-stack evidence](live-stack-evidence.md) and the [new model-only receipt](live-nebius-check.md).
+**Dated evidence:** October 17 and 19 Dell receipts show real CUDA ranking and Docker sandbox differential execution. On October 23 the model completed one bounded JSON connectivity request after credits were added, while the Dell GPU health check was degraded by missing NVIDIA userspace libraries. The [October 24 recovery receipt](gpu-recovery-2026-10-24.md) confirms local CUDA ranking again. These observations do not establish a live model-generated PR run or Nebius GPU hosting. Do not submit model quality ratings or claim a working full-stack Nebius demo until that run succeeds. See [live-stack evidence](live-stack-evidence.md) and the [model-only receipt](live-nebius-check.md).
 
 - **NVIDIA Nemotron** is integrated through Nebius Token Factory for risk hypotheses, test synthesis, evidence summaries, and minimal repair proposals. The current default is `nvidia/Nemotron-3_5-Lightning` as an economical evaluation candidate; Ultra remains an explicit comparison option. One model-only completion succeeded, but no PR task quality score or full workflow success is claimed.
 - **Dell RTX 3050 Ti** runs the GPU worker. CuPy performs hashed term-document vector construction, cosine similarity scoring, and repository-context ranking before Nemotron receives a bounded prompt.
 - **CUDA telemetry** records the selected device and whether each ranking used CUDA or the visible CPU fallback.
 - **Docker sandboxes** execute untrusted repository checks with no runtime network, dropped Linux capabilities, process limits, and resource limits.
 
-**October 19/23 update:** normal GPU Compose, CuPy and authenticated CUDA ranking were reverified on October 19 in the [GPU receipt](gpu-recovery-2026-10-19.md), but an October 23 health check found missing NVIDIA userspace libraries. Spending/authentication/security/UI improvements and the remaining gates are recorded in [hardening evidence](hardening-evidence.md). Do not copy this kit into a final submission until current GPU health, actual PR evidence and the recording are checked.
+**October 24 update:** after the October 23 missing-library incident, matching NVIDIA userspace packages, normal GPU Compose, CuPy and authenticated CUDA ranking were reverified in the [new GPU receipt](gpu-recovery-2026-10-24.md). Spending/authentication/security/UI improvements and the remaining gates are recorded in [hardening evidence](hardening-evidence.md). Do not copy this kit into a final submission until current GPU health, actual PR evidence and the recording are checked.
 
 ## Three-minute demo script
 

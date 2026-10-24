@@ -887,16 +887,16 @@ October 24, 2026 snapshot, based on the dated receipts below:
 - the project website and browser test build are publicly hosted on GitHub Pages;
 - all six GitHub Actions jobs passed for revision `32f9203`, including the real controlled CLI Docker acceptance plus backend, GPU-worker, security, frontend and controlled judging checks ([CI receipt](https://github.com/Hari-Aditya-003/AegisPR/actions/runs/40040038098));
 - the October 23 local matrix passed 206 backend tests at 90.05% coverage plus the other listed checks in [the live model receipt](live-nebius-check.md); the newer CLI/backend suite passed 229 tests at 88.70% coverage locally;
-- the Dell Tailscale connection and CUDA ranking were verified on October 19, but an October 24 read-only host check found `nvidia-smi` missing; current GPU readiness is not established;
+- the Dell Tailscale connection, exact-match NVIDIA userspace packages, in-container CuPy and authenticated CUDA ranking were reverified on October 24; this is local Dell GPU evidence, not Nebius GPU hosting ([recovery receipt](gpu-recovery-2026-10-24.md));
 - the backend production image now includes the Git and Docker tools needed by repository analysis and sandbox execution;
 - the isolated keyless judging build persisted actual Python/Node Docker receipts with base PASS, deliberately broken head FAIL and manually repaired checks PASS, without model calls;
 - an October 23 bounded model-only Nemotron completion succeeded after credits were added; app-side estimates recorded two calls, 74 input and 388 output tokens, and $0.000099 estimated total, not a provider invoice or PR acceptance run;
 - the $20 total / $0.25 per-run / five-attempt admission limits and zero SDK automatic retries remain unchanged;
 - a token-free pre-push CLI, optional repeated Docker suite comparison, and caller-supplied GPU result comparator are implemented with the explicit limitations in [the local verification guide](pre-push-verification.md);
 - a 104.52-second captioned capability draft was recorded privately and sampled visually; it is not uploaded or a final live-model demonstration;
-- actual public-PR acceptance, current CUDA health, a judge-accessible full application/test build and the final supported video URL remain completion gates.
+- actual public-PR acceptance, a judge-accessible full application/test build and the final supported video URL remain completion gates; CUDA readiness must still be rechecked at recording time.
 
-Current dated receipts include the [October 19 GPU recovery](gpu-recovery-2026-10-19.md), [October 23 model-only completion](live-nebius-check.md), [controlled full-stack acceptance](judge-build-evidence-2026-10-19.md) and [private capability recording](demo-recording.md). The earlier [GPU](live-gpu-evidence.md) and [deployment/sandbox](live-stack-evidence.md) receipts remain historical observations. Fixture results and a model-only JSON completion are not a model-generated public PR review.
+Current dated receipts include the [October 24 GPU recovery](gpu-recovery-2026-10-24.md), [October 23 model-only completion](live-nebius-check.md), [controlled full-stack acceptance](judge-build-evidence-2026-10-19.md) and [private capability recording](demo-recording.md). The earlier [GPU](live-gpu-evidence.md) and [deployment/sandbox](live-stack-evidence.md) receipts remain historical observations. Fixture results and a model-only JSON completion are not a model-generated public PR review.
 
 ## 24. Limitations and roadmap
 
@@ -916,7 +916,7 @@ Current dated receipts include the [October 19 GPU recovery](gpu-recovery-2026-1
 ### Recommended next steps
 
 1. Preserve the limited usable Nebius credit and complete one bounded real public-PR end-to-end run with captured evidence.
-2. Restore and reverify current NVIDIA GPU health without changing unrelated host services.
+2. Recheck NVIDIA GPU health before any live recording or submission claim, without changing unrelated host services.
 3. Publish the live application behind HTTPS with authentication or bounded hackathon access.
 4. Keep the GitHub Pages project website and test build in sync with releases.
 5. Record and publish the three-minute demonstration.
