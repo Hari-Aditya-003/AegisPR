@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import logging
 import json
 import os
@@ -54,7 +55,7 @@ class DockerSandbox:
             return self._skipped(branch, commit, "Generated test path was rejected")
         if (checkout / ".dockerignore").exists() or (checkout / ".dockerignore").is_symlink():
             return self._skipped(branch, commit, "Generated verification does not support repository .dockerignore files")
-        targeted = self._generated_command(profile, relative, mode=generated_test.mode)
+        targeted = self._generated_command(profile, relative, mode=generated_test.mode, code=generated_test.test_code)
         if not targeted:
             return self._skipped(branch, commit, "No supported generated-test runner was detected")
         base_image, install = self._runtime(profile)
@@ -175,7 +176,9 @@ class DockerSandbox:
                 else self._skipped("repair", commit, "No supported command was detected")
                 if not command else self._build_error(commit, baseline_build),
             ) for name, command in commands]
-            targeted = self._generated_command(profile, relative, mode=generated_test.mode) if safe_path else None
+            targeted = self._generated_command(
+                profile, relative, mode=generated_test.mode, code=generated_test.test_code,
+            ) if safe_path else None
             if (checkout / ".dockerignore").exists() or (checkout / ".dockerignore").is_symlink():
                 generated_execution = self._skipped("repair", commit, "Generated verification does not support repository .dockerignore files")
             elif safe_path and generated_command and targeted:
@@ -399,9 +402,25 @@ class DockerSandbox:
             process.stderr.close()
 
     @staticmethod
-    def _generated_command(profile: RepositoryProfile, path: PurePosixPath, *, mode: str = "assertion") -> str | None:
+    def _generated_command(
+        profile: RepositoryProfile, path: PurePosixPath, *, mode: str = "assertion", code: str | None = None,
+    ) -> str | None:
         target = shlex.quote(str(path))
         if path.suffix == ".py" and profile.test_command in {"pytest", "pytest -q", "python -m pytest"}:
+            if mode == "output" and code is not None:
+                try:
+                    tree = ast.parse(code)
+                except SyntaxError:
+                    tree = None
+                if tree is not None and not any(
+                    isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test_")
+                    or isinstance(node, ast.ClassDef) and node.name.startswith("Test")
+                    and any(isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef))
+                            and child.name.startswith("test_") for child in node.body)
+                    for node in tree.body
+                ):
+                    script = f"import runpy; runpy.run_path({str(path)!r}, run_name='__main__')"
+                    return f"python -c {shlex.quote(script)}"
             capture = " -s" if mode == "output" else ""
             return f"python -m pytest -q{capture} -- {target}"
         if path.suffix in {".js", ".jsx", ".ts", ".tsx"} and (".test." in path.name or ".spec." in path.name):
