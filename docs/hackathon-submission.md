@@ -1,6 +1,6 @@
 # Hackathon Submission Kit
 
-This is a draft kit for the Nebius × NVIDIA Global AI Hackathon submission. Finalize the claims and bracketed fields only after an end-to-end PR acceptance run, judge access and the final recording are verified. A bounded model-only completion succeeded October 23. Of four October 24 live controlled-PR runs, the first three were truncated; the fourth generated and executed one output example but ended `INCONCLUSIVE` because pytest collected no tests. A fixed runner replayed that saved example offline, not as a new paid autonomous review. The owner will create and upload the final video themselves; do not generate or upload one on their behalf.
+This is a draft kit for the Nebius × NVIDIA Global AI Hackathon submission. Finalize the claims and bracketed fields only after an end-to-end PR acceptance run, judge access and the final recording are verified. A bounded model-only completion succeeded October 23. Of five October 24 live controlled-PR runs, the first three were truncated; the fourth generated and executed one output example but ended `INCONCLUSIVE` because pytest collected no tests; the fifth stopped at plan validation before Docker execution. A fixed runner replayed the fourth run's saved example offline, not as a new paid autonomous review. The owner will create and upload the final video themselves; do not generate or upload one on their behalf.
 
 ## Submission profile
 
@@ -15,7 +15,7 @@ This is a draft kit for the Nebius × NVIDIA Global AI Hackathon submission. Fin
 
 The website and interactive browser test build are published on GitHub Pages.
 The test build executes a deterministic coupon fixture in JavaScript; it is not
-a public GPU/Nemotron service. A model-only connectivity check succeeded October 23. One October 24 controlled public-PR run generated and executed a model-written test, but ended [inconclusive](live-pr-attempt-2026-10-24.md); a complete autonomous PR verdict is still unverified.
+a public GPU/Nemotron service. A model-only connectivity check succeeded October 23. One October 24 controlled public-PR run generated and executed a model-written test but ended [inconclusive](live-pr-attempt-2026-10-24.md); a later run stopped at plan validation. A complete autonomous PR verdict is still unverified.
 The [credential-free full local judging build](judge-test-build.md) also runs the
 real interface/API/Docker executor with prewritten Python and Node fixtures.
 It requires Docker, not paid tokens; it is not live model/PR evidence.

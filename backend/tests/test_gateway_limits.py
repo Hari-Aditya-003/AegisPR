@@ -56,7 +56,7 @@ async def test_large_input_is_bounded_and_maximum_output_is_explicit(tmp_path):
     assert len(json.dumps(request["messages"]).encode()) <= 32_000
     assert request["max_tokens"] == 8192
     prompt = request["messages"][1]["content"]
-    assert "at most one test file" in prompt
+    assert "exactly one test file" in prompt
     assert "both old-code and new-code" in prompt
     assert "at most eight" in prompt
 
@@ -108,6 +108,30 @@ async def test_malformed_plan_gets_one_budgeted_correction_request(tmp_path):
         assert create.await_count == 2
         assert budget.summary("corrected")["calls"] == 2
         assert "invalid" in create.await_args.kwargs["messages"][1]["content"].lower()
+    finally:
+        current_run.reset(token)
+
+
+@pytest.mark.asyncio
+async def test_oversized_plan_correction_requests_one_test_object_with_imports(tmp_path):
+    gateway, create, budget = setup_gateway(tmp_path)
+    oversized = response()
+    payload = json.loads(oversized.choices[0].message.content)
+    payload["tests"] = [dict(payload["tests"][0], id=f"T{index}") for index in range(1, 9)]
+    oversized.choices[0].message.content = json.dumps(payload)
+    create.side_effect = [oversized, response()]
+    token = current_run.set("oversized")
+    try:
+        plan = await gateway.create_plan("diff", RepositoryProfile(languages=["Python"]), [])
+        assert len(plan.tests) == 1
+        assert create.await_count == 2
+        assert budget.summary("oversized")["calls"] == 2
+        first_prompt = create.await_args_list[0].kwargs["messages"][1]["content"]
+        correction = create.await_args_list[1].kwargs["messages"][1]["content"]
+        assert "tests array must contain exactly one object" in first_prompt
+        assert "exactly one test object" in correction
+        assert "single test_code" in correction
+        assert "imports" in correction
     finally:
         current_run.reset(token)
 
