@@ -61,8 +61,10 @@ class NebiusGateway:
         encoded = json.dumps(messages, ensure_ascii=False).encode("utf-8")
         if len(encoded) > 32_000:
             raise ValueError("Prompt exceeds the input budget; narrow the verification scope")
+        nemotron = self.model.lower().startswith("nvidia/") and "nemotron" in self.model.lower()
+        output_mode = "nemotron-prompt-json-no-reasoning-v2" if nemotron else "json-object-v1"
         fingerprint = hashlib.sha256(json.dumps(
-            [self.model, stage, messages, max_tokens, temperature, "json-v1"], sort_keys=True
+            [self.model, stage, messages, max_tokens, temperature, output_mode], sort_keys=True
         ).encode()).hexdigest()
         run_id = current_run.get()
         if self.budget:
@@ -74,10 +76,14 @@ class NebiusGateway:
         # than a chars/4 estimate. Provider prices/usage remain authoritative.
         ticket = self.budget.reserve(run_id, stage, self.model, len(encoded) + 4096, max_tokens) if self.budget else None
         try:
-            response = await self.client.chat.completions.create(
-                model=self.model, messages=messages, response_format={"type": "json_object"},
-                temperature=temperature, max_tokens=max_tokens,
-            )
+            request = dict(model=self.model, messages=messages, temperature=temperature, max_tokens=max_tokens)
+            if nemotron:
+                # The public model card does not advertise JSON mode; require JSON in the prompt
+                # without forcing that unsupported response format or spending hidden reasoning tokens.
+                request["reasoning_effort"] = "none"
+            else:
+                request["response_format"] = {"type": "json_object"}
+            response = await self.client.chat.completions.create(**request)
         except Exception as exc:
             status = getattr(exc, "status_code", None)
             if ticket:
