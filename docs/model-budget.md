@@ -2,7 +2,7 @@
 
 ## What is verified
 
-Catalog availability and API authentication are verified. A bounded model-only JSON completion succeeded on October 23 after credits were added; see the [dated receipt](live-nebius-check.md). That does not establish model quality on PRs. Do not report an output-quality score, latency comparison, successful model-generated repair, or a winning model until a measured acceptance run exists.
+Catalog availability and API authentication are verified. A bounded model-only completion succeeded on October 23 after credits were added; see the [dated receipt](live-nebius-check.md). A later [controlled-PR attempt](live-pr-attempt-2026-10-24.md) generated and executed one Nemotron-written example but ended `INCONCLUSIVE`; the saved example's offline replay found a stable output difference. Neither establishes model quality on PRs. Do not report an output-quality score, latency comparison, successful model-generated repair, or a winning model until a measured acceptance run exists.
 
 The default changed from Ultra to `nvidia/Nemotron-3_5-Lightning` as a lower-cost evaluation candidate. The application does not automatically fan out to every model or escalate to a more expensive model. Using every catalog model is neither a correctness test nor a hackathon requirement.
 
