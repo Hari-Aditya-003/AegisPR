@@ -21,4 +21,11 @@ The fourth run's generated Python file was an assertionless top-level example ra
 
 An operator replayed the **already-generated** test from run `4751e57c-dfdf-408a-87cc-cbae27328105` against the exact base and PR commits in the fixed Docker sandbox. The example called `apply_coupon(5, 8)` and printed a labeled JSON observation. All three base executions passed with exit 0 and value `0`; all three PR executions passed with exit 0 and value `-3`. The output difference was stable across these three attempts on each commit. Provider call count stayed at nine before and after replay.
 
+The saved generated expression printed the same result into fields named `base` and `pr` **within each branch**; those field names are not a cross-branch comparison. The actual comparison was between separate Docker executions on the two immutable commits:
+
+```text
+base stdout: AEGISPR_OUTPUT={"base": 0, "pr": 0}    status=PASSED exit=0 (3/3)
+head stdout: AEGISPR_OUTPUT={"base": -3, "pr": -3} status=PASSED exit=0 (3/3)
+```
+
 This is manually initiated, offline Docker replay of a live-model-generated example. It proves a stable **behavior change in the controlled fixture**, not an autonomous `REGRESSION_FOUND` product verdict, a human-confirmed unintended change, a verified repair, or a real-world benchmark. The original live run remains `INCONCLUSIVE`. A new paid end-to-end attempt would require separate owner approval; do not silently retry it or quote the replay as a successful live review.
