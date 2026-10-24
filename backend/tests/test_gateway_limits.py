@@ -62,7 +62,7 @@ async def test_large_input_is_bounded_and_maximum_output_is_explicit(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_nemotron_does_not_force_unsupported_json_mode_or_hidden_reasoning(tmp_path):
+async def test_nemotron_does_not_force_unadvertised_json_mode_or_hidden_reasoning(tmp_path):
     gateway, create, _ = setup_gateway(tmp_path)
     await gateway.create_plan("diff", RepositoryProfile(), [])
     request = create.call_args.kwargs

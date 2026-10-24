@@ -79,7 +79,7 @@ class NebiusGateway:
             request = dict(model=self.model, messages=messages, temperature=temperature, max_tokens=max_tokens)
             if nemotron:
                 # The public model card does not advertise JSON mode; require JSON in the prompt
-                # without forcing that unsupported response format or spending hidden reasoning tokens.
+                # without forcing an unadvertised response format or spending hidden reasoning tokens.
                 request["reasoning_effort"] = "none"
             else:
                 request["response_format"] = {"type": "json_object"}
