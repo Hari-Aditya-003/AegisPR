@@ -65,6 +65,45 @@ The recording shows the public site, an interactive browser-only coupon boundary
 
 Sampled frames at roughly 0, 12, 24, 36, 39, 48, 60, 72, 75 and 84 seconds were visually inspected for those labels and visible secrets; no access code or provider key was seen in those samples. This is **sampled inspection, not an exhaustive frame-by-frame privacy audit**. The recorder's request allowlist permits only fixed GET evidence surfaces, rejects model/budget/write endpoints and WebSockets, and injects the local app access code privately into session storage rather than typing or captioning it. Its nine guard tests passed. The user still owns the final public video and should review this draft before using any footage.
 
+## October 25 real-time controlled-PR recording
+
+The owner requested footage of a real-time PR verification. A private, Git-ignored
+draft is at `artifacts/demo/aegispr-live-and-earlier-evidence-2026-10-25.webm`.
+It is **88.72 seconds**, VP8 at **1280×720 and 25 fps**, 10,926,621 bytes;
+SHA-256 `f62447bc9ce1eb67b3b0f99d5af36fc0830110f489af74af995537eaabc5d6db`.
+It has English on-screen captions and no narration. It is not uploaded or the
+owner's final submission video.
+
+The first 55.68 seconds show a **new live full-app run**
+`e7a3772e-7317-483e-bcea-f7377d0f7653` on the deliberately seeded public
+PR. The operator discovered and rehearsed the browser selectors against an
+existing result without submitting or spending credits, then made exactly one
+UI submission while recording. The app ingested the PR, ranked context on the
+Dell CUDA worker, made **one new Nemotron-3_5-Lightning call**, and executed a
+generated test on base and head in Docker. It reported `INCONCLUSIVE`, with
+one `INCONCLUSIVE` finding, no intent votes and no confirmation reruns. New
+usage was 1,024 input and 551 output tokens, **$0.000194 app-estimated**. The
+persistent ledger moved from 15 calls / $0.005130 to 16 calls / $0.005324
+app-estimated. These are not provider billing or remaining-credit statements.
+
+The new generated Python test did **not** call the changed function. Instead,
+it printed hard-coded old/new formulas, producing identical stdout on the
+two branches. This run did **not** prove a behavior change or regression.
+The footage must not be clipped to imply that it did. The second scene is
+explicitly labeled as an **earlier, separate controlled-PR run**
+`6d6a108f-3b98-482c-9aeb-cc6494180c55`. That run had an actual stable
+branch-output change and three advisory model intent votes, but its overall
+status was also `INCONCLUSIVE` pending human assessment. The second scene is
+read-only and made no new provider call. This is not a real-world accuracy
+benchmark, Nebius-hosted GPU run or confirmed autonomous regression verdict.
+
+`ffprobe` checked the composite's dimensions, frame rate, duration and size.
+Frames sampled across the opening, live timeline, result, earlier finding,
+branch execution and ending were visually inspected. The private access code
+and provider key were not visible in those samples. This is **sampled review,
+not exhaustive frame-by-frame security inspection**. The raw live and earlier
+clips, local recorder and JSON receipt remain under ignored `artifacts/demo/`.
+
 ## Before final submission
 
-For the final submission, show the dated live Nemotron call and controlled-PR result with their exact limits; do not present this fixture walkthrough as fresh inference or a confirmed autonomous regression verdict. Review every frame for secrets, misleading labels and unsupported claims; verify duration, English content, public viewing and current organizer video requirements. The owner has said they will prepare and upload the final video themselves. A local WebM or GitHub Pages link is not automatically a valid replacement for that field.
+For the final submission, show the dated live Nemotron call and controlled-PR results with their exact limits. Do not present the fixture walkthrough as fresh inference, or the newer inconclusive live take as a confirmed regression. Review every frame for secrets, misleading labels and unsupported claims; verify duration, English content, public viewing and current organizer video requirements. The owner has said they will prepare and upload the final video themselves. A local WebM or GitHub Pages link is not automatically a valid replacement for that field.
