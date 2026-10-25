@@ -32,6 +32,12 @@ test('public browser fixture accurately separates its scope from dated live evid
   assert.doesNotMatch(demo, /blocked by unavailable account credits/i);
 });
 
+test('landing and browser fixture link to the read-only controlled PR evidence', () => {
+  const demo = readFileSync(new URL('../dist/demo/index.html', import.meta.url), 'utf8');
+  assert.match(html, /href="\.\/evidence\/"/);
+  assert.match(demo, /href="\.\.\/evidence\/"/);
+});
+
 test('guide controller selects one panel and exposes its state to assistive technology', async () => {
   const { bindGuide } = await import('../dist/guide.mjs');
   const buttons = ['browser', 'local', 'live'].map(path => ({
