@@ -308,6 +308,67 @@ def test_generated_python_run_targets_the_exact_file(tmp_path: Path, monkeypatch
     assert result.environment["generated_test_path"] == "tests/helper.py"
 
 
+@pytest.mark.parametrize("repair", [False, True])
+def test_generated_test_uses_new_sibling_when_repository_file_exists(
+    tmp_path: Path, monkeypatch, repair: bool,
+) -> None:
+    original = tmp_path / "tests" / "test_coupon.py"
+    original.parent.mkdir()
+    original.write_text("def test_existing(): assert True\n")
+    calls: list[list[str]] = []
+    mock_processes(monkeypatch, lambda args, **kwargs: (
+        calls.append(args) or subprocess.CompletedProcess(args, 0, "passed", "")
+    ))
+    profile = RepositoryProfile(languages=["Python"], install_command="pip install .", test_command="pytest -q")
+    sandbox = DockerSandbox(5, "128m", 1)
+    proposed = generated("tests/test_coupon.py")
+
+    if repair:
+        result = sandbox.verify_repair(tmp_path, "a" * 40, profile, proposed)[1].execution
+    else:
+        result = sandbox.execute(tmp_path, "a" * 40, "base", profile, proposed)
+
+    assert result.status.value == "PASSED"
+    assert original.read_text() == "def test_existing(): assert True\n"
+    siblings = list(original.parent.glob("aegispr_*_test_coupon.py"))
+    assert len(siblings) == 1
+    assert siblings[0].read_text() == proposed.test_code
+    command = next(args for args in calls if args[:2] == ["docker", "run"])[-1]
+    if not repair:
+        assert command.endswith(f"; python -m pytest -q -- tests/{siblings[0].name}")
+        assert result.environment["generated_test_path"] == f"tests/{siblings[0].name}"
+
+
+def test_generated_node_test_keeps_runner_filename_when_repository_file_exists(
+    tmp_path: Path, monkeypatch,
+) -> None:
+    original = tmp_path / "tests" / "coupon.test.js"
+    original.parent.mkdir()
+    original.write_text("test('existing', () => {});\n")
+    calls: list[list[str]] = []
+    mock_processes(monkeypatch, lambda args, **kwargs: (
+        calls.append(args) or subprocess.CompletedProcess(args, 0, "passed", "")
+    ))
+    profile = RepositoryProfile(
+        languages=["JavaScript"], install_command="npm ci", test_command="npx vitest run",
+        test_framework="vitest",
+    )
+    proposed = generated("tests/coupon.test.js")
+    proposed.framework = "vitest"
+    proposed.test_command = "npx vitest run"
+    proposed.test_code = "test('generated', () => {});"
+
+    result = DockerSandbox(5, "128m", 1).execute(tmp_path, "a" * 40, "head", profile, proposed)
+
+    assert result.status.value == "PASSED"
+    assert original.read_text() == "test('existing', () => {});\n"
+    siblings = list(original.parent.glob("aegispr_*_coupon.test.js"))
+    assert len(siblings) == 1
+    assert siblings[0].read_text() == proposed.test_code
+    command = next(args for args in calls if args[:2] == ["docker", "run"])[-1]
+    assert f"vitest run --maxWorkers=1 --passWithNoTests=false tests/{siblings[0].name}" in command
+
+
 def test_repository_dockerignore_cannot_hide_generated_test(tmp_path: Path, monkeypatch) -> None:
     (tmp_path / ".dockerignore").write_text("tests/\n")
     calls = []
