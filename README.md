@@ -2,23 +2,45 @@
 
 Don't trust a PR. Prove it.
 
-AegisPR is an autonomous evidence-backed pull request verification agent powered by NVIDIA Nemotron on Nebius Token Factory. It analyzes a code change, names concrete risks, generates targeted adversarial tests, executes the same test against the base and pull request commits, and reports whether the change introduced a reproducible regression.
+AegisPR is an evidence-backed pull request verification agent powered by NVIDIA Nemotron on Nebius Token Factory. It analyzes a code change, proposes targeted tests, executes the same test against the base and pull request commits, and reports what the resulting evidence supports—including when the answer is inconclusive.
 
-Project website: [hari-aditya-003.github.io/AegisPR](https://hari-aditya-003.github.io/AegisPR/).
+## Hackathon submission and judging
+
+**Track:** Best Apps and Agents. **Source:** this public repository. **License:** [MIT](LICENSE). The [official rules](https://nebiusglobalaihackathon.devpost.com/rules) require a working project using an NVIDIA open model through Nebius Token Factory or Nebius AI Cloud, public licensed source with setup instructions, a working demo/hosted app/test build, a project description, a public YouTube demonstration shorter than three minutes, and free judge access through the judging period. The project uses **Token Factory**, not Nebius AI Cloud. The published submission deadline is **October 30, 2026, 10:00 a.m. PDT**; the judging period ends **December 15, 2026**. This README and the [submission kit](docs/hackathon-submission.md) distinguish completed evidence from submission items still owned by the entrant.
+
+| What to inspect | Access and evidence | Limit |
+| --- | --- | --- |
+| Project website and usage guide | [AegisPR website](https://hari-aditya-003.github.io/AegisPR/) | Explains the product; does not run the private backend. |
+| Immediate working test build | [Interactive coupon experiment](https://hari-aditya-003.github.io/AegisPR/demo/) | Free, no account or tokens; fixed JavaScript example, not arbitrary PR or model inference. |
+| Actual controlled-PR evidence | [Read-only run viewer](https://hari-aditya-003.github.io/AegisPR/evidence/) and [dated receipt](docs/live-pr-continuation-2026-10-25.md) | One deliberately seeded public PR; live-model intent votes are advisory and the overall result was `INCONCLUSIVE`. |
+| Reproducible full local interface/API/executor | [Linux/Docker judging build](docs/judge-test-build.md) | Real Docker execution of **prewritten** Python/Node tests and manual repairs, with zero model calls, no GPU and no provider credentials. Run only on a trusted machine with Docker-socket access. |
+| Full live PR workflow | [Private deployment instructions below](#quick-start) | Requires a server-side Nebius key, usable credits, Docker and an authenticated deployment. The Dell production instance is not a public judge URL. |
+
+The final public YouTube demonstration is **not yet linked here**. The entrant is preparing and uploading it; the local [96.8-second captioned draft](docs/demo-recording.md) is private and predates the latest live intent-review calls. Do not treat that draft or the browser fixture as footage of a live model-generated PR verdict. Before submitting, the entrant must verify that the video shows the working project truthfully, is publicly viewable on YouTube and shorter than three minutes; keep the free test build accessible through the judging period. Devpost also requires honest platform/model feedback, personal eligibility and ownership declarations, permission for third-party material, English-language materials or translations, and an explanation of significant updates if the project predates the submission period. No prize, track eligibility or judging outcome is guaranteed.
 
 New here? Follow the [How to use guide](https://hari-aditya-003.github.io/AegisPR/#how-to-use) for the browser experiment, token-free local Docker build, or live PR setup. See the [website design and validation notes](docs/website-design.md).
 
-Public interactive test build: [Try the coupon-boundary experiment](https://hari-aditya-003.github.io/AegisPR/demo/). This browser test build demonstrates deterministic base/change/repair comparisons. It does not analyze arbitrary PRs or run cloud inference. An October 23 bounded Nemotron connectivity request succeeded after credits were added; it was not a full PR review. See the [dated receipt](docs/live-nebius-check.md).
+An October 23 bounded Nemotron connectivity request succeeded after credits were added; it was not a full PR review. See the [dated receipt](docs/live-nebius-check.md).
 
 The Dell's CUDA ranking worked in [dated October 19](docs/gpu-recovery-2026-10-19.md) and [October 24](docs/gpu-recovery-2026-10-24.md) checks. An intervening October 23 health check found missing NVIDIA userspace libraries. In the [October 25 continuation](docs/live-pr-continuation-2026-10-25.md), a saved Nemotron-generated test ran on both commits of a controlled public PR in Docker; two confirmation reruns per side reproduced a behavior change. Three fresh Nemotron intent reviews unanimously called it unintended, but their votes are advisory and the product result remained `INCONCLUSIVE`. [Inspect the public evidence summary](https://hari-aditya-003.github.io/AegisPR/evidence/). This is not an independent benchmark or confirmed regression.
 
-For a credential-free full local test build, run `bash scripts/judge-test-build.sh start` from a Linux checkout with Docker. It launches the real interface/API and records actual Docker checks for fixed Python and Node fixtures. Read the [judging build instructions and explicit limitations](docs/judge-test-build.md): tests and manual repairs are prewritten, not generated by Nemotron.
+For a credential-free full local test build, use a trusted Linux machine with Git, Bash, OpenSSL and Docker Engine + Compose:
+
+```bash
+git clone https://github.com/Hari-Aditya-003/AegisPR.git
+cd AegisPR
+bash scripts/judge-test-build.sh start
+```
+
+The command prints local report URLs and creates a private access code at `artifacts/judge/access-code`. Enter that code in the report page's **Private deployment access** panel; never publish it. This separate build launches the real interface/API and records actual Docker checks for fixed Python and Node fixtures. When finished, run `bash scripts/judge-test-build.sh stop`. Read the [judging build instructions and explicit limitations](docs/judge-test-build.md): tests and manual repairs are prewritten, not generated by Nemotron. The judging build uses no Nebius key, provider credits or GPU.
 
 A [rehearsed capability-recording workflow](docs/demo-recording.md) can produce a captioned draft without model calls. It clearly separates the browser illustration, saved Docker evidence and current local GPU health; it is not the final live-model submission demonstration.
 
 ## Why AegisPR
 
 AI review usually returns an opinion. AegisPR turns a claim into an experiment:
+
+For example, a reviewer of an AI-written pricing change can run the same coupon inputs on the base and proposed versions before merging. If the outputs differ, the report shows the exact commits, test command and values so a person can decide whether the change matches the intended contract. This is useful even when the tool cannot safely call the difference a regression.
 
 ```text
 CLAIM → HYPOTHESIS → TEST → BASE + PR EXECUTION → EVIDENCE → CONCLUSION
@@ -33,7 +55,7 @@ The core result matrix is deterministic:
 | Pass | Pass | No failure reproduced |
 | Fail | Pass | Possible improvement |
 
-The newer output-example path compares labeled JSON observations instead of guessed assertions. A stable difference is rerun twice per commit, then may receive a three-vote **advisory** intent review; it is not automatically called a regression. The controlled October 25 PR run exercised those comparison and voting paths with live Nemotron intent calls. A bounded Python changed-line mutant can measure whether a test detects one deliberate fault; that mutation path is locally tested but was not exercised in this run. See the [research workflow and evidence limits](docs/workflow-research-implementation.md).
+The newer output-example path compares labeled JSON observations instead of guessed assertions. A stable difference is rerun twice per commit, then may receive a three-vote **advisory** intent review; it is not automatically called a regression. The controlled October 25 PR run exercised those comparison and voting paths with live Nemotron intent calls. A bounded Python changed-line mutant can measure whether a test detects one deliberate fault; that mutation path is locally tested but was not exercised in this run. Other implemented but separately scoped checks include pre-push CLI verification, opt-in time/memory screening, heuristic security/API-signature signals and bounded caller-supplied CUDA-output comparison. They are not claims of comprehensive vulnerability or kernel verification. See the [research workflow and evidence limits](docs/workflow-research-implementation.md).
 
 The [research-feature audit](docs/FEATURE_AUDIT.md) lists what is implemented and what remains. A [12-case seeded evaluation dataset](evals/seeded-prs/README.md) provides executable synthetic base/head examples with hand labels; it is **not** a real-PR benchmark or a measured model accuracy result.
 
@@ -78,7 +100,7 @@ Start with the [complete project documentation](docs/PROJECT_DOCUMENTATION.md). 
 
 ## Quick start
 
-Requirements:
+Requirements for the **live private deployment** (the public browser experiment and keyless judging build above have different requirements):
 
 - Docker 29+ with Compose
 - NVIDIA driver and NVIDIA Container Toolkit on the GPU host
@@ -87,14 +109,17 @@ Requirements:
 
 ```bash
 cp .env.example .env
-# Add NEBIUS_API_KEY; replace GPU_WORKER_TOKEN and API_ACCESS_TOKEN
-# with separate random secrets. Example generator: openssl rand -hex 32
+# Add NEBIUS_API_KEY and replace GPU_WORKER_TOKEN and API_ACCESS_TOKEN
+# with different random secrets. Example generator: openssl rand -hex 32
+# For a local browser, set PUBLIC_API_URL=http://localhost:8000 and
+# ALLOWED_ORIGINS=http://localhost:3000 in .env before building.
+# On Linux, set DOCKER_GID to the group ID of /var/run/docker.sock.
 docker compose up --build -d
 docker compose ps
 curl http://localhost:8000/health
 ```
 
-Open `http://localhost:3000`, save the private deployment access code (your `API_ACCESS_TOKEN`, never the provider key), paste a public GitHub pull request URL, and select **Verify PR**. The code is kept only in that tab's session storage. Use HTTPS for any internet-accessible deployment; private Tailscale transport is encrypted but not a public judge URL.
+The checked-in `.env.example` contains the existing Dell Tailscale frontend/API origins and a sample Docker-socket group ID; copying it unchanged does **not** configure a fresh local host. Use the local values noted above or your own trusted HTTPS origin, and verify your Docker-socket group ID. Open `http://localhost:3000`, save the private deployment access code (your `API_ACCESS_TOKEN`, never the provider key), paste a public GitHub pull request URL, and select **Verify PR**. The code is kept only in that tab's session storage. Use HTTPS for any internet-accessible deployment; private Tailscale transport is encrypted but not a public judge URL. Docker-socket access is host-equivalent authority: do not expose this PR execution service to arbitrary public users.
 
 The Compose default is `nvidia/Nemotron-3_5-Lightning` through the OpenAI-compatible endpoint `https://api.tokenfactory.nebius.com/v1/`. This lowers estimated token cost versus Ultra; output quality still needs a live benchmark. The public and authenticated catalogs list this exact ID. A successful model-list request does not confirm inference credits; an actual completion must also succeed. Read the [model and $25 budget policy](docs/model-budget.md) before enabling paid calls.
 
@@ -138,8 +163,12 @@ npm run dev
 Tests:
 
 ```bash
+# From the repository root after installing backend and frontend dependencies;
+# install Playwright Chromium for browser checks.
 make test
 ```
+
+The [CI workflow](.github/workflows/ci.yml) also runs backend, frontend, GPU-worker fallback, security, CLI Docker acceptance and a keyless full-stack judging build. The [October 25 run](https://github.com/Hari-Aditya-003/AegisPR/actions/runs/40173554976) passed all six jobs: 237 backend tests (88.85% coverage), 33 frontend tests, seven standard browser tests and four real judging-build browser checks; the public website's 25 tests passed in its [deployment workflow](https://github.com/Hari-Aditya-003/AegisPR/actions/runs/40173554839). These tests include mocks and fixed fixtures where labeled; CI does not prove live paid inference or GPU CUDA availability on every host.
 
 ## API
 
@@ -172,6 +201,7 @@ Repair requests are accepted only for a confirmed differential regression. A pat
 | `PUBLIC_API_URL` | Production | Browser-visible FastAPI URL used at frontend build time |
 | `ALLOWED_ORIGINS` | Production | Exact comma-separated frontend origins |
 | `DOCKER_GID` | Dell host | Group ID allowed to access the Docker socket |
+| `BACKEND_PORT` | No | Host port for FastAPI, default `8000` |
 
 ## Verification statuses
 
@@ -187,11 +217,13 @@ Repair requests are accepted only for a confirmed differential regression. A pat
 
 A successful AegisPR verification does not prove that software contains no defects or security vulnerabilities. It reports the evidence produced by the specific analyses and tests executed during that verification run.
 
-## Hackathon fit
+## NVIDIA model, Nebius service and hackathon fit
 
-AegisPR integrates NVIDIA Nemotron through Nebius Token Factory for risk planning, test generation, root-cause analysis, and repair proposals. The economical Lightning model is the current default; Ultra remains an explicitly configured comparison option. Token Factory's hosted, OpenAI-compatible API avoids serving a large reasoning model on the 4 GB Dell GPU. A [dated controlled-PR run](docs/live-pr-continuation-2026-10-25.md) reused a saved Nemotron plan and made three fresh intent-review calls after real base/head Docker execution. The final product status was `INCONCLUSIVE`. Independent PR quality, comparative model accuracy and comparative latency remain unmeasured. No speedup is claimed.
+AegisPR makes runtime requests to Nebius Token Factory's OpenAI-compatible inference API using the NVIDIA open model **`nvidia/Nemotron-3_5-Lightning`**. It uses the model for bounded risk/test planning, generated usage examples, advisory intent review and optional repair proposals; deterministic Git/Docker execution supplies the actual branch results. Token Factory lets this workflow call a hosted model without deploying or maintaining a large model on the 4 GB Dell GPU. Exact-response caching and app-side admission estimates conserve the limited credits. This is an **engineering workflow benefit, not a measured speedup**. Lightning was selected as a lower-cost candidate, not proven the best model; Ultra is an explicit configuration option, not a model used in the dated acceptance run.
 
-The Dell RTX 3050 Ti independently runs the verified CuPy/CUDA context-ranking workload. Real Docker fixture testing produced baseline PASS, changed code FAIL, and manually repaired code PASS. The Dell is local infrastructure, not a Nebius cloud GPU instance. See [live deployment evidence](docs/live-stack-evidence.md).
+The [dated controlled-PR run](docs/live-pr-continuation-2026-10-25.md) reused a previously generated Lightning test plan, executed the test on both commits and made three fresh Lightning intent-review calls. The stable output difference was `BEHAVIOR_CHANGE`; the final product status remained `INCONCLUSIVE` because model intent votes alone do not confirm a regression. New calls cost **$0.000172 app-estimated**, and the persistent ledger showed **$0.005130 app-estimated lifetime use** afterward; neither figure is a provider invoice or a verified account balance. Independent real-PR quality, comparative model accuracy and comparative latency remain unmeasured. No speedup is claimed. See the [budget policy](docs/model-budget.md) and [public evidence page](https://hari-aditya-003.github.io/AegisPR/evidence/).
+
+The Dell RTX 3050 Ti independently runs the verified CuPy/CUDA context-ranking workload. Real Docker fixture testing produced baseline PASS, changed code FAIL, and manually repaired code PASS. The Dell is **local infrastructure**, not a Nebius AI Cloud GPU instance or a Token Factory Sandbox. No Nebius AI Cloud service, Tavily runtime integration or cloud GPU benchmark is claimed. See [live deployment evidence](docs/live-stack-evidence.md).
 
 ## Free public hosting
 
