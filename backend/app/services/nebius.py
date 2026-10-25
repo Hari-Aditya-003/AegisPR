@@ -214,9 +214,13 @@ hypotheses array must contain exactly one object and the tests array must contai
 Do not create a separate test object for each input; put all examples in the single test_code.
 Include explicit imports for the changed functions and any JSON helpers used by that code. Cover
 both old-code and new-code failure angles: inputs that challenge the old implementation
-and inputs that challenge the new implementation. Use at most eight
+and inputs that challenge the new implementation. Use at most four
 labeled normal and edge-case inputs total. Deduplicate inputs. Keep the entire
 JSON response compact; do not add prose or duplicate code across cases.
+For Python, test_code must be valid Python source after JSON parsing. Encode
+line breaks once in JSON; do not leave literal backslash-n sequences in the
+decoded code or double-escape quotation marks. Use simple statements rather
+than exception branches unless an exception is essential to the hypothesis.
 Prefer assertionless usage examples: invoke changed public behavior with the same inputs on both
 commits and print exactly one JSON-serializable value per case as AEGISPR_OUTPUT=<json>, with
 no assertions. Python pytest should use print('AEGISPR_OUTPUT=' + json.dumps(value)); JavaScript
@@ -273,7 +277,9 @@ UNTRUSTED REPOSITORY CONTEXT BEGIN\n{repository_context}\nUNTRUSTED REPOSITORY C
                         f"Validation error: {str(exc)[:250]}\n"
                         "Return exactly one hypothesis object and exactly one test object. "
                         "Combine all labeled cases inside the single test_code, and include the imports "
-                        "needed to call changed functions. Do not return one test object per input.\n"
+                        "needed to call changed functions. Do not return one test object per input. "
+                        "For Python, the decoded test_code must have valid Python syntax with actual "
+                        "line breaks, not literal backslash-n sequences or double-escaped quotes.\n"
                         f"Original task:\n{bounded_text(prompt, 16_000)}"
                     )},
                 ]
@@ -297,6 +303,13 @@ UNTRUSTED REPOSITORY CONTEXT BEGIN\n{repository_context}\nUNTRUSTED REPOSITORY C
             raise InvalidPlanOutput("Nemotron plan references were invalid or duplicated")
         changed_python = _changed_python_modules(diff)
         for test in tests:
+            if test.file_path.endswith(".py"):
+                try:
+                    ast.parse(test.test_code)
+                except SyntaxError:
+                    raise InvalidPlanOutput(
+                        "Generated Python test_code has invalid Python syntax after decoding"
+                    ) from None
             if test.mode == "output" and changed_python and test.file_path.endswith(".py"):
                 if not _python_output_uses_changed_result(test.test_code, changed_python):
                     raise InvalidPlanOutput(
