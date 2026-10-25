@@ -1,4 +1,5 @@
 import json
+import ast
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
@@ -236,5 +237,35 @@ async def test_output_plan_calling_changed_python_function_needs_no_correction(t
         assert plan.tests[0].mode == "output"
         assert create.await_count == 1
         assert budget.summary("valid-output-example")["calls"] == 1
+    finally:
+        current_run.reset(token)
+
+
+@pytest.mark.asyncio
+async def test_correction_accepts_parseable_code_with_literal_escaped_newlines(tmp_path):
+    gateway, create, budget = setup_gateway(tmp_path)
+    oversized = response()
+    correction = response()
+    oversized_payload = json.loads(oversized.choices[0].message.content)
+    oversized_payload["tests"] = [dict(oversized_payload["tests"][0], id=f"T{index}") for index in range(1, 5)]
+    oversized.choices[0].message.content = json.dumps(oversized_payload)
+    corrected_payload = json.loads(correction.choices[0].message.content)
+    intended_code = (
+        'import json\nfrom coupon import apply_coupon\n'
+        'value = apply_coupon(50, 100)\n'
+        'print("AEGISPR_OUTPUT=" + json.dumps({"case": "over", "output": value}))\n'
+    )
+    corrected_payload["tests"][0].update(
+        mode="output", test_code=intended_code.replace("\n", "\\n").replace('"', '\\"')
+    )
+    correction.choices[0].message.content = json.dumps(corrected_payload)
+    create.side_effect = [oversized, correction]
+    token = current_run.set("escaped-correction")
+    try:
+        plan = await gateway.create_plan("diff --git a/coupon.py b/coupon.py\n", RepositoryProfile(), [])
+        assert plan.tests[0].test_code == intended_code
+        ast.parse(plan.tests[0].test_code)
+        assert create.await_count == 2
+        assert budget.summary("escaped-correction")["calls"] == 2
     finally:
         current_run.reset(token)
