@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
+import re
 from dataclasses import dataclass
+from pathlib import PurePosixPath
 
 from openai import AsyncOpenAI
 
@@ -28,6 +31,62 @@ def bounded_text(text: str, limit: int) -> str:
     if len(encoded) <= limit:
         return text
     return encoded[:limit].decode("utf-8", errors="ignore") + "\n[context truncated to budget]"
+
+
+def _changed_python_modules(diff: str) -> set[str]:
+    paths = re.findall(r"^diff --git a/(.+?) b/(.+)$", diff, flags=re.MULTILINE)
+    return {
+        PurePosixPath(after).stem
+        for before, after in paths
+        if before == after and after.endswith(".py") and PurePosixPath(after).stem != "__init__"
+    }
+
+
+def _python_output_uses_changed_result(code: str, changed_modules: set[str]) -> bool:
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return False
+    imported_names: set[str] = set()
+    module_aliases: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module and node.module.split(".")[-1] in changed_modules:
+            imported_names.update(alias.asname or alias.name for alias in node.names if alias.name != "*")
+        elif isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name.split(".")[-1] in changed_modules:
+                    module_aliases.add(alias.asname or alias.name.split(".")[0])
+
+    def changed_call(node: ast.AST) -> bool:
+        if not isinstance(node, ast.Call):
+            return False
+        function = node.func
+        if isinstance(function, ast.Name):
+            return function.id in imported_names
+        while isinstance(function, ast.Attribute):
+            function = function.value
+        return isinstance(function, ast.Name) and function.id in module_aliases
+
+    derived_names: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Assign, ast.AnnAssign)) and any(changed_call(child) for child in ast.walk(node.value)):
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+            derived_names.update(child.id for target in targets for child in ast.walk(target) if isinstance(child, ast.Name))
+
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "print"):
+            continue
+        contents = [child for arg in node.args for child in ast.walk(arg)]
+        marker = any(isinstance(child, ast.Constant) and isinstance(child.value, str)
+                     and "AEGISPR_OUTPUT=" in child.value for child in contents)
+        serialized = any(isinstance(child, ast.Call) and isinstance(child.func, ast.Attribute)
+                         and isinstance(child.func.value, ast.Name)
+                         and child.func.value.id == "json" and child.func.attr == "dumps" for child in contents)
+        observed = any(changed_call(child) or isinstance(child, ast.Name) and child.id in derived_names
+                       for child in contents)
+        if marker and serialized and observed:
+            return True
+    return False
 
 
 class VerificationPlan:
@@ -138,6 +197,9 @@ no assertions. Python pytest should use print('AEGISPR_OUTPUT=' + json.dumps(val
 Vitest/Jest should use console.log('AEGISPR_OUTPUT=' + JSON.stringify(value)). Avoid timestamps,
 randomness, network calls, and nondeterministic object ordering. Print a JSON object with stable
 case and output keys so corresponding observations have the same order on both commits.
+Never calculate or print simulated old/new formulas in the test: the same test file runs separately
+on both commits. For a changed Python module, import and call its changed function, then serialize
+the actual returned value. Do not print hard-coded expected values or old_output/new_output pairs.
 Mark such tests mode="output".
 Only use mode="assertion" when an objective expected result is known from repository contracts.
 Prioritize testable authentication, authorization, input validation, data-exposure, and public API
@@ -172,7 +234,7 @@ UNTRUSTED REPOSITORY CONTEXT BEGIN\n{repository_context}\nUNTRUSTED REPOSITORY C
                     max_tokens=8192 if attempt == 0 else 4096,
                     temperature=0.2 if attempt == 0 else 0.1,
                 )
-                return self._validate_plan_payload(payload)
+                return self._validate_plan_payload(payload, diff)
             except (MalformedModelOutput, InvalidPlanOutput) as exc:
                 if attempt == 1:
                     raise
@@ -191,7 +253,7 @@ UNTRUSTED REPOSITORY CONTEXT BEGIN\n{repository_context}\nUNTRUSTED REPOSITORY C
                 ]
         raise InferenceUnavailable("Plan correction did not complete")
 
-    def _validate_plan_payload(self, payload: dict) -> VerificationPlan:
+    def _validate_plan_payload(self, payload: dict, diff: str) -> VerificationPlan:
         if not payload.get("hypotheses") or not payload.get("tests"):
             raise InvalidPlanOutput("Nemotron returned an empty verification plan")
         if not isinstance(payload.get("hypotheses"), list) or not isinstance(payload.get("tests"), list):
@@ -207,6 +269,13 @@ UNTRUSTED REPOSITORY CONTEXT BEGIN\n{repository_context}\nUNTRUSTED REPOSITORY C
         if (len(hypothesis_ids) != len(hypotheses) or len({item.id for item in tests}) != len(tests)
                 or any(item.hypothesis_id not in hypothesis_ids for item in tests)):
             raise InvalidPlanOutput("Nemotron plan references were invalid or duplicated")
+        changed_python = _changed_python_modules(diff)
+        for test in tests:
+            if test.mode == "output" and changed_python and test.file_path.endswith(".py"):
+                if not _python_output_uses_changed_result(test.test_code, changed_python):
+                    raise InvalidPlanOutput(
+                        "Output example must call a changed Python function and serialize that result"
+                    )
         return VerificationPlan(hypotheses, tests, self.model)
 
     async def analyze_root_cause(self, finding: Finding | None) -> str | None:
