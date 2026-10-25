@@ -69,7 +69,9 @@ async def test_large_input_is_bounded_and_maximum_output_is_explicit(tmp_path):
     prompt = request["messages"][1]["content"]
     assert "exactly one test file" in prompt
     assert "both old-code and new-code" in prompt
-    assert "at most eight" in prompt
+    assert "at most four" in prompt
+    assert "valid Python source" in prompt
+    assert "literal backslash-n" in prompt
 
 
 @pytest.mark.asyncio
@@ -277,5 +279,34 @@ async def test_correction_accepts_parseable_code_with_literal_escaped_newlines(t
         ast.parse(plan.tests[0].test_code)
         assert create.await_count == 2
         assert budget.summary("escaped-correction")["calls"] == 2
+    finally:
+        current_run.reset(token)
+
+
+@pytest.mark.asyncio
+async def test_invalid_python_syntax_gets_specific_correction_feedback(tmp_path):
+    gateway, create, _ = setup_gateway(tmp_path)
+    malformed = response()
+    corrected = response()
+    malformed_payload = json.loads(malformed.choices[0].message.content)
+    corrected_payload = json.loads(corrected.choices[0].message.content)
+    malformed_payload["tests"][0].update(mode="output", test_code=(
+        "import json\\nfrom coupon import apply_coupon\\n"
+        "print('AEGISPR_OUTPUT=' + json.dumps({'output': apply_coupon(50, 100)))"
+    ))
+    corrected_payload["tests"][0].update(mode="output", test_code=(
+        "import json\nfrom coupon import apply_coupon\n"
+        "print('AEGISPR_OUTPUT=' + json.dumps({'output': apply_coupon(50, 100)}))\n"
+    ))
+    malformed.choices[0].message.content = json.dumps(malformed_payload)
+    corrected.choices[0].message.content = json.dumps(corrected_payload)
+    create.side_effect = [malformed, corrected]
+    token = current_run.set("invalid-python-syntax")
+    try:
+        plan = await gateway.create_plan("diff --git a/coupon.py b/coupon.py\n", RepositoryProfile(), [])
+        assert "apply_coupon" in plan.tests[0].test_code
+        assert create.await_count == 2
+        correction_message = create.await_args.kwargs["messages"][1]["content"]
+        assert "Python syntax" in correction_message
     finally:
         current_run.reset(token)
