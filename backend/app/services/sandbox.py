@@ -55,6 +55,7 @@ class DockerSandbox:
             return self._skipped(branch, commit, "Generated test path was rejected")
         if (checkout / ".dockerignore").exists() or (checkout / ".dockerignore").is_symlink():
             return self._skipped(branch, commit, "Generated verification does not support repository .dockerignore files")
+        relative = self._generated_path_for_checkout(checkout, relative)
         targeted = self._generated_command(profile, relative, mode=generated_test.mode, code=generated_test.test_code)
         if not targeted:
             return self._skipped(branch, commit, "No supported generated-test runner was detected")
@@ -157,6 +158,8 @@ class DockerSandbox:
             and generated_test.test_code
             and self._is_safe_test_path(relative)
         )
+        if safe_path:
+            relative = self._generated_path_for_checkout(checkout, relative)
         generated_tag = f"aegispr-repair-{commit[:12]}-{suffix}-generated"
         started = time.monotonic()
         try:
@@ -479,6 +482,17 @@ class DockerSandbox:
             or "test" in path.stem.lower()
             or "spec" in path.stem.lower()
         )
+
+    @staticmethod
+    def _generated_path_for_checkout(checkout: Path, relative: PurePosixPath) -> PurePosixPath:
+        # Preserve existing repository tests. Symlinks still reach the exclusive,
+        # no-follow writer and are rejected rather than being renamed around.
+        if any((checkout.joinpath(*relative.parts[:index])).is_symlink()
+               for index in range(1, len(relative.parts) + 1)):
+            return relative
+        if (checkout / relative).is_file():
+            return relative.parent / f"aegispr_{uuid4().hex[:12]}_{relative.name}"
+        return relative
 
     @staticmethod
     def _runtime(profile: RepositoryProfile) -> tuple[str | None, str | None]:
