@@ -7,7 +7,7 @@ import pytest
 
 from app.schemas.verification import RepositoryProfile
 from app.services.inference_budget import InferenceBudget, current_run
-from app.services.nebius import NebiusGateway, InferenceUnavailable
+from app.services.nebius import NebiusGateway, InferenceUnavailable, _normalize_python_test_code
 
 MODEL = "nvidia/Nemotron-3_5-Lightning"
 
@@ -25,6 +25,16 @@ def setup_gateway(tmp_path, **kwargs):
     create = AsyncMock(return_value=response())
     gateway.client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
     return gateway, create, budget
+
+
+def test_code_normalizer_preserves_valid_python_with_literal_escape_sequence():
+    code = "print('AEGISPR_OUTPUT=' + 'line\\nother')"
+    assert _normalize_python_test_code(code) == code
+
+
+def test_code_normalizer_leaves_unparseable_candidate_unchanged():
+    code = "not valid\\npython ("
+    assert _normalize_python_test_code(code) == code
 
 
 @pytest.mark.asyncio

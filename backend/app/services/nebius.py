@@ -42,6 +42,32 @@ def _changed_python_modules(diff: str) -> set[str]:
     }
 
 
+def _normalize_python_test_code(code: str) -> str:
+    try:
+        ast.parse(code)
+        return code
+    except SyntaxError:
+        pass
+    if "\n" in code or "\\n" not in code:
+        return code
+    candidate = code.replace("\\n", "\n").replace('\\"', '"')
+    try:
+        ast.parse(candidate)
+    except SyntaxError:
+        return code
+    return candidate
+
+
+def _normalize_plan_test(item: object) -> object:
+    if not isinstance(item, dict):
+        return item
+    code = item.get("test_code")
+    path = item.get("file_path")
+    if not isinstance(code, str) or not isinstance(path, str) or not path.endswith(".py"):
+        return item
+    return {**item, "test_code": _normalize_python_test_code(code)}
+
+
 def _python_output_uses_changed_result(code: str, changed_modules: set[str]) -> bool:
     try:
         tree = ast.parse(code)
@@ -262,7 +288,7 @@ UNTRUSTED REPOSITORY CONTEXT BEGIN\n{repository_context}\nUNTRUSTED REPOSITORY C
             raise InvalidPlanOutput("Nemotron plan exceeded the two-experiment scope")
         try:
             hypotheses = [Hypothesis.model_validate(item) for item in payload["hypotheses"]]
-            tests = [GeneratedTest.model_validate(item) for item in payload["tests"]]
+            tests = [GeneratedTest.model_validate(_normalize_plan_test(item)) for item in payload["tests"]]
         except (ValueError, TypeError):
             raise InvalidPlanOutput("Nemotron plan contained invalid fields") from None
         hypothesis_ids = {item.id for item in hypotheses}
