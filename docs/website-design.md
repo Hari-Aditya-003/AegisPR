@@ -31,4 +31,10 @@ October 21 result: **20 checks passed** (12 website checks and 8 recorder guards
 
 Browser inspection covered the desktop layout, 390px and 320px widths without horizontal overflow, all three guide choices, Enter-key guide activation, workflow stage changes, FAQ expansion, and the animation pause control. No browser console errors were observed during the checked interactions. These are targeted website checks, not a repeat of the October 19 backend/GPU acceptance matrix, a comprehensive accessibility audit, or new evidence of live model inference.
 
-The private draft video was not re-recorded or uploaded. No Dell service, production authentication, provider key or inference budget was changed.
+The private draft video was not re-recorded or uploaded for the October 21 redesign. No Dell service, production authentication, provider key or inference budget was changed then.
+
+## October 25 evidence viewer
+
+The public static build now includes `website/dist/evidence/`, linked from both the landing page and browser experiment. It displays the exact controlled-PR scope, pinned commits, selected base/head output values, three fresh Nemotron intent votes, `BEHAVIOR_CHANGE` finding and `INCONCLUSIVE` overall status. Its spending figures are explicitly **app estimates**, not a provider invoice. It has no form, provider key or PR-processing endpoint. It links to the dated receipt and the separate full local judging build. It is not the private full application.
+
+The page was developed with red-to-green tests. All **25 website tests** passed locally. A local browser check at 1280px and 390px widths confirmed rendering, accessible disclosure content, no horizontal overflow and the intended links. This is not a comprehensive accessibility audit. Recheck the public GitHub Pages URL after deployment; local preview alone does not prove publication.

@@ -1,6 +1,6 @@
 # Hackathon Submission Kit
 
-This is a draft kit for the Nebius × NVIDIA Global AI Hackathon submission. Finalize the claims and bracketed fields only after judge access and the final recording are verified. A bounded model-only completion succeeded October 23. Five October 24 controlled-PR runs reached at most test generation. The [October 25 continuation](live-pr-continuation-2026-10-25.md) generated a four-case test with one paid call, but its live run skipped execution because the proposed filename already existed. A zero-token full-app replay of that saved plan then executed the test on both commits and recorded a stable behavior change. It remained `INCONCLUSIVE` because intent was unverified, not because a regression was confirmed. The owner will create and upload the final video themselves; do not generate or upload one on their behalf.
+This is a draft kit for the Nebius × NVIDIA Global AI Hackathon submission. Finalize the claims and bracketed fields only after judge access and the final recording are verified. A bounded model-only completion succeeded October 23. The [October 25 continuation](live-pr-continuation-2026-10-25.md) records a saved Nemotron-generated four-case test, actual Docker execution on both commits of a controlled public PR, two confirmation reruns per side, and three fresh paid intent votes. All three voted `unintended`; the product status remained `INCONCLUSIVE` because advisory votes are not confirmed regression proof. The owner will create and upload the final video themselves; do not generate or upload one on their behalf.
 
 ## Submission profile
 
@@ -11,11 +11,12 @@ This is a draft kit for the Nebius × NVIDIA Global AI Hackathon submission. Fin
 - **Project website:** <https://hari-aditya-003.github.io/AegisPR/>
 - **License:** MIT
 - **Public test build:** <https://hari-aditya-003.github.io/AegisPR/demo/>
+- **Controlled-PR evidence viewer:** <https://hari-aditya-003.github.io/AegisPR/evidence/>
 - **Video:** `[OWNER TO ADD PUBLIC YOUTUBE URL, STRICTLY UNDER 3:00]`
 
 The website and interactive browser test build are published on GitHub Pages.
 The test build executes a deterministic coupon fixture in JavaScript; it is not
-a public GPU/Nemotron service. A model-only connectivity check succeeded October 23. The [October 24 attempts](live-pr-attempt-2026-10-24.md) and [October 25 continuation](live-pr-continuation-2026-10-25.md) record actual model-generated tests and an autonomous cached-plan Docker comparison of a controlled public PR. That comparison is **not** fresh inference, an independent benchmark or a confirmed unintended-regression verdict; final status was `INCONCLUSIVE`.
+a public GPU/Nemotron service. A model-only connectivity check succeeded October 23. The [October 25 continuation](live-pr-continuation-2026-10-25.md) records an earlier cached-plan replay and a later full-app run that made three fresh Nemotron intent calls after Docker comparison of the controlled public PR. That is **not** an independent benchmark or confirmed unintended-regression verdict; final status was `INCONCLUSIVE`. The evidence viewer is read-only, not a public instance of the backend.
 The [credential-free full local judging build](judge-test-build.md) also runs the
 real interface/API/Docker executor with prewritten Python and Node fixtures.
 It requires Docker, not paid tokens; it is not live model/PR evidence.
@@ -38,9 +39,9 @@ The model proposes experiments, but it does not decide whether they passed. Exit
 
 ## NVIDIA and Nebius usage
 
-**Dated evidence:** October 17 and 19 Dell receipts show real CUDA ranking and Docker sandbox differential execution. On October 23 the model completed one bounded connectivity request after credits were added, while the Dell GPU health check was degraded by missing NVIDIA userspace libraries. The [October 24 recovery receipt](gpu-recovery-2026-10-24.md) confirms local CUDA ranking again. The [October 24 live PR receipt](live-pr-attempt-2026-10-24.md) records model-generated test execution ending `INCONCLUSIVE`; the [October 25 continuation](live-pr-continuation-2026-10-25.md) records a paid generated four-case test and a separate zero-new-call full-app replay finding stable `BEHAVIOR_CHANGE`. These observations do not establish a confirmed unintended regression, Nebius GPU hosting or a public full-stack service. Do not submit an unmeasured model-quality rating. See [live-stack evidence](live-stack-evidence.md) and the [model-only receipt](live-nebius-check.md).
+**Dated evidence:** October 17 and 19 Dell receipts show real CUDA ranking and Docker sandbox differential execution. On October 23 the model completed one bounded connectivity request after credits were added, while the Dell GPU health check was degraded by missing NVIDIA userspace libraries. The [October 24 recovery receipt](gpu-recovery-2026-10-24.md) confirms local CUDA ranking again. The [October 25 continuation](live-pr-continuation-2026-10-25.md) records a paid generated four-case test, a zero-new-call replay, and a later full-app run with three fresh Nemotron intent calls. The later run found stable `BEHAVIOR_CHANGE`, but the overall status remained `INCONCLUSIVE`. These observations do not establish a confirmed unintended regression, Nebius GPU hosting, comparative model quality or a public full-stack service. See [live-stack evidence](live-stack-evidence.md) and the [model-only receipt](live-nebius-check.md).
 
-- **NVIDIA Nemotron** is integrated through Nebius Token Factory for risk hypotheses, test synthesis, evidence summaries, and minimal repair proposals. The current default is `nvidia/Nemotron-3_5-Lightning` as an economical evaluation candidate; Ultra remains an explicit comparison option. A controlled PR run generated one executable output example, but no PR task quality score or full workflow success is claimed.
+- **NVIDIA Nemotron** is integrated through Nebius Token Factory for risk hypotheses, test synthesis, evidence summaries, and minimal repair proposals. The current default is `nvidia/Nemotron-3_5-Lightning` as an economical evaluation candidate; Ultra remains an explicit comparison option. A controlled PR run generated one executable output example and later used three fresh intent calls, but no comparative PR task-quality score or confirmed regression is claimed.
 - **Dell RTX 3050 Ti** runs the GPU worker. CuPy performs hashed term-document vector construction, cosine similarity scoring, and repository-context ranking before Nemotron receives a bounded prompt.
 - **CUDA telemetry** records the selected device and whether each ranking used CUDA or the visible CPU fallback.
 - **Docker sandboxes** execute untrusted repository checks with no runtime network, dropped Linux capabilities, process limits, and resource limits.
@@ -83,7 +84,7 @@ Narration:
 
 > The same generated test passes before the change and fails after it. That branch difference—not model confidence—is why AegisPR reports a regression.
 
-Do **not** use the `REGRESSION_FOUND` card or narration for the October 24 live run: it ended `INCONCLUSIVE`. Its later offline replay showed an output difference, not an autonomous or human-confirmed unintended-regression verdict. If the final recording does not reach the illustrated state, show the actual status and explain the limit instead.
+Do **not** use the `REGRESSION_FOUND` card or narration for the October 25 controlled run: it ended `INCONCLUSIVE`, despite stable output differences and 3/3 advisory `unintended` votes. If the final recording does not reach the illustrated state, show the actual status and explain the limit instead.
 
 ### 1:40–2:15 — Repair and re-verification
 
@@ -122,8 +123,8 @@ The OpenAI-compatible Token Factory interface made it straightforward to place N
 - [ ] Health endpoint reports Nebius configured and the GPU worker reachable at final recording time.
 - [x] A bounded model-only inference completes successfully on October 23; a later controlled PR call generates one test, but its product verdict is inconclusive.
 - [ ] GPU worker health and authenticated ranking record `accelerator: cuda` and RTX 3050 Ti metadata at final recording time (dated October 19 receipt exists).
-- [x] A controlled public PR reaches live-model test generation and base/PR Docker execution; the resulting product verdict was inconclusive. Separate zero-token replay passed on both branches and found a stable output difference.
-- [ ] A fresh autonomous PR run reaches a defensible final verdict after the runner fix, subject to owner approval for any paid call.
+- [x] A controlled public PR reaches model-generated test execution in Docker on both commits, two confirmation reruns per side, and three fresh Nemotron intent reviews; the resulting product status was `INCONCLUSIVE`.
+- [ ] A human-confirmed unintended regression or independently labeled real-PR benchmark exists; advisory intent votes do not satisfy this.
 - [ ] The proof card shows exact commits, commands, logs, exit codes, and durations.
 - [ ] Repair verification reaches `FIX_VERIFIED` with all required checks passing.
 - [ ] No API key, shared worker token, or private host detail appears in the recording.
@@ -139,9 +140,9 @@ The OpenAI-compatible Token Factory interface made it straightforward to place N
 - [x] Nebius Token Factory integration
 - [x] Real CUDA workload and explicit fallback reporting
 - [x] Automated test and security verification
-- [ ] Public working demo application URL
+- [x] Public interactive browser test-build URL and read-only controlled-PR evidence URL (not an unrestricted full live application)
 - [x] Public project website on GitHub Pages
 - [ ] Public YouTube demonstration, three minutes or shorter
 - [x] Live Dell CUDA application-workload evidence captured
-- [x] Bounded model-only Nebius inference and one controlled-PR test-generation attempt captured after credits became usable; autonomous final verdict remains open
+- [x] Bounded model-only Nebius inference, controlled-PR test generation and three fresh intent calls captured after credits became usable; confirmed unintended-regression verdict remains open
 
