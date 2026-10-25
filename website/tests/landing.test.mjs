@@ -17,8 +17,17 @@ test('landing page offers three clearly scoped how-to paths and a no-script fall
   }
   assert.match(html, /<noscript>/);
   assert.match(html, /not a live PR review/i);
-  assert.match(html, /usable Nebius credits/i);
+  assert.match(html, /bounded Nemotron inference succeeded/i);
+  assert.match(html, /no completed autonomous PR verdict/i);
+  assert.doesNotMatch(html, /pending usable Nebius credits/i);
   assert.match(html, /artifacts\/judge\/access-code/);
+});
+
+test('public browser fixture accurately separates its scope from dated live evidence', () => {
+  const demo = readFileSync(new URL('../dist/demo/index.html', import.meta.url), 'utf8');
+  assert.match(demo, /bounded Nemotron inference succeeded/i);
+  assert.match(demo, /no completed autonomous PR verdict/i);
+  assert.doesNotMatch(demo, /blocked by unavailable account credits/i);
 });
 
 test('guide controller selects one panel and exposes its state to assistive technology', async () => {
