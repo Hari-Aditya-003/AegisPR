@@ -183,3 +183,58 @@ async def test_generated_plan_references_and_scope_are_validated(tmp_path, mutat
     create.return_value = data
     with pytest.raises(ValueError):
         await gateway.create_plan("diff", RepositoryProfile(), [])
+
+
+@pytest.mark.asyncio
+async def test_output_plan_that_simulates_changed_python_function_gets_one_correction(tmp_path):
+    gateway, create, budget = setup_gateway(tmp_path)
+    invalid = response()
+    valid = response()
+    invalid_payload = json.loads(invalid.choices[0].message.content)
+    valid_payload = json.loads(valid.choices[0].message.content)
+    invalid_payload["tests"][0].update(mode="output", test_code=(
+        "from coupon import apply_coupon\n"
+        "print('AEGISPR_OUTPUT=' + str(max(0, 50 - 100)))\n"
+    ))
+    valid_payload["tests"][0].update(mode="output", test_code=(
+        "import json\nfrom coupon import apply_coupon\n"
+        "print('AEGISPR_OUTPUT=' + json.dumps({'case': 'over', 'output': apply_coupon(50, 100)}))\n"
+    ))
+    invalid.choices[0].message.content = json.dumps(invalid_payload)
+    valid.choices[0].message.content = json.dumps(valid_payload)
+    create.side_effect = [invalid, valid]
+    token = current_run.set("bad-output-example")
+    try:
+        plan = await gateway.create_plan(
+            "diff --git a/coupon.py b/coupon.py\n@@ -1 +1 @@\n-def apply_coupon(x, y):\n+def apply_coupon(x, y):",
+            RepositoryProfile(languages=["Python"]), [],
+        )
+        assert "apply_coupon(50, 100)" in plan.tests[0].test_code
+        assert create.await_count == 2
+        assert budget.summary("bad-output-example")["calls"] == 2
+        assert "call a changed" in create.await_args.kwargs["messages"][1]["content"].lower()
+    finally:
+        current_run.reset(token)
+
+
+@pytest.mark.asyncio
+async def test_output_plan_calling_changed_python_function_needs_no_correction(tmp_path):
+    gateway, create, budget = setup_gateway(tmp_path)
+    valid = response()
+    payload = json.loads(valid.choices[0].message.content)
+    payload["tests"][0].update(mode="output", test_code=(
+        "import json\nfrom coupon import apply_coupon\n"
+        "for subtotal, discount in [(50, 100), (10, 2)]:\n"
+        "    observed = apply_coupon(subtotal, discount)\n"
+        "    print('AEGISPR_OUTPUT=' + json.dumps({'subtotal': subtotal, 'output': observed}))\n"
+    ))
+    valid.choices[0].message.content = json.dumps(payload)
+    create.return_value = valid
+    token = current_run.set("valid-output-example")
+    try:
+        plan = await gateway.create_plan("diff --git a/coupon.py b/coupon.py\n", RepositoryProfile(), [])
+        assert plan.tests[0].mode == "output"
+        assert create.await_count == 1
+        assert budget.summary("valid-output-example")["calls"] == 1
+    finally:
+        current_run.reset(token)
