@@ -9,6 +9,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const website = 'https://hari-aditya-003.github.io/AegisPR/';
 const app = 'http://127.0.0.1:3300';
 const health = 'http://127.0.0.1:18880/health';
+export const closingCaption = 'Current evidence: a saved model plan found a stable PR behavior change; intent remains inconclusive.';
 const uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 const scenes = new Set(['preflight', 'brand', 'browser-illustration', 'python-evidence', 'manual-repair', 'node-evidence', 'gpu-health', 'remaining-work',
   'python-navigation', 'python-response-validation', 'python-provenance', 'python-open-branches', 'python-base-reveal', 'python-head-reveal',
@@ -272,7 +273,7 @@ async function runDemo(mode) {
     await caption('“Configured” is configuration only, not a successful Nemotron call.');
     await pause(10000);
     checkpoint('remaining-work');
-    await navigate(website, 'Still pending: funded live Nemotron inference and real PR acceptance.');
+    await navigate(website, closingCaption);
     await pause(8000);
     succeeded = true;
   } finally {
@@ -284,10 +285,10 @@ async function runDemo(mode) {
     await writeFile(markerPath, JSON.stringify({ version: 1, success: true, fingerprint, completed_at: Date.now() }), { mode: 0o600 });
     print('REHEARSAL PASSED — all controlled story actions verified; no inference requested.');
   } else if (record) {
-    const target = path.join(outputDir, 'controlled-capabilities.webm');
+    const target = path.join(outputDir, 'aegispr-workflow-2026-10-25.webm');
     await assertNotSymlink(target);
     await copyFile(await video.path(), target, constants.COPYFILE_EXCL);
-    print('DRAFT VIDEO SAVED — artifacts/demo/controlled-capabilities.webm; not published.');
+    print('DRAFT VIDEO SAVED — artifacts/demo/aegispr-workflow-2026-10-25.webm; not published.');
   } else print('DISCOVERY PASSED — fields mapped without input values; no inference requested.');
 }
 

@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   allowedRequest,
+  closingCaption,
   matchesHeroTitle,
   observedNavigation,
   safeOutput,
@@ -11,6 +12,12 @@ import {
   validateFixture,
   validateRehearsalMarker,
 } from './record-controlled-demo.mjs';
+
+test('closing caption distinguishes the saved PR replay from fresh inference', () => {
+  assert.match(closingCaption, /saved model plan/i);
+  assert.match(closingCaption, /inconclusive/i);
+  assert.doesNotMatch(closingCaption, /inference.*pending|confirmed regression/i);
+});
 
 test('hero assertion tolerates rendered line breaks without accepting unrelated headings', () => {
   assert.equal(matchesHeroTitle('Don’t trust a PR.\nProve it.'), true);

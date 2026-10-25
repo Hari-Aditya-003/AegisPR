@@ -1,6 +1,6 @@
 # Draft capability recording
 
-This is a **capability preview, not the final end-to-end hackathon submission video**. A separate, small live Nemotron connectivity check succeeded on October 23, 2026, but actual PR acceptance remains unverified. Do not replace missing PR evidence with fixture footage or invent model feedback.
+This is a **capability preview, not the final end-to-end hackathon submission video**. A separate live Nemotron connectivity check succeeded on October 23, 2026. On October 25, a controlled public PR's saved model plan was replayed through the full app and real Docker execution without a new provider call; the stable behavior change remained `INCONCLUSIVE` on intent. The fixture footage below is **not** footage of that PR replay. Do not replace missing PR evidence with fixture footage or invent model feedback.
 
 The recorder separates three evidence modes:
 
@@ -57,6 +57,14 @@ The later [live credit-check receipt](live-nebius-check.md) records a successful
 
 The local, Git-ignored `artifacts/demo/live-nebius-credit-check-retry-2026-10-23.webm` is a 17.76-second, 1280×720 VP8 silent recording with English captions. SHA-256: `f3a7a67ac27d28ac530485f433cc73c4462545546bfc613cdfe903018c06eb4c`. A sampled frame was visually inspected and shows the truthful live-model caption and cost estimate. The recording does not display credentials, but this was **sampled review, not a frame-by-frame privacy audit**. Do not upload it as the final submission video without owner review and approval.
 
+## October 25 workflow screen recording
+
+The owner requested a new screen recording of the process. Discovery and a complete no-video rehearsal passed before capture. The local, Git-ignored `artifacts/demo/aegispr-workflow-2026-10-25.webm` is 96.80 seconds, VP8 at 1280×720 and 25 fps, 6,974,541 bytes. SHA-256: `489cfccb428dae64b5dcd4a42bfe0ac6b8af4f35fe8e5b6a5d8a2f01ae3be046`. It is silent with English captions, private and not uploaded.
+
+The recording shows the public site, an interactive browser-only coupon boundary check and prewritten clamp, then newly executed Python and Node controlled-fixture reports (`0aa65cd5-2e5e-4223-8b7e-87ce29de8b4c` and `2523e882-9ee3-4204-a12e-3e5da120cf0f`). Those reports contain actual isolated Docker commands, commits, logs and manual-repair checks, but **zero model calls** and no live GitHub PR review. The separate Dell production `/health` scene showed `status: ok` and `gpu_accelerator: cuda` during recording; it is not proof of Nebius inference or Nebius GPU hosting. The closing caption points to the separate saved-plan controlled-PR result as a stable behavior change with inconclusive intent. The top-right draft badge remains visible throughout.
+
+Sampled frames at roughly 0, 12, 24, 36, 39, 48, 60, 72, 75 and 84 seconds were visually inspected for those labels and visible secrets; no access code or provider key was seen in those samples. This is **sampled inspection, not an exhaustive frame-by-frame privacy audit**. The recorder's request allowlist permits only fixed GET evidence surfaces, rejects model/budget/write endpoints and WebSockets, and injects the local app access code privately into session storage rather than typing or captioning it. Its nine guard tests passed. The user still owns the final public video and should review this draft before using any footage.
+
 ## Before final submission
 
-Complete and measure the actual NVIDIA/Nebius PR workflow within the application's spending limits after the Dell GPU worker is repaired and a suitable PR is selected. Replace the relevant draft scenes with real generated-test/PR/repair evidence and truthful model feedback. Review every frame for secrets, misleading labels and unsupported claims; verify duration, English content, public viewing and current organizer video requirements. Upload only with the account owner's approval and use the resulting supported video-platform URL in the submission form. A local WebM or GitHub Pages link is not automatically a valid replacement for that field.
+For the final submission, show the dated live Nemotron call and controlled-PR result with their exact limits; do not present this fixture walkthrough as fresh inference or a confirmed autonomous regression verdict. Review every frame for secrets, misleading labels and unsupported claims; verify duration, English content, public viewing and current organizer video requirements. The owner has said they will prepare and upload the final video themselves. A local WebM or GitHub Pages link is not automatically a valid replacement for that field.
