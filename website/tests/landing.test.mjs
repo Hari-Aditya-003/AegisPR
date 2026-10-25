@@ -17,8 +17,8 @@ test('landing page offers three clearly scoped how-to paths and a no-script fall
   }
   assert.match(html, /<noscript>/);
   assert.match(html, /not a live PR review/i);
-  assert.match(html, /bounded Nemotron inference succeeded/i);
-  assert.match(html, /October 25[^<]*cached-plan replay/i);
+  assert.match(html, /controlled PR run reused a saved Nemotron test plan/i);
+  assert.match(html, /three fresh intent-review calls/i);
   assert.match(html, /3\/3[^<]*unintended/i);
   assert.match(html, /overall status remains INCONCLUSIVE/i);
   assert.doesNotMatch(html, /pending usable Nebius credits/i);
@@ -27,8 +27,8 @@ test('landing page offers three clearly scoped how-to paths and a no-script fall
 
 test('public browser fixture accurately separates its scope from dated live evidence', () => {
   const demo = readFileSync(new URL('../dist/demo/index.html', import.meta.url), 'utf8');
-  assert.match(demo, /bounded Nemotron inference succeeded/i);
-  assert.match(demo, /October 25[^<]*cached-plan replay/i);
+  assert.match(demo, /controlled PR run reused a saved Nemotron test plan/i);
+  assert.match(demo, /three fresh intent-review calls/i);
   assert.match(demo, /3\/3[^<]*unintended/i);
   assert.match(demo, /overall status remains INCONCLUSIVE/i);
   assert.doesNotMatch(demo, /blocked by unavailable account credits/i);

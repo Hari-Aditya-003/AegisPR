@@ -21,7 +21,8 @@ test('public evidence page shows branch observations, votes and conservative out
   assert.match(html, /-10/);
   assert.match(html, /3\/3[^<]*unintended/i);
   assert.match(html, /INCONCLUSIVE/);
-  assert.doesNotMatch(html, /confirmed (?:unintended )?regression|REGRESSION_FOUND/);
+  assert.doesNotMatch(html, /<strong>REGRESSION_FOUND<\/strong>/);
+  assert.match(html, /not proof of a confirmed regression/i);
 });
 
 test('public evidence page discloses scope and cannot accept credentials or run arbitrary PRs', () => {

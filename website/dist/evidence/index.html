@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#05090c">
+  <meta name="description" content="Inspect the dated, bounded AegisPR controlled pull-request result, including actual Docker branch outputs and Nemotron intent votes.">
+  <title>AegisPR — Controlled PR evidence</title>
+  <link rel="icon" href="../aegispr-logo.jpg"><link rel="stylesheet" href="../styles.css"><link rel="stylesheet" href="../brand.css?v=20261023-logo"><link rel="stylesheet" href="./evidence.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to evidence</a>
+  <header class="nav"><a class="brand" href="../" aria-label="AegisPR home"><span class="brand-mark" aria-hidden="true"></span>Aegis<span class="brand-light">PR</span></a><a class="nav-cta" href="../demo/">Try the browser demo ↗</a></header>
+  <main id="main" class="evidence-shell">
+    <p class="eyebrow">Dated run · October 25, 2026</p>
+    <h1>A real test run.<br><em>A bounded conclusion.</em></h1>
+    <p class="lede">AegisPR compared two commits of a controlled public GitHub PR. The same model-generated usage example ran in isolated Docker on each commit. The output changed consistently; three fresh Nemotron intent reviews called it unintended. The product's overall status remains <strong>INCONCLUSIVE</strong> because model votes are advisory, not proof of a confirmed regression.</p>
+    <div class="evidence-actions"><a class="button primary" href="https://github.com/Hari-Aditya-003/AegisPR-acceptance/pull/1">Inspect the controlled PR ↗</a><a class="button secondary" href="../demo/">Try the browser experiment ↗</a></div>
+    <aside class="scope-banner"><strong>Scope first.</strong> This is a controlled PR with a deliberately seeded boundary change, not an independent real-world benchmark. This page is a public, read-only evidence viewer. It cannot run arbitrary PRs, access the private deployment, or spend model tokens.</aside>
+
+    <section aria-labelledby="chain-title"><p class="eyebrow">01 / How the process ran</p><h2 id="chain-title">From code change to evidence</h2>
+      <ol class="process-grid">
+        <li><span>01</span><h3>Ingest the PR</h3><p>Fetch the public diff and pin both immutable commits.</p></li>
+        <li><span>02</span><h3>Rank context</h3><p>Score relevant repository files on the Dell RTX 3050 Ti using CUDA. This local workload is not a Nebius GPU instance.</p></li>
+        <li><span>03</span><h3>Plan the test</h3><p>The test plan was generated earlier by <code>nvidia/Nemotron-3_5-Lightning</code> through Nebius Token Factory and reused from the response cache in this run.</p></li>
+        <li><span>04</span><h3>Execute both commits</h3><p>Run the same four-case Python output example in isolated Docker on base and head, then repeat changed observations twice per side.</p></li>
+        <li><span>05</span><h3>Review intent</h3><p>Three new paid intent-review calls compared the observed outputs with the PR title, description and commit message.</p></li>
+      </ol>
+    </section>
+
+    <section aria-labelledby="results-title"><p class="eyebrow">02 / Branch observations</p><h2 id="results-title">The boundary moved.</h2><p class="section-intro">Every base/head execution and each of the two confirmation reruns per side exited successfully. The difference is in the printed values, not a test-process failure.</p>
+      <div class="table-wrap"><table><caption>Selected outputs from the same generated usage example on each commit</caption><thead><tr><th scope="col">Input (subtotal, discount)</th><th scope="col">Base</th><th scope="col">PR head</th></tr></thead><tbody><tr><th scope="row">(100, 50)</th><td>50</td><td>50</td></tr><tr class="changed"><th scope="row">(50, 100)</th><td>0</td><td>-50</td></tr><tr class="changed"><th scope="row">(0, 10)</th><td>0</td><td>-10</td></tr><tr><th scope="row">(10, 0)</th><td>10</td><td>10</td></tr></tbody></table></div>
+      <p class="fine-print">The generated file printed keys named “old” and “new” within each branch, but both keys called that branch's own function. AegisPR compared the separate pinned-commit executions. Do not read those within-branch keys as an additional comparison.</p>
+    </section>
+
+    <section aria-labelledby="verdict-title"><p class="eyebrow">03 / What the evidence supports</p><h2 id="verdict-title">Advisory intent, deterministic status.</h2>
+      <div class="verdict-grid"><article><span class="data-label">Execution classification</span><strong>BEHAVIOR_CHANGE</strong><p>Stable output difference after two confirmation reruns per side.</p></article><article><span class="data-label">Model intent review</span><strong>3/3 unintended</strong><p>All three fresh Nemotron votes read the change as conflicting with the stated behavior-preserving refactor.</p></article><article><span class="data-label">Overall AegisPR status</span><strong>INCONCLUSIVE</strong><p>Intent votes are not an automatic confirmed-regression verdict; a human must review the contract and PR intent.</p></article></div>
+      <details><summary>Exact run and spending provenance</summary><div class="detail-content"><p>Run ID: <code>6d6a108f-3b98-482c-9aeb-cc6494180c55</code></p><p>Base: <code>1bfad69ed176946d23068f68eee8cadfdd3e3361</code><br>Head: <code>4f89ac80cc3cb11a5c646d8cae0851e964a689e1</code></p><p>One saved plan cache hit; three new paid intent-review calls; 1,527 input and 327 output tokens; $0.000172 app-estimated for this run. The application ledger showed $0.005130 app-estimated lifetime use afterward. These numbers are not a provider invoice or proof of remaining account balance.</p><p>The generated Python file proposed <code>tests/test_coupon.py</code>; the runner wrote a safe sibling file in disposable checkouts because that path already existed. No repository file was overwritten. No automatic repair was attempted in this run.</p></div></details>
+    </section>
+
+    <section class="next-steps" aria-labelledby="next-title"><p class="eyebrow">04 / Try it and inspect the source</p><h2 id="next-title">See each evidence mode for yourself.</h2><div class="next-grid"><article><h3>Browser experiment</h3><p>Change the coupon inputs and run a fixed JavaScript comparison. No credentials, Docker, GPU or model tokens.</p><a href="../demo/">Open the interactive demo ↗</a></article><article><h3>Full local test build</h3><p>On a trusted Linux/Docker machine, run the actual UI, API and isolated executor with prewritten Python and Node fixtures. No provider key required.</p><a href="https://github.com/Hari-Aditya-003/AegisPR/blob/main/docs/judge-test-build.md">Read setup instructions ↗</a></article><article><h3>Source and dated receipt</h3><p>Read the exact live-run caveats, the earlier paid plan call and the separate zero-token replay. No claim of an independent benchmark or Nebius GPU hosting.</p><a href="https://github.com/Hari-Aditya-003/AegisPR/blob/main/docs/live-pr-continuation-2026-10-25.md">Read the evidence record ↗</a></article></div></section>
+    <p class="fine-print">This public page reports one controlled case; it is not a public instance of the private PR-processing application, a measured false-alarm rate, or proof that every bug will be found. The source is available under the <a href="https://github.com/Hari-Aditya-003/AegisPR/blob/main/LICENSE">MIT License</a>.</p>
+  </main>
+  <footer><a href="../">← AegisPR home</a><a href="https://github.com/Hari-Aditya-003/AegisPR">GitHub source ↗</a></footer>
+</body>
+</html>
