@@ -104,6 +104,30 @@ and provider key were not visible in those samples. This is **sampled review,
 not exhaustive frame-by-frame security inspection**. The raw live and earlier
 clips, local recorder and JSON receipt remain under ignored `artifacts/demo/`.
 
+## October 26 fresh Super-model controlled-PR recordings
+
+The [dated run receipt](live-pr-super-comparison-2026-10-26.md) documents a
+new, paid Nemotron 3 Super test generated for the deliberately seeded public
+PR. The example called the changed Python function and printed its actual
+outputs. Separate base/head Docker runs and two confirmations per side showed
+the same output change. Three advisory intent votes said `unintended`, while
+the overall application status remained `INCONCLUSIVE` pending human review.
+
+Two private, Git-ignored WebM files are available to the owner:
+
+- `artifacts/demo/aegispr-real-time-pr-after-output-gate-2026-10-26.webm`
+  (94.64 seconds): the live UI submission and workflow.
+- `artifacts/demo/aegispr-super-pr-evidence-review-2026-10-26.webm`
+  (34.12 seconds): a read-only walkthrough of the saved finding, votes,
+  confirmations, commits and execution evidence after the production frontend
+  was updated. This second clip made no provider calls.
+
+The receipt records each file's SHA-256 hash and sampled visual review. Neither
+clip is a public or final YouTube submission. The two clips should not be
+joined or narrated as an independent benchmark, confirmed regression, Nebius
+GPU execution, or a successful generated repair. The owner will prepare and
+upload the final video themselves.
+
 ## Before final submission
 
 For the final submission, show the dated live Nemotron call and controlled-PR results with their exact limits. Do not present the fixture walkthrough as fresh inference, or the newer inconclusive live take as a confirmed regression. Review every frame for secrets, misleading labels and unsupported claims; verify duration, English content, public viewing and current organizer video requirements. The owner has said they will prepare and upload the final video themselves. A local WebM or GitHub Pages link is not automatically a valid replacement for that field.

@@ -4,7 +4,7 @@
 
 Catalog availability and API authentication are verified. A bounded model-only completion succeeded on October 23 after credits were added; see the [dated receipt](live-nebius-check.md). A later [controlled-PR attempt](live-pr-attempt-2026-10-24.md) generated and executed one Nemotron-written example but ended `INCONCLUSIVE`; the saved example's offline replay found a stable output difference. Neither establishes model quality on PRs. Do not report an output-quality score, latency comparison, successful model-generated repair, or a winning model until a measured acceptance run exists.
 
-The default changed from Ultra to `nvidia/Nemotron-3_5-Lightning` as a lower-cost evaluation candidate. The application does not automatically fan out to every model or escalate to a more expensive model. Using every catalog model is neither a correctness test nor a hackathon requirement.
+The repository default changed from Ultra to `nvidia/Nemotron-3_5-Lightning` as a lower-cost evaluation candidate. A [dated October 26 trial](live-pr-super-comparison-2026-10-26.md) also ran `nvidia/nemotron-3-super-120b-a12b` against one seeded PR: it generated an executable changed-function test and found a stable behavior change, after earlier Lightning plans failed validation. The prompts and validation changed between trials, so this is not a controlled model-quality comparison or proof that Super is universally better. The application does not automatically fan out to every model or escalate to a more expensive model. Using every catalog model is neither a correctness test nor a hackathon requirement.
 
 The [Nebius public catalog](https://tokenfactory.nebius.com/api/public/models_info), checked October 18, lists these NVIDIA model IDs and USD prices per million input/output tokens:
 
@@ -36,4 +36,4 @@ These are **app-side admission estimates, not a guaranteed provider hard spendin
 
 Use a fixed seeded regression and a no-regression control with exact base/head commits. Compare Lightning against Ultra only if necessary, with the same capped context and a total trial ceiling below $0.50. Capture valid schema, collected executable test, correct differential outcome, false positives, repair checks, provider token usage, latency, and cost per successful verification. Select the cheapest candidate meeting the acceptance criteria. Do not infer quality from price or size.
 
-Reserve judging credits before recording. A successful provider call, a full real PR review, a reachable full application/test build, and an honest demonstration video remain submission gates; see [submission readiness](submission-readiness.md).
+Reserve judging credits before recording. A controlled public PR has now been reviewed with live model-generated testing, but an independent real-PR benchmark, a public full-application judging route, and the entrant's final YouTube demonstration remain outstanding; see [submission readiness](submission-readiness.md).
