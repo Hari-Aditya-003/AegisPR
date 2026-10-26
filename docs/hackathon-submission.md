@@ -16,7 +16,7 @@ This is a draft kit for the Nebius × NVIDIA Global AI Hackathon submission. Fin
 
 The website and interactive browser test build are published on GitHub Pages.
 The test build executes a deterministic coupon fixture in JavaScript; it is not
-a public GPU/Nemotron service. A model-only connectivity check succeeded October 23. The [October 26 run](live-pr-super-comparison-2026-10-26.md) records one fresh Super-generated test and three intent calls after Docker comparison of the controlled public PR. That is **not** an independent benchmark or confirmed unintended-regression verdict; final status was `INCONCLUSIVE`. The public evidence viewer shows an older saved example, not the October 26 private backend report.
+a public GPU/Nemotron service. A model-only connectivity check succeeded October 23. The [October 26 run](live-pr-super-comparison-2026-10-26.md) records one fresh Super-generated test and three intent calls after Docker comparison of the controlled public PR. That is **not** an independent benchmark or confirmed unintended-regression verdict; final status was `INCONCLUSIVE`. The public evidence viewer summarizes both the October 26 fresh-test run and the earlier saved-plan run; it is not the private authenticated report.
 The [credential-free full local judging build](judge-test-build.md) also runs the
 real interface/API/Docker executor with prewritten Python and Node fixtures.
 It requires Docker, not paid tokens; it is not live model/PR evidence.

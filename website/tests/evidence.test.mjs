@@ -35,3 +35,15 @@ test('public evidence page discloses scope and cannot accept credentials or run 
   assert.doesNotMatch(html, /<input|<form|API_ACCESS_TOKEN|NEBIUS_API_KEY/);
   assert.match(html, /href="\.\.\/demo\/"/);
 });
+
+test('public evidence page distinguishes the fresh Super run from the earlier cached Lightning run', () => {
+  const html = evidence();
+  assert.match(html, /cd1828ed-05e1-4739-a019-3ee1a9772f65/);
+  assert.match(html, /nvidia\/nemotron-3-super-120b-a12b/);
+  assert.match(html, /fresh[^<]*generated[^<]*test/i);
+  assert.match(html, /two confirmation reruns per side/i);
+  assert.match(html, /\$0\.001450 app-estimated/);
+  assert.match(html, /October 25[^<]*saved-plan/i);
+  assert.match(html, /live-pr-super-comparison-2026-10-26\.md/);
+  assert.match(html, /INCONCLUSIVE/);
+});
