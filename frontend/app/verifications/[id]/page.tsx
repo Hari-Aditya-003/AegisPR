@@ -100,6 +100,10 @@ export default function VerificationPage() {
                   {finding.intent_classification
                     ? <p>Advisory intent: {finding.intent_classification} · {finding.intent_votes?.length ?? 0} model votes. {finding.intent_reason}</p>
                     : <p>Intent not reviewed by a model.</p>}
+                  {finding.intent_votes?.length === finding.intent_vote_models?.length && !!finding.intent_votes?.length && <ol className="intent-vote-list" aria-label="Intent votes by model">
+                    {finding.intent_votes.map((vote, index) => <li key={`${finding.id}-intent-${index}`}><span>{finding.intent_vote_models?.[index]}</span><strong>Vote {index + 1}: {vote}</strong></li>)}
+                  </ol>}
+                  <p>Model agreement does not confirm the PR author&apos;s intent. Ask the author or maintainer to clarify conflicting requirements.</p>
                 </div>}
                 {!!finding.refinement_executions?.length && <p className="scope-note">Generated test refinement: {finding.refinement_executions.length} base executions recorded.</p>}
                 {finding.mutation_caught !== null && finding.mutation_caught !== undefined && <p className="scope-note">

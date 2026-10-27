@@ -4,14 +4,14 @@ import ast
 import hashlib
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import PurePosixPath
 
 from openai import AsyncOpenAI
 
 from app.schemas.verification import Finding, GeneratedTest, Hypothesis, RepositoryProfile, TestExecution
 from app.services.context_ranker import ContextDocument
-from app.services.inference_budget import InferenceBudget, current_run
+from app.services.inference_budget import MODEL_PRICES, InferenceBudget, current_run
 
 
 class InferenceUnavailable(ValueError):
@@ -133,35 +133,51 @@ class IntentReview:
     verdict: str
     votes: list[str]
     reason: str
+    models: list[str] = field(default_factory=list)
 
 
 class NebiusGateway:
-    def __init__(self, api_key: str | None, base_url: str, model: str, budget: InferenceBudget | None = None) -> None:
+    def __init__(
+        self, api_key: str | None, base_url: str, model: str,
+        budget: InferenceBudget | None = None, intent_models: list[str] | None = None,
+    ) -> None:
         self.api_key = api_key
         self.model = model
         self.budget = budget
+        self.cross_model_intent = intent_models is not None
+        if intent_models is not None:
+            if len(intent_models) != 3 or len(set(intent_models)) != 3:
+                raise ValueError("Intent ensemble requires three distinct models")
+            if any(item not in MODEL_PRICES or not item.lower().startswith("nvidia/")
+                   or "nemotron" not in item.lower() for item in intent_models):
+                raise ValueError("Each intent model needs a verified price and NVIDIA Nemotron ID")
+        self.intent_models = list(intent_models) if intent_models is not None else [model] * 3
         self.client = AsyncOpenAI(api_key=api_key, base_url=base_url, max_retries=0, timeout=45.0) if api_key else None
 
-    async def _request(self, stage: str, messages: list[dict[str, str]], max_tokens: int, temperature: float) -> dict:
+    async def _request(
+        self, stage: str, messages: list[dict[str, str]], max_tokens: int, temperature: float,
+        *, model_override: str | None = None,
+    ) -> dict:
+        selected_model = model_override or self.model
         encoded = json.dumps(messages, ensure_ascii=False).encode("utf-8")
         if len(encoded) > 32_000:
             raise ValueError("Prompt exceeds the input budget; narrow the verification scope")
-        nemotron = self.model.lower().startswith("nvidia/") and "nemotron" in self.model.lower()
+        nemotron = selected_model.lower().startswith("nvidia/") and "nemotron" in selected_model.lower()
         output_mode = "nemotron-prompt-json-no-reasoning-v2" if nemotron else "json-object-v1"
         fingerprint = hashlib.sha256(json.dumps(
-            [self.model, stage, messages, max_tokens, temperature, output_mode], sort_keys=True
+            [selected_model, stage, messages, max_tokens, temperature, output_mode], sort_keys=True
         ).encode()).hexdigest()
         run_id = current_run.get()
         if self.budget:
             cached = self.budget.cached(fingerprint)
             if cached is not None:
-                self.budget.record_cache_hit(run_id, stage, self.model)
+                self.budget.record_cache_hit(run_id, stage, selected_model)
                 return cached
         # UTF-8 bytes plus protocol margin is deliberately more conservative
         # than a chars/4 estimate. Provider prices/usage remain authoritative.
-        ticket = self.budget.reserve(run_id, stage, self.model, len(encoded) + 4096, max_tokens) if self.budget else None
+        ticket = self.budget.reserve(run_id, stage, selected_model, len(encoded) + 4096, max_tokens) if self.budget else None
         try:
-            request = dict(model=self.model, messages=messages, temperature=temperature, max_tokens=max_tokens)
+            request = dict(model=selected_model, messages=messages, temperature=temperature, max_tokens=max_tokens)
             if nemotron:
                 # The public model card does not advertise JSON mode; require JSON in the prompt
                 # without forcing an unadvertised response format or spending hidden reasoning tokens.
@@ -374,7 +390,7 @@ UNTRUSTED REPOSITORY CONTEXT BEGIN\n{repository_context}\nUNTRUSTED REPOSITORY C
         )
         votes: list[str] = []
         reasons: list[str] = []
-        for trial in range(1, 4):
+        for trial, model in enumerate(self.intent_models, start=1):
             payload = await self._request(
                 f"intent_vote_{trial}", [
                     {"role": "system", "content": (
@@ -383,7 +399,7 @@ UNTRUSTED REPOSITORY CONTEXT BEGIN\n{repository_context}\nUNTRUSTED REPOSITORY C
                         "unintended, or unclear, and a short reason. Output differences are not automatically bugs."
                     )},
                     {"role": "user", "content": f"Questions: {questions}\nEvidence: {json.dumps(evidence, ensure_ascii=False)}"},
-                ], max_tokens=256, temperature=0.3,
+                ], max_tokens=256, temperature=0.3, model_override=model,
             )
             vote = payload.get("intent")
             if vote not in {"intended", "unintended", "unclear"}:
@@ -391,9 +407,13 @@ UNTRUSTED REPOSITORY CONTEXT BEGIN\n{repository_context}\nUNTRUSTED REPOSITORY C
             votes.append(vote)
             reason = payload.get("reason")
             reasons.append(reason.strip()[:500] if isinstance(reason, str) else "")
-        verdict = next((value for value in ("intended", "unintended", "unclear") if votes.count(value) >= 2), "unclear")
-        reason = next((text for vote, text in zip(votes, reasons) if vote == verdict and text), "")
-        return IntentReview(verdict=verdict, votes=votes, reason=reason)
+        if self.cross_model_intent and len(set(votes)) > 1:
+            verdict = "unclear"
+            reason = "Models disagreed; ask the PR author or maintainer to clarify the intended behavior."
+        else:
+            verdict = next((value for value in ("intended", "unintended", "unclear") if votes.count(value) >= 2), "unclear")
+            reason = next((text for vote, text in zip(votes, reasons) if vote == verdict and text), "")
+        return IntentReview(verdict=verdict, votes=votes, reason=reason, models=list(self.intent_models))
 
     async def refine_test(self, generated: GeneratedTest, base: TestExecution, *, attempt: int) -> GeneratedTest:
         if not self.client:

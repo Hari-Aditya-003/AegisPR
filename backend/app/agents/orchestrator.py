@@ -60,7 +60,8 @@ class Orchestrator:
             settings.inference_max_calls_per_run,
         )
         self.nebius = NebiusGateway(
-            settings.nebius_api_key, settings.nebius_base_url, settings.nebius_model, budget=self.budget
+            settings.nebius_api_key, settings.nebius_base_url, settings.nebius_model, budget=self.budget,
+            intent_models=[item.strip() for item in settings.intent_review_models.split(",") if item.strip()] or None,
         )
         self.sandbox = DockerSandbox(
             settings.sandbox_timeout_seconds, settings.sandbox_memory, settings.sandbox_cpus
@@ -453,6 +454,7 @@ class Orchestrator:
                     )
                     finding.intent_classification = review.verdict
                     finding.intent_votes = review.votes
+                    finding.intent_vote_models = review.models
                     finding.intent_reason = review.reason
                 except (InferenceUnavailable, BudgetExceeded) as exc:
                     finding.explanation_error = str(exc)

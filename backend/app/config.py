@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     nebius_api_key: str | None = Field(default=None, repr=False)
     nebius_base_url: str = "https://api.tokenfactory.nebius.com/v1/"
     nebius_model: str = "nvidia/Nemotron-3_5-Lightning"
+    intent_review_models: str = ""
     inference_budget_usd: str = "20"
     inference_run_budget_usd: str = "0.25"
     inference_max_calls_per_run: int = Field(default=5, ge=1, le=10)

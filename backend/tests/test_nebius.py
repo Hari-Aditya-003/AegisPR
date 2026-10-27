@@ -6,6 +6,7 @@ import pytest
 
 from app.schemas.verification import ExecutionStatus, Finding, GeneratedTest, RepositoryProfile, TestExecution
 from app.services.context_ranker import ContextDocument
+from app.services.inference_budget import BudgetExceeded, InferenceBudget, current_run
 from app.services.nebius import NebiusGateway
 
 
@@ -196,6 +197,52 @@ def test_intent_model_roster_requires_three_distinct_priced_nemotron_models() ->
         NebiusGateway("key", "https://example.invalid/v1", "nvidia/Nemotron-3_5-Lightning", intent_models=[
             "nvidia/Nemotron-3_5-Lightning", "nvidia/nemotron-3-super-120b-a12b", "nvidia/unknown",
         ])
+
+
+@pytest.mark.asyncio
+async def test_model_override_is_distinctly_cached_and_charged_at_its_own_price(tmp_path) -> None:
+    budget = InferenceBudget(tmp_path / "budget.sqlite3", limit_usd="0.01", per_run_usd="0.01")
+    gateway = NebiusGateway("key", "https://example.invalid/v1", "nvidia/Nemotron-3_5-Lightning", budget=budget)
+    response = SimpleNamespace(
+        usage=SimpleNamespace(prompt_tokens=100, completion_tokens=50),
+        choices=[SimpleNamespace(finish_reason="stop", message=SimpleNamespace(content='{"intent":"unclear"}'))],
+    )
+    create = AsyncMock(return_value=response)
+    gateway.client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    marker = current_run.set("cross-model-test")
+    try:
+        for model in ("nvidia/Nemotron-3_5-Lightning", "nvidia/nemotron-3-super-120b-a12b"):
+            await gateway._request("intent_vote_1", [{"role": "user", "content": "same evidence"}], 128, 0.3, model_override=model)
+    finally:
+        current_run.reset(marker)
+
+    assert [call.kwargs["model"] for call in create.await_args_list] == [
+        "nvidia/Nemotron-3_5-Lightning", "nvidia/nemotron-3-super-120b-a12b",
+    ]
+    assert budget.summary("cross-model-test")["calls"] == 2
+    assert budget.summary("cross-model-test")["accounted_cost_usd"] == 0.000093
+
+
+@pytest.mark.asyncio
+async def test_expensive_second_vote_is_blocked_before_provider_call_when_run_cap_is_low(tmp_path) -> None:
+    budget = InferenceBudget(tmp_path / "budget.sqlite3", limit_usd="0.01", per_run_usd="0.0005")
+    gateway = NebiusGateway("key", "https://example.invalid/v1", "nvidia/Nemotron-3_5-Lightning", budget=budget)
+    create = AsyncMock(return_value=SimpleNamespace(
+        usage=SimpleNamespace(prompt_tokens=100, completion_tokens=50),
+        choices=[SimpleNamespace(finish_reason="stop", message=SimpleNamespace(content='{"intent":"unclear"}'))],
+    ))
+    gateway.client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    marker = current_run.set("capped-ensemble-test")
+    try:
+        await gateway._request("intent_vote_1", [{"role": "user", "content": "evidence"}], 128, 0.3,
+                               model_override="nvidia/Nemotron-3_5-Lightning")
+        with pytest.raises(BudgetExceeded):
+            await gateway._request("intent_vote_2", [{"role": "user", "content": "evidence"}], 128, 0.3,
+                                   model_override="nvidia/nemotron-3-super-120b-a12b")
+    finally:
+        current_run.reset(marker)
+
+    create.assert_awaited_once()
 
 
 @pytest.mark.asyncio

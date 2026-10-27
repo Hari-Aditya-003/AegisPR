@@ -308,6 +308,9 @@ html { scroll-padding-top: 110px; }
 .access-control [role=status] { margin-bottom: 0; }
 html[data-motion=paused] *, html[data-motion=paused] *::before, html[data-motion=paused] *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 .scope-note, .disclaimer { color: #9bb2b5; font-size: 12px; }
+.intent-vote-list { display: grid; gap: 7px; margin: 12px 0; padding-left: 20px; }
+.intent-vote-list li { color: #b6d4d1; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.intent-vote-list li strong { display: block; color: #d6fff0; font-weight: 700; }
 .run-status { max-width: 100%; white-space: normal; line-height: 1.5; }
 .report-main, .report-side, .report-heading > div { min-width: 0; }
 .report-heading p, .finding > p, .proof-topline { overflow-wrap: anywhere; }

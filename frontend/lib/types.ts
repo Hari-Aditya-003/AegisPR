@@ -31,6 +31,7 @@ export interface Finding {
   refinement_executions?: TestExecution[];
   intent_classification?: "intended" | "unintended" | "unclear" | null;
   intent_votes?: Array<"intended" | "unintended" | "unclear">;
+  intent_vote_models?: string[];
   intent_reason?: string | null;
   mutation_operator?: string | null;
   mutation_execution?: TestExecution | null;

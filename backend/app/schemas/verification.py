@@ -142,6 +142,7 @@ class Finding(BaseModel):
     refinement_executions: list[TestExecution] = Field(default_factory=list)
     intent_classification: Literal["intended", "unintended", "unclear"] | None = None
     intent_votes: list[Literal["intended", "unintended", "unclear"]] = Field(default_factory=list)
+    intent_vote_models: list[str] = Field(default_factory=list)
     intent_reason: str | None = None
     mutation_operator: str | None = None
     mutation_execution: TestExecution | None = None
