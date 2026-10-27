@@ -7,7 +7,7 @@ import pytest
 from app.schemas.verification import ExecutionStatus, Finding, GeneratedTest, RepositoryProfile, TestExecution
 from app.services.context_ranker import ContextDocument
 from app.services.inference_budget import BudgetExceeded, InferenceBudget, current_run
-from app.services.nebius import NebiusGateway
+from app.services.nebius import InferenceUnavailable, NebiusGateway
 
 
 @pytest.mark.asyncio
@@ -188,6 +188,33 @@ async def test_cross_model_disagreement_remains_unclear_even_with_two_matching_v
 
     assert review.verdict == "unclear"
     assert review.reason == "Models disagreed; ask the PR author or maintainer to clarify the intended behavior."
+
+
+@pytest.mark.asyncio
+async def test_failed_model_vote_preserves_completed_votes_without_claiming_consensus() -> None:
+    models = [
+        "nvidia/Nemotron-3_5-Lightning",
+        "nvidia/nemotron-3-super-120b-a12b",
+        "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    ]
+    gateway = NebiusGateway("key", "https://example.invalid/v1", models[0], intent_models=models)
+    gateway._request = AsyncMock(side_effect=[
+        {"intent": "unintended", "reason": "A changed boundary."},
+        InferenceUnavailable("Model unavailable"),
+    ])
+    finding = Finding(
+        hypothesis_id="H1", generated_test_id="T1", classification="BEHAVIOR_CHANGE", summary="Boundary",
+        base_execution=TestExecution(branch="base", commit="a" * 40, status=ExecutionStatus.PASSED, stdout="AEGISPR_OUTPUT=0\n"),
+        head_execution=TestExecution(branch="head", commit="b" * 40, status=ExecutionStatus.PASSED, stdout="AEGISPR_OUTPUT=-5\n"),
+    )
+
+    review = await gateway.classify_intent(finding, title="Refactor", description="", commit_messages=[])
+
+    assert review.verdict == "unclear"
+    assert review.votes == ["unintended"]
+    assert review.models == models[:1]
+    assert "incomplete" in review.reason.lower()
+    assert gateway._request.await_count == 2
 
 
 def test_intent_model_roster_requires_three_distinct_priced_nemotron_models() -> None:
