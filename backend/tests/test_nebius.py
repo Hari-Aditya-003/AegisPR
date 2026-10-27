@@ -137,6 +137,68 @@ async def test_intent_review_tie_or_invalid_vote_is_unclear() -> None:
 
 
 @pytest.mark.asyncio
+async def test_distinct_nemotron_models_cast_three_traceable_advisory_votes() -> None:
+    models = [
+        "nvidia/Nemotron-3_5-Lightning",
+        "nvidia/nemotron-3-super-120b-a12b",
+        "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    ]
+    gateway = NebiusGateway("key", "https://example.invalid/v1", models[0], intent_models=models)
+    gateway._request = AsyncMock(side_effect=[
+        {"intent": "unintended", "reason": "Contract changed."},
+        {"intent": "unintended", "reason": "Out of scope."},
+        {"intent": "unintended", "reason": "Boundary changed."},
+    ])
+    finding = Finding(
+        hypothesis_id="H1", generated_test_id="T1", classification="BEHAVIOR_CHANGE", summary="Boundary",
+        base_execution=TestExecution(branch="base", commit="a" * 40, status=ExecutionStatus.PASSED, stdout="AEGISPR_OUTPUT=0\n"),
+        head_execution=TestExecution(branch="head", commit="b" * 40, status=ExecutionStatus.PASSED, stdout="AEGISPR_OUTPUT=-5\n"),
+    )
+
+    review = await gateway.classify_intent(finding, title="Preserve coupon behavior", description="Refactor only", commit_messages=[])
+
+    assert review.verdict == "unintended"
+    assert review.models == models
+    assert review.votes == ["unintended"] * 3
+    assert [call.kwargs["model_override"] for call in gateway._request.await_args_list] == models
+    assert gateway._request.await_count == 3
+
+
+@pytest.mark.asyncio
+async def test_cross_model_disagreement_remains_unclear_even_with_two_matching_votes() -> None:
+    models = [
+        "nvidia/Nemotron-3_5-Lightning",
+        "nvidia/nemotron-3-super-120b-a12b",
+        "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    ]
+    gateway = NebiusGateway("key", "https://example.invalid/v1", models[0], intent_models=models)
+    gateway._request = AsyncMock(side_effect=[
+        {"intent": "intended", "reason": "Author says so."},
+        {"intent": "intended", "reason": "Probably intended."},
+        {"intent": "unintended", "reason": "Refactor claim conflicts."},
+    ])
+    finding = Finding(
+        hypothesis_id="H1", generated_test_id="T1", classification="BEHAVIOR_CHANGE", summary="Boundary",
+        base_execution=TestExecution(branch="base", commit="a" * 40, status=ExecutionStatus.PASSED, stdout="AEGISPR_OUTPUT=0\n"),
+        head_execution=TestExecution(branch="head", commit="b" * 40, status=ExecutionStatus.PASSED, stdout="AEGISPR_OUTPUT=-5\n"),
+    )
+
+    review = await gateway.classify_intent(finding, title="Refactor", description="", commit_messages=[])
+
+    assert review.verdict == "unclear"
+    assert review.reason == "Models disagreed; ask the PR author or maintainer to clarify the intended behavior."
+
+
+def test_intent_model_roster_requires_three_distinct_priced_nemotron_models() -> None:
+    with pytest.raises(ValueError, match="three distinct"):
+        NebiusGateway("key", "https://example.invalid/v1", "nvidia/Nemotron-3_5-Lightning", intent_models=["nvidia/Nemotron-3_5-Lightning"] * 3)
+    with pytest.raises(ValueError, match="verified price"):
+        NebiusGateway("key", "https://example.invalid/v1", "nvidia/Nemotron-3_5-Lightning", intent_models=[
+            "nvidia/Nemotron-3_5-Lightning", "nvidia/nemotron-3-super-120b-a12b", "nvidia/unknown",
+        ])
+
+
+@pytest.mark.asyncio
 async def test_refinement_preserves_test_identity_and_uses_base_error() -> None:
     gateway = NebiusGateway("key", "https://example.invalid/v1", "nvidia/model")
     gateway._request = AsyncMock(return_value={"test_code": "def test_fixed(): print('AEGISPR_OUTPUT=0')"})
