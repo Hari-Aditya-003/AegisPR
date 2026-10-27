@@ -136,6 +136,7 @@ describe("VerificationPage", () => {
         head_execution: { ...completedRun.findings[0].head_execution, status: "PASSED", stdout: "AEGISPR_OUTPUT=-10" },
         confirmation_executions: Array.from({ length: 4 }, (_, i) => ({ branch: i % 2 ? "head" : "base", status: "PASSED" })),
         intent_classification: "unintended", intent_votes: ["unintended", "unclear", "unintended"],
+        intent_vote_models: ["nvidia/Nemotron-3_5-Lightning", "nvidia/nemotron-3-super-120b-a12b", "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"],
         intent_reason: "The PR only describes copy changes.",
         mutation_operator: "> to >=", mutation_caught: true,
       }],
@@ -146,6 +147,10 @@ describe("VerificationPage", () => {
     await screen.findByRole("heading", { name: "Coupon support" });
     expect(screen.getByText(/Advisory intent: unintended/i)).toBeInTheDocument();
     expect(screen.getByText(/3 model votes/i)).toBeInTheDocument();
+    expect(screen.getByText("nvidia/Nemotron-3_5-Lightning")).toBeInTheDocument();
+    expect(screen.getByText("nvidia/nemotron-3-super-120b-a12b")).toBeInTheDocument();
+    expect(screen.getByText("nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B")).toBeInTheDocument();
+    expect(screen.getByText(/Model agreement does not confirm the PR author.s intent/i)).toBeInTheDocument();
     expect(screen.getByText(/4 confirmation executions/i)).toBeInTheDocument();
     expect(screen.getByText(/1 of 1 valid mutants caught/i)).toBeInTheDocument();
     expect(screen.getByText(/not a confirmed regression/i)).toBeInTheDocument();
