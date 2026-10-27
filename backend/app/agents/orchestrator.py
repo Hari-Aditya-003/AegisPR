@@ -438,7 +438,7 @@ class Orchestrator:
             )
             if (classification == Classification.BEHAVIOR_CHANGE and self.settings.nebius_api_key
                     and not intent_reviewed
-                    and self.budget.summary(run.id)["calls"] <= self.settings.inference_max_calls_per_run - 3):
+                    and self.budget.summary(run.id)["calls"] <= self.settings.inference_max_calls_per_run - len(self.nebius.intent_models)):
                 intent_reviewed = True
                 try:
                     if github and reference:

@@ -142,7 +142,10 @@ async def test_unstable_output_difference_is_inconclusive(tmp_path: Path) -> Non
 
 @pytest.mark.asyncio
 async def test_stable_output_difference_records_advisory_intent_without_claiming_confirmed_bug(tmp_path: Path) -> None:
-    settings = Settings(data_path=tmp_path / "runs.sqlite3", workspace_root=tmp_path / "work", nebius_api_key="test-key")
+    models = ["nvidia/Nemotron-3_5-Lightning", "nvidia/nemotron-3-super-120b-a12b",
+              "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B", "nvidia/Nemotron-3-Ultra-550b-a55b"]
+    settings = Settings(data_path=tmp_path / "runs.sqlite3", workspace_root=tmp_path / "work",
+                        nebius_api_key="test-key", intent_review_models=",".join(models))
     orchestrator = Orchestrator(settings, VerificationStore(settings.data_path))
     run = orchestrator.create(CreateVerificationRequest(pull_request_url="https://github.com/acme/store/pull/42"))
     run.summary = summary()
@@ -160,15 +163,14 @@ async def test_stable_output_difference_records_advisory_intent_without_claiming
             item.stdout = f"AEGISPR_OUTPUT={value}\n"
             results.append(item)
     orchestrator.sandbox.execute.side_effect = results
-    models = ["nvidia/Nemotron-3_5-Lightning", "nvidia/nemotron-3-super-120b-a12b", "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"]
-    orchestrator.nebius.classify_intent = AsyncMock(return_value=IntentReview("unintended", ["unintended"] * 3, "Outside stated scope", models=models))
+    orchestrator.nebius.classify_intent = AsyncMock(return_value=IntentReview("unintended", ["unintended"] * 4, "Outside stated scope", models=models))
 
     await orchestrator._execute_plan(run, tmp_path / "repo", tmp_path / "work")
 
     assert run.status == VerificationStatus.INCONCLUSIVE
     assert run.metrics.regressions_found == 0
     assert run.findings[0].intent_classification == "unintended"
-    assert run.findings[0].intent_votes == ["unintended"] * 3
+    assert run.findings[0].intent_votes == ["unintended"] * 4
     assert run.findings[0].intent_vote_models == models
     assert orchestrator.nebius.classify_intent.await_args.kwargs["commit_messages"] == ["Update coupon label"]
 

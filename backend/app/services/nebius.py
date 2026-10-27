@@ -146,8 +146,8 @@ class NebiusGateway:
         self.budget = budget
         self.cross_model_intent = intent_models is not None
         if intent_models is not None:
-            if len(intent_models) != 3 or len(set(intent_models)) != 3:
-                raise ValueError("Intent ensemble requires three distinct models")
+            if len(intent_models) != 4 or len(set(intent_models)) != 4:
+                raise ValueError("Intent ensemble requires four distinct models")
             if any(item not in MODEL_PRICES or not item.lower().startswith("nvidia/")
                    or "nemotron" not in item.lower() for item in intent_models):
                 raise ValueError("Each intent model needs a verified price and NVIDIA Nemotron ID")
@@ -405,7 +405,8 @@ UNTRUSTED REPOSITORY CONTEXT BEGIN\n{repository_context}\nUNTRUSTED REPOSITORY C
             except (InferenceUnavailable, BudgetExceeded):
                 return IntentReview(
                     verdict="unclear", votes=votes, models=self.intent_models[:len(votes)],
-                    reason=f"Intent review incomplete: only {len(votes)} of 3 model votes completed; ask the PR author or maintainer.",
+                    reason=(f"Intent review incomplete: only {len(votes)} of {len(self.intent_models)} "
+                            "model votes completed; ask the PR author or maintainer."),
                 )
             vote = payload.get("intent")
             if vote not in {"intended", "unintended", "unclear"}:

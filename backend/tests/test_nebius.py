@@ -138,17 +138,19 @@ async def test_intent_review_tie_or_invalid_vote_is_unclear() -> None:
 
 
 @pytest.mark.asyncio
-async def test_distinct_nemotron_models_cast_three_traceable_advisory_votes() -> None:
+async def test_distinct_nemotron_models_cast_four_traceable_advisory_votes() -> None:
     models = [
         "nvidia/Nemotron-3_5-Lightning",
         "nvidia/nemotron-3-super-120b-a12b",
         "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+        "nvidia/Nemotron-3-Ultra-550b-a55b",
     ]
     gateway = NebiusGateway("key", "https://example.invalid/v1", models[0], intent_models=models)
     gateway._request = AsyncMock(side_effect=[
         {"intent": "unintended", "reason": "Contract changed."},
         {"intent": "unintended", "reason": "Out of scope."},
         {"intent": "unintended", "reason": "Boundary changed."},
+        {"intent": "unintended", "reason": "Author confirmation is missing."},
     ])
     finding = Finding(
         hypothesis_id="H1", generated_test_id="T1", classification="BEHAVIOR_CHANGE", summary="Boundary",
@@ -160,9 +162,9 @@ async def test_distinct_nemotron_models_cast_three_traceable_advisory_votes() ->
 
     assert review.verdict == "unintended"
     assert review.models == models
-    assert review.votes == ["unintended"] * 3
+    assert review.votes == ["unintended"] * 4
     assert [call.kwargs["model_override"] for call in gateway._request.await_args_list] == models
-    assert gateway._request.await_count == 3
+    assert gateway._request.await_count == 4
 
 
 @pytest.mark.asyncio
@@ -171,12 +173,14 @@ async def test_cross_model_disagreement_remains_unclear_even_with_two_matching_v
         "nvidia/Nemotron-3_5-Lightning",
         "nvidia/nemotron-3-super-120b-a12b",
         "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+        "nvidia/Nemotron-3-Ultra-550b-a55b",
     ]
     gateway = NebiusGateway("key", "https://example.invalid/v1", models[0], intent_models=models)
     gateway._request = AsyncMock(side_effect=[
         {"intent": "intended", "reason": "Author says so."},
         {"intent": "intended", "reason": "Probably intended."},
         {"intent": "unintended", "reason": "Refactor claim conflicts."},
+        {"intent": "intended", "reason": "Likely intended."},
     ])
     finding = Finding(
         hypothesis_id="H1", generated_test_id="T1", classification="BEHAVIOR_CHANGE", summary="Boundary",
@@ -196,6 +200,7 @@ async def test_failed_model_vote_preserves_completed_votes_without_claiming_cons
         "nvidia/Nemotron-3_5-Lightning",
         "nvidia/nemotron-3-super-120b-a12b",
         "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+        "nvidia/Nemotron-3-Ultra-550b-a55b",
     ]
     gateway = NebiusGateway("key", "https://example.invalid/v1", models[0], intent_models=models)
     gateway._request = AsyncMock(side_effect=[
@@ -217,12 +222,13 @@ async def test_failed_model_vote_preserves_completed_votes_without_claiming_cons
     assert gateway._request.await_count == 2
 
 
-def test_intent_model_roster_requires_three_distinct_priced_nemotron_models() -> None:
-    with pytest.raises(ValueError, match="three distinct"):
+def test_intent_model_roster_requires_four_distinct_priced_nemotron_models() -> None:
+    with pytest.raises(ValueError, match="four distinct"):
         NebiusGateway("key", "https://example.invalid/v1", "nvidia/Nemotron-3_5-Lightning", intent_models=["nvidia/Nemotron-3_5-Lightning"] * 3)
     with pytest.raises(ValueError, match="verified price"):
         NebiusGateway("key", "https://example.invalid/v1", "nvidia/Nemotron-3_5-Lightning", intent_models=[
-            "nvidia/Nemotron-3_5-Lightning", "nvidia/nemotron-3-super-120b-a12b", "nvidia/unknown",
+            "nvidia/Nemotron-3_5-Lightning", "nvidia/nemotron-3-super-120b-a12b",
+            "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B", "nvidia/unknown",
         ])
 
 
