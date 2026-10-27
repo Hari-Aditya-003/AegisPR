@@ -1,10 +1,32 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { VerificationForm } from "../components/verification-form";
 
 
 describe("VerificationForm", () => {
+  it("prefills a public PR from the website handoff without starting a paid review", async () => {
+    const onSubmit = vi.fn();
+    window.history.replaceState(null, "", "/?pr=https%3A%2F%2Fgithub.com%2Facme%2Fstore%2Fpull%2F42");
+    try {
+      render(<VerificationForm onSubmit={onSubmit} />);
+      await waitFor(() => expect(screen.getByLabelText(/github pull request/i)).toHaveValue("https://github.com/acme/store/pull/42"));
+      expect(onSubmit).not.toHaveBeenCalled();
+    } finally {
+      window.history.replaceState(null, "", "/");
+    }
+  });
+
+  it("ignores invalid PR handoff values", async () => {
+    window.history.replaceState(null, "", "/?pr=javascript%3Aalert(1)");
+    try {
+      render(<VerificationForm onSubmit={vi.fn()} />);
+      await waitFor(() => expect(screen.getByLabelText(/github pull request/i)).toHaveValue(""));
+    } finally {
+      window.history.replaceState(null, "", "/");
+    }
+  });
+
   it("explains the product and accepts a public GitHub pull request", async () => {
     const onSubmit = vi.fn().mockResolvedValue(undefined);
     render(<VerificationForm onSubmit={onSubmit} />);
