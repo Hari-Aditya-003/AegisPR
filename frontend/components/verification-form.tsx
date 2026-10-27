@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 
 interface VerificationFormProps {
@@ -13,6 +13,13 @@ export function VerificationForm({ onSubmit }: VerificationFormProps) {
   const [value, setValue] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const handedOffUrl = new URLSearchParams(window.location.search).get("pr");
+    if (handedOffUrl && handedOffUrl.length <= 300 && pullRequestPattern.test(handedOffUrl)) {
+      setValue(handedOffUrl.replace(/\/$/, ""));
+    }
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -58,7 +65,7 @@ export function VerificationForm({ onSubmit }: VerificationFormProps) {
             {submitting ? "Starting…" : "Verify PR"}
           </button>
         </div>
-        <p className="field-hint" id="pr-hint">Public repositories are supported in the hackathon MVP.</p>
+        <p className="field-hint" id="pr-hint">Public repositories are supported. Opening this page never starts a review; pressing Verify PR may use Nebius credits. The Agent timeline appears on the report page after a run starts.</p>
         {error && <p className="field-error" id="pr-error" role="alert">{error}</p>}
       </form>
       <div className="hero-assurances"><span><i aria-hidden="true">✓</i> Exact commit comparison</span><span><i aria-hidden="true">✓</i> Isolated execution</span><span><i aria-hidden="true">✓</i> Evidence you can inspect</span></div>
