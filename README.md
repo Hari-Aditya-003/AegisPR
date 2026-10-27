@@ -10,7 +10,7 @@ AegisPR is an evidence-backed pull request verification agent powered by NVIDIA 
 
 | What to inspect | Access and evidence | Limit |
 | --- | --- | --- |
-| Project website and usage guide | [AegisPR website](https://hari-aditya-003.github.io/AegisPR/) | Explains the product; does not run the private backend. |
+| Project website and usage guide | [AegisPR website](https://hari-aditya-003.github.io/AegisPR/) | Explains the product and hands a validated PR URL to the private app; the static page does not execute a review. |
 | Immediate working test build | [Interactive coupon experiment](https://hari-aditya-003.github.io/AegisPR/demo/) | Free, no account or tokens; fixed JavaScript example, not arbitrary PR or model inference. |
 | Actual controlled-PR evidence | [Read-only public evidence summary](https://hari-aditya-003.github.io/AegisPR/evidence/) and [latest live-run receipt](docs/live-pr-super-comparison-2026-10-26.md) | Two runs on one deliberately seeded public PR; the October 26 Super-model run confirmed a stable output change but remained `INCONCLUSIVE` on intent. The full authenticated report remains private. |
 | Reproducible full local interface/API/executor | [Linux/Docker judging build](docs/judge-test-build.md) | Real Docker execution of **prewritten** Python/Node tests and manual repairs, with zero model calls, no GPU and no provider credentials. Run only on a trusted machine with Docker-socket access. |
@@ -19,6 +19,8 @@ AegisPR is an evidence-backed pull request verification agent powered by NVIDIA 
 The final public YouTube demonstration is **not yet linked here**; the entrant is preparing it. A private [94.64-second real-time controlled-PR recording and 34.12-second read-only evidence walkthrough](docs/live-pr-super-comparison-2026-10-26.md) now exist, but they are not the final uploaded submission video. Before submitting, the entrant must verify that the video shows the working project truthfully, is publicly viewable on YouTube and shorter than three minutes; keep the free test build accessible through the judging period. Devpost also requires honest platform/model feedback, personal eligibility and ownership declarations, permission for third-party material, English-language materials or translations, and an explanation of significant updates if the project predates the submission period. No prize, track eligibility or judging outcome is guaranteed.
 
 New here? Follow the [How to use guide](https://hari-aditya-003.github.io/AegisPR/#how-to-use) for the browser experiment, token-free local Docker build, or live PR setup. See the [website design and validation notes](docs/website-design.md).
+
+To review a PR from the website, open [Verify a PR](https://hari-aditya-003.github.io/AegisPR/#verify-pr), paste a public GitHub `/pull/NUMBER` URL (or select the controlled example), and choose **Open private verifier**. The Dell-hosted app opens with that URL prefilled. Connect to the owner's Tailscale network and enter the separate application access code; only then choose **Verify PR**, which can spend provider credits. The **Agent timeline** appears on the resulting report page. This handoff is for authorized operators, not public judge access. The SQLite PR #883 recording is a separate token-free Docker replay of the PR author's existing test, not an AegisPR model-generated report.
 
 An October 23 bounded Nemotron connectivity request succeeded after credits were added; it was not a full PR review. See the [dated receipt](docs/live-nebius-check.md).
 
